@@ -883,7 +883,7 @@ static int nwrap_pw_copy_r(const struct passwd *src, struct passwd *dst,
 
 	ofs = PTR_DIFF(last + 1, first);
 
-	if (ofs > buflen) {
+	if (ofs > (off_t) buflen) {
 		return ERANGE;
 	}
 
@@ -1084,7 +1084,7 @@ static int nwrap_gr_copy_r(const struct group *src, struct group *dst,
 	ofsb = PTR_DIFF(last + 1, first);
 	ofsm = PTR_DIFF(lastm + 1, src->gr_mem);
 
-	if ((ofsb + ofsm) > buflen) {
+	if ((ofsb + ofsm) > (off_t) buflen) {
 		return ERANGE;
 	}
 
@@ -1115,6 +1115,8 @@ static struct passwd *nwrap_files_getpwnam(struct nwrap_backend *b,
 					   const char *name)
 {
 	int i;
+
+	(void) b; /* unused */
 
 	nwrap_files_cache_reload(nwrap_pw_global.cache);
 
@@ -1157,6 +1159,8 @@ static struct passwd *nwrap_files_getpwuid(struct nwrap_backend *b,
 {
 	int i;
 
+	(void) b; /* unused */
+
 	nwrap_files_cache_reload(nwrap_pw_global.cache);
 
 	for (i=0; i<nwrap_pw_global.num; i++) {
@@ -1196,12 +1200,16 @@ static int nwrap_files_getpwuid_r(struct nwrap_backend *b,
 /* user enum functions */
 static void nwrap_files_setpwent(struct nwrap_backend *b)
 {
+	(void) b; /* unused */
+
 	nwrap_pw_global.idx = 0;
 }
 
 static struct passwd *nwrap_files_getpwent(struct nwrap_backend *b)
 {
 	struct passwd *pw;
+
+	(void) b; /* unused */
 
 	if (nwrap_pw_global.idx == 0) {
 		nwrap_files_cache_reload(nwrap_pw_global.cache);
@@ -1239,6 +1247,8 @@ static int nwrap_files_getpwent_r(struct nwrap_backend *b,
 
 static void nwrap_files_endpwent(struct nwrap_backend *b)
 {
+	(void) b; /* unused */
+
 	nwrap_pw_global.idx = 0;
 }
 
@@ -1246,6 +1256,10 @@ static void nwrap_files_endpwent(struct nwrap_backend *b)
 static int nwrap_files_initgroups(struct nwrap_backend *b,
 				  const char *user, gid_t group)
 {
+	(void) b; /* unused */
+	(void) user; /* unused */
+	(void) group; /* used */
+
 	/* TODO: maybe we should also fake this... */
 	return EPERM;
 }
@@ -1255,6 +1269,8 @@ static struct group *nwrap_files_getgrnam(struct nwrap_backend *b,
 					  const char *name)
 {
 	int i;
+
+	(void) b; /* unused */
 
 	nwrap_files_cache_reload(nwrap_gr_global.cache);
 
@@ -1297,6 +1313,8 @@ static struct group *nwrap_files_getgrgid(struct nwrap_backend *b,
 {
 	int i;
 
+	(void) b; /* unused */
+
 	nwrap_files_cache_reload(nwrap_gr_global.cache);
 
 	for (i=0; i<nwrap_gr_global.num; i++) {
@@ -1336,12 +1354,16 @@ static int nwrap_files_getgrgid_r(struct nwrap_backend *b,
 /* group enum functions */
 static void nwrap_files_setgrent(struct nwrap_backend *b)
 {
+	(void) b; /* unused */
+
 	nwrap_gr_global.idx = 0;
 }
 
 static struct group *nwrap_files_getgrent(struct nwrap_backend *b)
 {
 	struct group *gr;
+
+	(void) b; /* unused */
 
 	if (nwrap_gr_global.idx == 0) {
 		nwrap_files_cache_reload(nwrap_gr_global.cache);
@@ -1379,6 +1401,8 @@ static int nwrap_files_getgrent_r(struct nwrap_backend *b,
 
 static void nwrap_files_endgrent(struct nwrap_backend *b)
 {
+	(void) b; /* unused */
+
 	nwrap_gr_global.idx = 0;
 }
 
@@ -1416,6 +1440,9 @@ static int nwrap_module_getpwnam_r(struct nwrap_backend *b,
 				   char *buf, size_t buflen, struct passwd **pwdstp)
 {
 	int ret;
+
+	(void) b; /* unused */
+	(void) pwdst; /* unused */
 
 	if (!b->fns->_nss_getpwnam_r) {
 		return NSS_STATUS_NOTFOUND;
