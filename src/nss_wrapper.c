@@ -534,16 +534,12 @@ static bool nwrap_enabled(void)
 {
 	nwrap_init();
 
-	if (!nwrap_pw_global.cache->path) {
+	if (nwrap_pw_global.cache->path == NULL ||
+	    nwrap_pw_global.cache->path[0] == '\0') {
 		return false;
 	}
-	if (nwrap_pw_global.cache->path[0] == '\0') {
-		return false;
-	}
-	if (!nwrap_gr_global.cache->path) {
-		return false;
-	}
-	if (nwrap_gr_global.cache->path[0] == '\0') {
+	if (nwrap_gr_global.cache->path == NULL ||
+	    nwrap_gr_global.cache->path[0] == '\0') {
 		return false;
 	}
 
@@ -590,7 +586,7 @@ static bool nwrap_parse_file(struct nwrap_cache *nwrap)
 	buf[nwrap->st.st_size] = '\0';
 
 	nline = (char *)buf;
-	while (nline && nline[0]) {
+	while (nline != NULL && nline[0] != '\0') {
 		char *line;
 		char *e;
 		bool ok;
