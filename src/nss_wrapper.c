@@ -394,28 +394,28 @@ static struct nwrap_module_nss_fns *nwrap_load_module_fns(struct nwrap_backend *
 		return NULL;
 	}
 
-	fns->_nss_getpwnam_r	= (NSS_STATUS (*)(const char *, struct passwd *, char *, size_t, int *))
-				  nwrap_load_module_fn(b, "getpwnam_r");
-	fns->_nss_getpwuid_r	= (NSS_STATUS (*)(uid_t, struct passwd *, char *, size_t, int *))
-				  nwrap_load_module_fn(b, "getpwuid_r");
-	fns->_nss_setpwent	= (NSS_STATUS(*)(void))
-				  nwrap_load_module_fn(b, "setpwent");
-	fns->_nss_getpwent_r	= (NSS_STATUS (*)(struct passwd *, char *, size_t, int *))
-				  nwrap_load_module_fn(b, "getpwent_r");
-	fns->_nss_endpwent	= (NSS_STATUS(*)(void))
-				  nwrap_load_module_fn(b, "endpwent");
-	fns->_nss_initgroups	= (NSS_STATUS (*)(const char *, gid_t, long int *, long int *, gid_t **, long int, int *))
-				  nwrap_load_module_fn(b, "initgroups_dyn");
-	fns->_nss_getgrnam_r	= (NSS_STATUS (*)(const char *, struct group *, char *, size_t, int *))
-				  nwrap_load_module_fn(b, "getgrnam_r");
-	fns->_nss_getgrgid_r	= (NSS_STATUS (*)(gid_t, struct group *, char *, size_t, int *))
-				  nwrap_load_module_fn(b, "getgrgid_r");
-	fns->_nss_setgrent	= (NSS_STATUS(*)(void))
-				  nwrap_load_module_fn(b, "setgrent");
-	fns->_nss_getgrent_r	= (NSS_STATUS (*)(struct group *, char *, size_t, int *))
-				  nwrap_load_module_fn(b, "getgrent_r");
-	fns->_nss_endgrent	= (NSS_STATUS(*)(void))
-				  nwrap_load_module_fn(b, "endgrent");
+	*(void **)(&fns->_nss_getpwnam_r) =
+		nwrap_load_module_fn(b, "getpwnam_r");
+	*(void **)(&fns->_nss_getpwuid_r) =
+		nwrap_load_module_fn(b, "getpwuid_r");
+	*(void **)(&fns->_nss_setpwent) =
+		nwrap_load_module_fn(b, "setpwent");
+	*(void **)(&fns->_nss_getpwent_r) =
+		nwrap_load_module_fn(b, "getpwent_r");
+	*(void **)(&fns->_nss_endpwent) =
+		nwrap_load_module_fn(b, "endpwent");
+	*(void **)(&fns->_nss_initgroups) =
+		nwrap_load_module_fn(b, "initgroups_dyn");
+	*(void **)(&fns->_nss_getgrnam_r) =
+		nwrap_load_module_fn(b, "getgrnam_r");
+	*(void **)(&fns->_nss_getgrgid_r)=
+		nwrap_load_module_fn(b, "getgrgid_r");
+	*(void **)(&fns->_nss_setgrent) =
+		nwrap_load_module_fn(b, "setgrent");
+	*(void **)(&fns->_nss_getgrent_r) =
+		nwrap_load_module_fn(b, "getgrent_r");
+	*(void **)(&fns->_nss_endgrent) =
+		nwrap_load_module_fn(b, "endgrent");
 
 	return fns;
 }
@@ -1807,6 +1807,7 @@ static void nwrap_module_endgrent(struct nwrap_backend *b)
  * PUBLIC interface
  */
 
+#if 0
 _PUBLIC_ struct passwd *nwrap_getpwnam(const char *name)
 {
 	int i;
@@ -2232,3 +2233,4 @@ _PUBLIC_ int nwrap_getgrouplist(const char *user, gid_t group, gid_t *groups, in
 
 	return count;
 }
+#endif
