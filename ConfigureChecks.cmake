@@ -78,6 +78,13 @@ if (UNIX AND HAVE_ASPRINTF)
     add_definitions(-D_GNU_SOURCE)
 endif (UNIX AND HAVE_ASPRINTF)
 
+
+check_prototype_definition(getpwent_r
+ "struct passwd *getpwent_r(struct passwd *src, char *buf, int buflen)"
+ "NULL"
+ "unistd.h;pwd.h"
+ SOLARIS_GETPWENT_R)
+
 # ENDIAN
 if (NOT WIN32)
     test_big_endian(WORDS_BIGENDIAN)
