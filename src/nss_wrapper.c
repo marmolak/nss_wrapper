@@ -128,6 +128,7 @@ struct nwrap_libc_fns {
 	int (*_libc_getgrent_r)(struct group *group, char *buf, size_t buflen, struct group **result);
 #endif
 	void (*_libc_endgrent)(void);
+	int (*_libc_getgrouplist)(const char *user, gid_t group, id_t *groups, int *ngroups);
 };
 
 struct nwrap_module_nss_fns {
@@ -548,6 +549,9 @@ static void nwrap_libc_init(struct nwrap_main *r)
 #endif
 #ifdef HAVE_GETGRENT_R
 	*(void **) (&r->libc->fns->_libc_getgrent_r) = nwrap_libc_fn(r->libc, "getgrent_r");
+#endif
+#ifdef HAVE_GETGROUPLIST
+	*(void **) (&r->libc->fns->_libc_getgrouplist) = nwrap_libc_fn(r->libc, "getgrouplist");
 #endif
 }
 
@@ -2266,8 +2270,8 @@ void endgrent(void)
 	}
 }
 
-#if 0
-_PUBLIC_ int nwrap_getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
+#ifdef HAVE_GETGROUPLIST
+int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
 {
 	struct group *grp;
 	gid_t *groups_tmp;
@@ -2275,7 +2279,7 @@ _PUBLIC_ int nwrap_getgrouplist(const char *user, gid_t group, gid_t *groups, in
 	const char *name_of_group = "";
 
 	if (!nwrap_enabled()) {
-		return real_getgrouplist(user, group, groups, ngroups);
+		return nwrap_main_global->libc->fns->_libc_getgrouplist(user, group, groups, ngroups);
 	}
 
 	NWRAP_DEBUG(("%s: getgrouplist called for %s\n", __location__, user));
