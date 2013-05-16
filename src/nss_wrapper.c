@@ -117,6 +117,7 @@ struct nwrap_libc_fns {
 	void (*_libc_endpwent)(void);
 	int (*_libc_initgroups)(const char *user, gid_t gid);
 	struct group *(*_libc_getgrnam)(const char *name);
+	int (*_libc_getgrnam_r)(const char *name, struct group *grp, char *buf, size_t buflen, struct group **result);
 };
 
 struct nwrap_module_nss_fns {
@@ -524,6 +525,9 @@ static void nwrap_libc_init(struct nwrap_main *r)
 #endif
 #ifdef HAVE_GETPWUID_R
 	*(void **) (&r->libc->fns->_libc_getpwuid_r) = nwrap_libc_fn(r->libc, "getpwuid_r");
+#endif
+#ifdef HAVE_GETGRNAM_R
+	*(void **) (&r->libc->fns->_libc_getgrnam_r) = nwrap_libc_fn(r->libc, "getgrnam_r");
 #endif
 }
 
@@ -2090,14 +2094,14 @@ struct group *getgrnam(const char *name)
 	return NULL;
 }
 
-#if 0
-_PUBLIC_ int nwrap_getgrnam_r(const char *name, struct group *grdst,
-			      char *buf, size_t buflen, struct group **grdstp)
+#ifdef HAVE_GETGRNAM_R
+int getgrnam_r(const char *name, struct group *grdst,
+	       char *buf, size_t buflen, struct group **grdstp)
 {
 	int i,ret;
 
 	if (!nwrap_enabled()) {
-		return real_getgrnam_r(name, grdst, buf, buflen, grdstp);
+		return nwrap_main_global->libc->fns->_libc_getgrnam_r(name, grdst, buf, buflen, grdstp);
 	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
@@ -2111,7 +2115,9 @@ _PUBLIC_ int nwrap_getgrnam_r(const char *name, struct group *grdst,
 
 	return ENOENT;
 }
+#endif
 
+#if 0
 _PUBLIC_ struct group *nwrap_getgrgid(gid_t gid)
 {
 	int i;
