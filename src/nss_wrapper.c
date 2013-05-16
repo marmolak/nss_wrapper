@@ -122,6 +122,11 @@ struct nwrap_libc_fns {
 	int (*_libc_getgrgid_r)(gid_t gid, struct group *grp, char *buf, size_t buflen, struct group **result);
 	void (*_libc_setgrent)(void);
 	struct group *(*_libc_getgrent)(void);
+#ifdef SOLARIS_GETGRENT_R
+	struct group *(*_libc_getgrent_r)(struct group *group, char *buf, size_t buflen);
+#else
+	int (*_libc_getgrent_r)(struct group *group, char *buf, size_t buflen, struct group **result);
+#endif
 };
 
 struct nwrap_module_nss_fns {
@@ -538,6 +543,9 @@ static void nwrap_libc_init(struct nwrap_main *r)
 #endif
 #ifdef HAVE_GETGRGID_R
 	*(void **) (&r->libc->fns->_libc_getgrgid_r) = nwrap_libc_fn(r->libc, "getgrgid_r");
+#endif
+#ifdef HAVE_GETGRENT_R
+	*(void **) (&r->libc->fns->_libc_getgrent_r) = nwrap_libc_fn(r->libc, "getgrent_r");
 #endif
 }
 
@@ -2205,16 +2213,15 @@ struct group *getgrent(void)
 	return NULL;
 }
 
-#if 0
-_PUBLIC_ int nwrap_getgrent_r(struct group *grdst, char *buf,
-			      size_t buflen, struct group **grdstp)
+int getgrent_r(struct group *grdst, char *buf,
+	       size_t buflen, struct group **grdstp)
 {
 	int i,ret;
 
 	if (!nwrap_enabled()) {
 #ifdef SOLARIS_GETGRENT_R
 		struct group *gr;
-		gr = real_getgrent_r(grdst, buf, buflen);
+		gr = nwrap_main_global->libc->fns->_libc_getgrent_r(grdst, buf, buflen);
 		if (!gr) {
 			if (errno == 0) {
 				return ENOENT;
@@ -2226,7 +2233,7 @@ _PUBLIC_ int nwrap_getgrent_r(struct group *grdst, char *buf,
 		}
 		return 0;
 #else
-		return real_getgrent_r(grdst, buf, buflen, grdstp);
+		return nwrap_main_global->libc->fns->_libc_getgrent_r(grdst, buf, buflen, grdstp);
 #endif
 	}
 
@@ -2242,6 +2249,7 @@ _PUBLIC_ int nwrap_getgrent_r(struct group *grdst, char *buf,
 	return ENOENT;
 }
 
+#if 0
 _PUBLIC_ void nwrap_endgrent(void)
 {
 	int i;

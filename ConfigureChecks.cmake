@@ -85,6 +85,12 @@ check_prototype_definition(getpwent_r
  "unistd.h;pwd.h"
  SOLARIS_GETPWENT_R)
 
+check_prototype_definition(getpwent_r
+ "struct group *getpwent_r(struct group *src, char *buf, int buflen)"
+ "NULL"
+ "unistd.h;pwd.h"
+ SOLARIS_GETGRENT_R)
+
 # ENDIAN
 if (NOT WIN32)
     test_big_endian(WORDS_BIGENDIAN)

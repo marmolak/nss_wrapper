@@ -47,6 +47,7 @@
 /**************************** OPTIONS ****************************/
 
 #cmakedefine SOLARIS_GETPWENT_R 1
+#cmakedefine SOLARIS_GETGRENT_R 1
 
 /*************************** ENDIAN *****************************/
 
