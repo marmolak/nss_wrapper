@@ -501,6 +501,7 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	}
 
 	*(void **) (&r->libc->fns->_libc_getpwnam) = nwrap_libc_fn(r->libc, "getpwnam");
+	*(void **) (&r->libc->fns->_libc_getpwuid) = nwrap_libc_fn(r->libc, "getpwuid");
 #ifdef HAVE_GETPWNAM_R
 	*(void **) (&r->libc->fns->_libc_getpwnam_r) = nwrap_libc_fn(r->libc, "getpwnam_r");
 #endif
@@ -1905,14 +1906,13 @@ int getpwnam_r(const char *name, struct passwd *pwdst,
 }
 #endif
 
-#if 0
-_PUBLIC_ struct passwd *nwrap_getpwuid(uid_t uid)
+struct passwd *getpwuid(uid_t uid)
 {
 	int i;
 	struct passwd *pwd;
 
 	if (!nwrap_enabled()) {
-		return real_getpwuid(uid);
+		return nwrap_main_global->libc->fns->_libc_getpwuid(uid);
 	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
@@ -1926,6 +1926,7 @@ _PUBLIC_ struct passwd *nwrap_getpwuid(uid_t uid)
 	return NULL;
 }
 
+#if 0
 _PUBLIC_ int nwrap_getpwuid_r(uid_t uid, struct passwd *pwdst,
 			      char *buf, size_t buflen, struct passwd **pwdstp)
 {
