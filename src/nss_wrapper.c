@@ -120,6 +120,7 @@ struct nwrap_libc_fns {
 	int (*_libc_getgrnam_r)(const char *name, struct group *grp, char *buf, size_t buflen, struct group **result);
 	struct group *(*_libc_getgrgid)(gid_t gid);
 	int (*_libc_getgrgid_r)(gid_t gid, struct group *grp, char *buf, size_t buflen, struct group **result);
+	void (*_libc_setgrent)(void);
 };
 
 struct nwrap_module_nss_fns {
@@ -523,6 +524,7 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	*(void **) (&r->libc->fns->_libc_initgroups) = nwrap_libc_fn(r->libc, "initgroups");
 	*(void **) (&r->libc->fns->_libc_getgrnam) = nwrap_libc_fn(r->libc, "getgrnam");
 	*(void **) (&r->libc->fns->_libc_getgrgid) = nwrap_libc_fn(r->libc, "getgrgid");
+	*(void **) (&r->libc->fns->_libc_setgrent) = nwrap_libc_fn(r->libc, "setgrent");
 #ifdef HAVE_GETPWNAM_R
 	*(void **) (&r->libc->fns->_libc_getpwnam_r) = nwrap_libc_fn(r->libc, "getpwnam_r");
 #endif
@@ -2166,13 +2168,12 @@ int getgrgid_r(gid_t gid, struct group *grdst,
 }
 #endif
 
-#if 0
-_PUBLIC_ void nwrap_setgrent(void)
+void setgrent(void)
 {
 	int i;
 
 	if (!nwrap_enabled()) {
-		real_setgrent();
+		nwrap_main_global->libc->fns->_libc_setgrent();
 		return;
 	}
 
@@ -2182,6 +2183,7 @@ _PUBLIC_ void nwrap_setgrent(void)
 	}
 }
 
+#if 0
 _PUBLIC_ struct group *nwrap_getgrent(void)
 {
 	int i;
