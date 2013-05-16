@@ -1,6 +1,7 @@
 /*
  * Copyright (C) Stefan Metzmacher 2007 <metze@samba.org>
  * Copyright (C) Guenther Deschner 2009 <gd@samba.org>
+ * Copyright (C) Andreas Schneider 2013 <asn@samba.org>
  *
  * All rights reserved.
  *
@@ -105,6 +106,7 @@ struct nwrap_libc_fns {
 	int (*_libc_getpwnam_r)(const char *name, struct passwd *pwd,
 		       char *buf, size_t buflen, struct passwd **result);
 	struct passwd *(*_libc_getpwuid)(uid_t uid);
+	int (*_libc_getpwuid_r)(uid_t uid, struct passwd *pwd, char *buf, size_t buflen, struct passwd **result);
 };
 
 struct nwrap_module_nss_fns {
@@ -504,6 +506,9 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	*(void **) (&r->libc->fns->_libc_getpwuid) = nwrap_libc_fn(r->libc, "getpwuid");
 #ifdef HAVE_GETPWNAM_R
 	*(void **) (&r->libc->fns->_libc_getpwnam_r) = nwrap_libc_fn(r->libc, "getpwnam_r");
+#endif
+#ifdef HAVE_GETPWUID_R
+	*(void **) (&r->libc->fns->_libc_getpwuid_r) = nwrap_libc_fn(r->libc, "getpwuid_r");
 #endif
 }
 
@@ -1926,14 +1931,13 @@ struct passwd *getpwuid(uid_t uid)
 	return NULL;
 }
 
-#if 0
-_PUBLIC_ int nwrap_getpwuid_r(uid_t uid, struct passwd *pwdst,
-			      char *buf, size_t buflen, struct passwd **pwdstp)
+int getpwuid_r(uid_t uid, struct passwd *pwdst,
+	       char *buf, size_t buflen, struct passwd **pwdstp)
 {
 	int i,ret;
 
 	if (!nwrap_enabled()) {
-		return real_getpwuid_r(uid, pwdst, buf, buflen, pwdstp);
+		return nwrap_main_global->libc->fns->_libc_getpwuid_r(uid, pwdst, buf, buflen, pwdstp);
 	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
@@ -1948,6 +1952,7 @@ _PUBLIC_ int nwrap_getpwuid_r(uid_t uid, struct passwd *pwdst,
 	return ENOENT;
 }
 
+#if 0
 _PUBLIC_ void nwrap_setpwent(void)
 {
 	int i;
