@@ -125,6 +125,13 @@ typedef enum nss_status NSS_STATUS;
 #define NWRAP_VERBOSE(args)
 #endif
 
+struct nwrap_libc_fns {
+	struct passwd *(*_libc_getpwnam)(const char *name);
+	int (*_libc_getpwnam_r)(const char *name, struct passwd *pwd,
+		       char *buf, size_t buflen, struct passwd **result);
+	struct passwd *(*_libc_getpwuid)(uid_t uid);
+};
+
 struct nwrap_module_nss_fns {
 	NSS_STATUS (*_nss_getpwnam_r)(const char *name, struct passwd *result, char *buffer,
 				      size_t buflen, int *errnop);
@@ -306,10 +313,16 @@ struct nwrap_ops nwrap_module_ops = {
 	.nw_endgrent	= nwrap_module_endgrent,
 };
 
+struct nwrap_libc {
+	void *handle;
+	struct nwrap_libc_fns *fns;
+};
+
 struct nwrap_main {
 	const char *nwrap_switch;
 	int num_backends;
 	struct nwrap_backend *backends;
+	struct nwrap_libc *libc;
 };
 
 struct nwrap_main *nwrap_main_global;
@@ -476,6 +489,45 @@ static bool nwrap_module_init(const char *name,
 	return true;
 }
 
+#define LIBC_NAME "libc.so"
+
+static void *nwrap_libc_fn(struct nwrap_libc *c, const char *fn_name)
+{
+	void *func;
+
+	if (c->handle == NULL) {
+		return NULL;
+	}
+
+	func = dlsym(c->handle, fn_name);
+	if (func == NULL) {
+		printf("Failed to find %s in %s: %s\n",
+				fn_name, LIBC_NAME, dlerror());
+		exit(-1);
+	}
+
+	return func;
+}
+
+static void nwrap_libc_init(struct nwrap_main *r)
+{
+	unsigned int i;
+
+	for (r->libc->handle = NULL, i = 10; r->libc->handle == NULL; i--) {
+		char soname[256] = {0};
+
+		snprintf(soname, sizeof(soname), "%s.%u", LIBC_NAME, i);
+		r->libc->handle = dlopen(soname, RTLD_LAZY);
+	}
+
+	if (r->libc->handle == NULL) {
+		printf("Failed to dlopen %s.%u: %s\n", LIBC_NAME, i, dlerror());
+		exit(-1);
+	}
+
+	*(void **) (&r->libc->fns->_libc_getpwnam) = nwrap_libc_fn(r->libc, "getpwnam");
+}
+
 static void nwrap_backend_init(struct nwrap_main *r)
 {
 	const char *winbind_so_path = getenv("NSS_WRAPPER_WINBIND_SO_PATH");
@@ -510,6 +562,8 @@ static void nwrap_init(void)
 	initialized = true;
 
 	nwrap_main_global = &__nwrap_main_global;
+
+	nwrap_libc_init(nwrap_main_global);
 
 	nwrap_backend_init(nwrap_main_global);
 
@@ -1830,14 +1884,13 @@ static void nwrap_module_endgrent(struct nwrap_backend *b)
  * PUBLIC interface
  */
 
-#if 0
-_PUBLIC_ struct passwd *nwrap_getpwnam(const char *name)
+struct passwd *getpwnam(const char *name)
 {
 	int i;
 	struct passwd *pwd;
 
 	if (!nwrap_enabled()) {
-		return real_getpwnam(name);
+		return nwrap_main_global->libc->fns->_libc_getpwnam(name);
 	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
@@ -1851,6 +1904,7 @@ _PUBLIC_ struct passwd *nwrap_getpwnam(const char *name)
 	return NULL;
 }
 
+#if 0
 _PUBLIC_ int nwrap_getpwnam_r(const char *name, struct passwd *pwdst,
 			      char *buf, size_t buflen, struct passwd **pwdstp)
 {
