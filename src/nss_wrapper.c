@@ -70,31 +70,6 @@ typedef enum nss_status NSS_STATUS;
 #define _PUBLIC_
 #endif
 
-/* not all systems have _r functions... */
-#ifndef HAVE_GETPWNAM_R
-#define getpwnam_r(name, pwdst, buf, buflen, pwdstp)	ENOSYS
-#endif
-#ifndef HAVE_GETPWUID_R
-#define getpwuid_r(uid, pwdst, buf, buflen, pwdstp)	ENOSYS
-#endif
-#ifndef HAVE_GETPWENT_R
-#define getpwent_r(pwdst, buf, buflen, pwdstp)		ENOSYS
-#endif
-#ifndef HAVE_GETGRNAM_R
-#define getgrnam_r(name, grdst, buf, buflen, grdstp)	ENOSYS
-#endif
-#ifndef HAVE_GETGRGID_R
-#define getgrgid_r(gid, grdst, buf, buflen, grdstp)	ENOSYS
-#endif
-#ifndef HAVE_GETGRENT_R
-#define getgrent_r(grdst, buf, buflen, grdstp)		ENOSYS
-#endif
-
-/* Not all systems have getgrouplist */
-#ifndef HAVE_GETGROUPLIST
-#define getgrouplist(user, group, groups, ngroups)	0
-#endif
-
 #if 0
 # ifdef DEBUG
 # define NWRAP_ERROR(args)	DEBUG(0, args)
@@ -526,6 +501,9 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	}
 
 	*(void **) (&r->libc->fns->_libc_getpwnam) = nwrap_libc_fn(r->libc, "getpwnam");
+#ifdef HAVE_GETPWNAM_R
+	*(void **) (&r->libc->fns->_libc_getpwnam_r) = nwrap_libc_fn(r->libc, "getpwnam_r");
+#endif
 }
 
 static void nwrap_backend_init(struct nwrap_main *r)
@@ -1904,14 +1882,14 @@ struct passwd *getpwnam(const char *name)
 	return NULL;
 }
 
-#if 0
-_PUBLIC_ int nwrap_getpwnam_r(const char *name, struct passwd *pwdst,
-			      char *buf, size_t buflen, struct passwd **pwdstp)
+#ifdef HAVE_GETPWNAM_R
+int getpwnam_r(const char *name, struct passwd *pwdst,
+	       char *buf, size_t buflen, struct passwd **pwdstp)
 {
 	int i,ret;
 
 	if (!nwrap_enabled()) {
-		return real_getpwnam_r(name, pwdst, buf, buflen, pwdstp);
+		return nwrap_main_global->libc->fns->_libc_getpwnam_r(name, pwdst, buf, buflen, pwdstp);
 	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
@@ -1925,7 +1903,9 @@ _PUBLIC_ int nwrap_getpwnam_r(const char *name, struct passwd *pwdst,
 
 	return ENOENT;
 }
+#endif
 
+#if 0
 _PUBLIC_ struct passwd *nwrap_getpwuid(uid_t uid)
 {
 	int i;
