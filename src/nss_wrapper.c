@@ -115,6 +115,7 @@ struct nwrap_libc_fns {
 	int (*_libc_getpwent_r)(struct passwd *pwbuf, char *buf, size_t buflen, struct passwd **pwbufp);
 #endif
 	void (*_libc_endpwent)(void);
+	int (*_libc_initgroups)(const char *user, gid_t gid);
 };
 
 struct nwrap_module_nss_fns {
@@ -515,6 +516,7 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	*(void **) (&r->libc->fns->_libc_setpwent) = nwrap_libc_fn(r->libc, "setpwent");
 	*(void **) (&r->libc->fns->_libc_getpwent) = nwrap_libc_fn(r->libc, "getpwent");
 	*(void **) (&r->libc->fns->_libc_getpwent) = nwrap_libc_fn(r->libc, "endpwent");
+	*(void **) (&r->libc->fns->_libc_initgroups) = nwrap_libc_fn(r->libc, "initgroups");
 #ifdef HAVE_GETPWNAM_R
 	*(void **) (&r->libc->fns->_libc_getpwnam_r) = nwrap_libc_fn(r->libc, "getpwnam_r");
 #endif
@@ -2049,13 +2051,12 @@ void endpwent(void)
 	}
 }
 
-#if 0
-_PUBLIC_ int nwrap_initgroups(const char *user, gid_t group)
+int initgroups(const char *user, gid_t group)
 {
 	int i;
 
 	if (!nwrap_enabled()) {
-		return real_initgroups(user, group);
+		return nwrap_main_global->libc->fns->_libc_initgroups(user, group);
 	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
@@ -2067,6 +2068,7 @@ _PUBLIC_ int nwrap_initgroups(const char *user, gid_t group)
 	return -1;
 }
 
+#if 0
 _PUBLIC_ struct group *nwrap_getgrnam(const char *name)
 {
 	int i;
