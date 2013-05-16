@@ -107,6 +107,7 @@ struct nwrap_libc_fns {
 		       char *buf, size_t buflen, struct passwd **result);
 	struct passwd *(*_libc_getpwuid)(uid_t uid);
 	int (*_libc_getpwuid_r)(uid_t uid, struct passwd *pwd, char *buf, size_t buflen, struct passwd **result);
+	void (*_libc_setpwent)(void);
 };
 
 struct nwrap_module_nss_fns {
@@ -504,6 +505,7 @@ static void nwrap_libc_init(struct nwrap_main *r)
 
 	*(void **) (&r->libc->fns->_libc_getpwnam) = nwrap_libc_fn(r->libc, "getpwnam");
 	*(void **) (&r->libc->fns->_libc_getpwuid) = nwrap_libc_fn(r->libc, "getpwuid");
+	*(void **) (&r->libc->fns->_libc_setpwent) = nwrap_libc_fn(r->libc, "setpwent");
 #ifdef HAVE_GETPWNAM_R
 	*(void **) (&r->libc->fns->_libc_getpwnam_r) = nwrap_libc_fn(r->libc, "getpwnam_r");
 #endif
@@ -1952,13 +1954,12 @@ int getpwuid_r(uid_t uid, struct passwd *pwdst,
 	return ENOENT;
 }
 
-#if 0
-_PUBLIC_ void nwrap_setpwent(void)
+void setpwent(void)
 {
 	int i;
 
 	if (!nwrap_enabled()) {
-		real_setpwent();
+		nwrap_main_global->libc->fns->_libc_setpwent();
 		return;
 	}
 
@@ -1968,6 +1969,7 @@ _PUBLIC_ void nwrap_setpwent(void)
 	}
 }
 
+#if 0
 _PUBLIC_ struct passwd *nwrap_getpwent(void)
 {
 	int i;
