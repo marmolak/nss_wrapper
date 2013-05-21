@@ -557,7 +557,8 @@ static void nwrap_libc_init(struct nwrap_main *r)
 
 static void nwrap_backend_init(struct nwrap_main *r)
 {
-	const char *winbind_so_path = getenv("NSS_WRAPPER_WINBIND_SO_PATH");
+	const char *module_so_path = getenv("NSS_WRAPPER_MODULE_SO_PATH");
+	const char *module_fn_name = getenv("NSS_WRAPPER_MODULE_FN_NAME");
 
 	r->num_backends = 0;
 	r->backends = NULL;
@@ -570,12 +571,17 @@ static void nwrap_backend_init(struct nwrap_main *r)
 		return;
 	}
 
-	if (winbind_so_path && strlen(winbind_so_path)) {
-		if (!nwrap_module_init("winbind", &nwrap_module_ops, winbind_so_path,
+	if (module_so_path != NULL &&
+	    module_so_path[0] != '\0' &&
+	    module_fn_name != NULL &&
+	    module_fn_name[0] != '\0') {
+		if (!nwrap_module_init(module_fn_name,
+				       &nwrap_module_ops,
+				       module_so_path,
 				       &r->num_backends,
 				       &r->backends)) {
-			NWRAP_ERROR(("%s: failed to initialize 'winbind' backend\n",
-				     __location__));
+			NWRAP_ERROR(("%s: failed to initialize '%s' backend\n",
+				     __location__, module_fn_name));
 			return;
 		}
 	}
