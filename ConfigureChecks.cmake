@@ -91,7 +91,15 @@ check_prototype_definition(getpwent_r
  "unistd.h;pwd.h"
  SOLARIS_GETGRENT_R)
 
+check_library_exists(dl dlopen "" HAVE_LIBDL)
+if (HAVE_LIBDL)
+    find_library(DLFCN_LIBRARY dl)
+    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${DLFCN_LIBRARY})
+endif (HAVE_LIBDL)
+
 # ENDIAN
 if (NOT WIN32)
     test_big_endian(WORDS_BIGENDIAN)
 endif (NOT WIN32)
+
+set(NSSWRAP_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} CACHE INTERNAL "nsswrap required system libraries")
