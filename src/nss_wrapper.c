@@ -512,6 +512,12 @@ static void nwrap_libc_init(struct nwrap_main *r)
 {
 	unsigned int i;
 
+	r->libc = malloc(sizeof(struct nwrap_libc));
+	if (r->libc == NULL) {
+		printf("Failed to allocate memory for libc");
+		exit(-1);
+	}
+
 	for (r->libc->handle = NULL, i = 10; r->libc->handle == NULL; i--) {
 		char soname[256] = {0};
 
@@ -521,6 +527,12 @@ static void nwrap_libc_init(struct nwrap_main *r)
 
 	if (r->libc->handle == NULL) {
 		printf("Failed to dlopen %s.%u: %s\n", LIBC_NAME, i, dlerror());
+		exit(-1);
+	}
+
+	r->libc->fns = malloc(sizeof(struct nwrap_libc_fns));
+	if (r->libc->fns == NULL) {
+		printf("Failed to allocate memory for libc functions");
 		exit(-1);
 	}
 
