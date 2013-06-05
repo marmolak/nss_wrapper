@@ -749,16 +749,13 @@ static void test_nwrap_reentrant_enumeration_crosschecks(void **state)
 	test_nwrap_group_r_cross();
 }
 
-#if 0
-static bool test_nwrap_passwd_duplicates(struct torture_context *tctx)
+static bool test_nwrap_passwd_duplicates(void)
 {
-	int i, d;
 	struct passwd *pwd;
-	size_t num_pwd;
+	size_t d, i, num_pwd;
 	int duplicates = 0;
 
-	torture_assert(tctx, test_nwrap_enum_passwd(tctx, &pwd, &num_pwd),
-	    "failed to enumerate passwd");
+	test_nwrap_enum_passwd(&pwd, &num_pwd);
 
 	for (i=0; i < num_pwd; i++) {
 		const char *current_name = pwd[i].pw_name;
@@ -767,33 +764,30 @@ static bool test_nwrap_passwd_duplicates(struct torture_context *tctx)
 			if (d == i) {
 				continue;
 			}
-			if (!strequal(current_name, dup_name)) {
+			if (strcmp(current_name, dup_name) != 0) {
 				continue;
 			}
 
-			torture_warning(tctx, "found duplicate names:");
+			DEBUG("found duplicate names:");
+
 			print_passwd(&pwd[d]);
 			print_passwd(&pwd[i]);
 			duplicates++;
 		}
 	}
 
-	if (duplicates) {
-		torture_fail(tctx, talloc_asDEBUG(tctx, "found %d duplicate names", duplicates));
-	}
+	assert_false(duplicates);
 
 	return true;
 }
 
-static bool test_nwrap_group_duplicates(struct torture_context *tctx)
+static bool test_nwrap_group_duplicates(void)
 {
-	int i, d;
 	struct group *grp;
-	size_t num_grp;
+	size_t d, i, num_grp;
 	int duplicates = 0;
 
-	torture_assert(tctx, test_nwrap_enum_group(tctx, &grp, &num_grp),
-		"failed to enumerate group");
+	test_nwrap_enum_group(&grp, &num_grp);
 
 	for (i=0; i < num_grp; i++) {
 		const char *current_name = grp[i].gr_name;
@@ -802,56 +796,36 @@ static bool test_nwrap_group_duplicates(struct torture_context *tctx)
 			if (d == i) {
 				continue;
 			}
-			if (!strequal(current_name, dup_name)) {
+			if (strcmp(current_name, dup_name) != 0) {
 				continue;
 			}
 
-			torture_warning(tctx, "found duplicate names:");
+			DEBUG("found duplicate names:");
+
 			print_group(&grp[d]);
 			print_group(&grp[i]);
 			duplicates++;
 		}
 	}
 
-	if (duplicates) {
-		torture_fail(tctx, talloc_asDEBUG(tctx, "found %d duplicate names", duplicates));
-	}
+	assert_false(duplicates);
 
 	return true;
 }
 
-
-static bool test_nwrap_duplicates(struct torture_context *tctx)
+static void test_nwrap_duplicates(void **state)
 {
 	const char *old_pwd = getenv("NSS_WRAPPER_PASSWD");
 	const char *old_group = getenv("NSS_WRAPPER_GROUP");
 
 	if (!old_pwd || !old_group) {
-		DEBUG(tctx, "ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
-		torture_skip(tctx, "nothing to test\n");
+		DEBUG("ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
+		return;
 	}
 
-	torture_assert(tctx, test_nwrap_passwd_duplicates(tctx),
-			"failed to test users");
-	torture_assert(tctx, test_nwrap_group_duplicates(tctx),
-			"failed to test groups");
-
-	return true;
+	test_nwrap_passwd_duplicates();
+	test_nwrap_group_duplicates();
 }
-
-struct torture_suite *torture_local_nss_wrapper(TALLOC_CTX *mem_ctx)
-{
-	struct torture_suite *suite = torture_suite_create(mem_ctx, "nss-wrapper");
-
-	torture_suite_add_simple_test(suite, "enumeration", test_nwrap_enumeration);
-	torture_suite_add_simple_test(suite, "reentrant enumeration", test_nwrap_reentrant_enumeration);
-	torture_suite_add_simple_test(suite, "reentrant enumeration crosschecks", test_nwrap_reentrant_enumeration_crosschecks);
-	torture_suite_add_simple_test(suite, "membership", test_nwrap_membership);
-	torture_suite_add_simple_test(suite, "duplicates", test_nwrap_duplicates);
-
-	return suite;
-}
-#endif
 
 int main(void) {
 	int rc;
@@ -861,6 +835,7 @@ int main(void) {
 		unit_test(test_nwrap_reentrant_enumeration),
 		unit_test(test_nwrap_reentrant_enumeration_crosschecks),
 		unit_test(test_nwrap_membership),
+		unit_test(test_nwrap_duplicates),
 	};
 
 	rc = run_tests(tests);
