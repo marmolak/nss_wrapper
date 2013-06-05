@@ -406,42 +406,33 @@ static void test_nwrap_passwd_r(void)
 	}
 }
 
-#if 0
-static bool test_nwrap_passwd_r_cross(struct torture_context *tctx)
+static bool test_nwrap_passwd_r_cross(void)
 {
-	int i;
 	struct passwd *pwd, pwd1, pwd2, pwd3, pwd4;
-	size_t num_pwd;
+	size_t i, num_pwd;
 
-	torture_assert(tctx, test_nwrap_enum_r_passwd(tctx, &pwd, &num_pwd),
-						      "failed to enumerate passwd");
+	test_nwrap_enum_r_passwd(&pwd, &num_pwd);
 
 	for (i=0; i < num_pwd; i++) {
-		torture_assert(tctx, test_nwrap_getpwnam_r(tctx, pwd[i].pw_name, &pwd1),
-			"failed to call getpwnam_r for enumerated user");
-		torture_assert_passwd_equal(tctx, &pwd[i], &pwd1,
-			"getpwent_r and getpwnam_r gave different results");
-		torture_assert(tctx, test_nwrap_getpwuid_r(tctx, pwd[i].pw_uid, &pwd2),
-			"failed to call getpwuid_r for enumerated user");
-		torture_assert_passwd_equal(tctx, &pwd[i], &pwd2,
-			"getpwent_r and getpwuid_r gave different results");
-		torture_assert_passwd_equal(tctx, &pwd1, &pwd2,
-			"getpwnam_r and getpwuid_r gave different results");
-		torture_assert(tctx, test_nwrap_getpwnam(tctx, pwd[i].pw_name, &pwd3),
-			"failed to call getpwnam for enumerated user");
-		torture_assert_passwd_equal(tctx, &pwd[i], &pwd3,
-			"getpwent_r and getpwnam gave different results");
-		torture_assert(tctx, test_nwrap_getpwuid(tctx, pwd[i].pw_uid, &pwd4),
-			"failed to call getpwuid for enumerated user");
-		torture_assert_passwd_equal(tctx, &pwd[i], &pwd4,
-			"getpwent_r and getpwuid gave different results");
-		torture_assert_passwd_equal(tctx, &pwd3, &pwd4,
-			"getpwnam and getpwuid gave different results");
+		test_nwrap_getpwnam_r(pwd[i].pw_name, &pwd1);
+		assert_passwd_equal(&pwd[i], &pwd1);
+
+		test_nwrap_getpwuid_r(pwd[i].pw_uid, &pwd2);
+		assert_passwd_equal(&pwd[i], &pwd2);
+
+		assert_passwd_equal(&pwd1, &pwd2);
+
+		test_nwrap_getpwnam(pwd[i].pw_name, &pwd3);
+		assert_passwd_equal(&pwd[i], &pwd3);
+
+		test_nwrap_getpwuid(pwd[i].pw_uid, &pwd4);
+		assert_passwd_equal(&pwd[i], &pwd4);
+
+		assert_passwd_equal(&pwd3, &pwd4);
 	}
 
 	return true;
 }
-#endif
 
 static bool test_nwrap_enum_group(struct group **grp_array_p,
 				  size_t *num_grp_p)
@@ -562,42 +553,34 @@ static bool test_nwrap_group_r(void)
 	return true;
 }
 
-#if 0
-static bool test_nwrap_group_r_cross(struct torture_context *tctx)
+static bool test_nwrap_group_r_cross(void)
 {
-	int i;
 	struct group *grp, grp1, grp2, grp3, grp4;
-	size_t num_grp;
+	size_t i, num_grp;
 
-	torture_assert(tctx, test_nwrap_enum_r_group(tctx, &grp, &num_grp),
-						     "failed to enumerate group");
+	test_nwrap_enum_r_group(&grp, &num_grp);
 
 	for (i=0; i < num_grp; i++) {
-		torture_assert(tctx, test_nwrap_getgrnam_r(tctx, grp[i].gr_name, &grp1),
-			"failed to call getgrnam_r for enumerated user");
-		torture_assert_group_equal(tctx, &grp[i], &grp1,
-			"getgrent_r and getgrnam_r gave different results");
-		torture_assert(tctx, test_nwrap_getgrgid_r(tctx, grp[i].gr_gid, &grp2),
-			"failed to call getgrgid_r for enumerated user");
-		torture_assert_group_equal(tctx, &grp[i], &grp2,
-			"getgrent_r and getgrgid_r gave different results");
-		torture_assert_group_equal(tctx, &grp1, &grp2,
-			"getgrnam_r and getgrgid_r gave different results");
-		torture_assert(tctx, test_nwrap_getgrnam(tctx, grp[i].gr_name, &grp3),
-			"failed to call getgrnam for enumerated user");
-		torture_assert_group_equal(tctx, &grp[i], &grp3,
-			"getgrent_r and getgrnam gave different results");
-		torture_assert(tctx, test_nwrap_getgrgid(tctx, grp[i].gr_gid, &grp4),
-			"failed to call getgrgid for enumerated user");
-		torture_assert_group_equal(tctx, &grp[i], &grp4,
-			"getgrent_r and getgrgid gave different results");
-		torture_assert_group_equal(tctx, &grp3, &grp4,
-			"getgrnam and getgrgid gave different results");
+		test_nwrap_getgrnam_r(grp[i].gr_name, &grp1);
+		assert_group_equal(&grp[i], &grp1);
+
+		test_nwrap_getgrgid_r(grp[i].gr_gid, &grp2);
+		assert_group_equal(&grp[i], &grp2);
+
+		assert_group_equal(&grp1, &grp2);
+
+		test_nwrap_getgrnam(grp[i].gr_name, &grp3);
+		assert_group_equal(&grp[i], &grp3);
+
+		test_nwrap_getgrgid(grp[i].gr_gid, &grp4);
+		assert_group_equal(&grp[i], &grp4);
+
+		assert_group_equal(&grp3, &grp4);
+
 	}
 
 	return true;
 }
-#endif
 
 #if 0
 static bool test_nwrap_getgrouplist(struct torture_context *tctx,
@@ -770,27 +753,23 @@ static void test_nwrap_reentrant_enumeration(void **state)
 	test_nwrap_group_r();
 }
 
-#if 0
-static bool test_nwrap_reentrant_enumeration_crosschecks(struct torture_context *tctx)
+static void test_nwrap_reentrant_enumeration_crosschecks(void **state)
 {
 	const char *old_pwd = getenv("NSS_WRAPPER_PASSWD");
 	const char *old_group = getenv("NSS_WRAPPER_GROUP");
 
 	if (!old_pwd || !old_group) {
-		DEBUG(tctx, "ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
-		torture_skip(tctx, "nothing to test\n");
+		DEBUG("ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
+		return;
 	}
 
-	DEBUG(tctx, "Testing re-entrant calls with cross checks\n");
+	DEBUG("Testing re-entrant calls with cross checks\n");
 
-	torture_assert(tctx, test_nwrap_passwd_r_cross(tctx),
-			"failed to test users");
-	torture_assert(tctx, test_nwrap_group_r_cross(tctx),
-			"failed to test groups");
-
-	return true;
+	test_nwrap_passwd_r_cross();
+	test_nwrap_group_r_cross();
 }
 
+#if 0
 static bool test_nwrap_passwd_duplicates(struct torture_context *tctx)
 {
 	int i, d;
@@ -900,6 +879,7 @@ int main(void) {
 	const UnitTest tests[] = {
 		unit_test(test_nwrap_enumeration),
 		unit_test(test_nwrap_reentrant_enumeration),
+		unit_test(test_nwrap_reentrant_enumeration_crosschecks),
 	};
 
 	rc = run_tests(tests);
