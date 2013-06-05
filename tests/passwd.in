@@ -1,0 +1,3 @@
+bob:x:1000:1000:bob gecos:@HOMEDIR@:/bin/false
+nobody:x:65533:65534:bob gecos:@HOMEDIR@:/bin/false
+root:x:65534:65532:root gecos:@HOMEDIR@:/bin/false

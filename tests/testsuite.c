@@ -582,9 +582,7 @@ static bool test_nwrap_group_r_cross(void)
 	return true;
 }
 
-#if 0
-static bool test_nwrap_getgrouplist(struct torture_context *tctx,
-				    const char *user,
+static bool test_nwrap_getgrouplist(const char *user,
 				    gid_t gid,
 				    gid_t **gids_p,
 				    int *num_gids_p)
@@ -593,20 +591,20 @@ static bool test_nwrap_getgrouplist(struct torture_context *tctx,
 	int num_groups = 0;
 	gid_t *groups = NULL;
 
-	DEBUG(tctx, "Testing getgrouplist: %s\n", user);
+	DEBUG("Testing getgrouplist: %s\n", user);
 
 	ret = getgrouplist(user, gid, NULL, &num_groups);
 	if (ret == -1 || num_groups != 0) {
 
-		groups = talloc_array(tctx, gid_t, num_groups);
-		torture_assert(tctx, groups, "out of memory\n");
+		groups = malloc(sizeof(gid_t) * num_groups);
+		assert_non_null(groups);
 
 		ret = getgrouplist(user, gid, groups, &num_groups);
 	}
 
-	torture_assert(tctx, (ret != -1), "failed to call getgrouplist");
+	assert_false(ret == -1);
 
-	DEBUG(tctx, "%s is member in %d groups\n", user, num_groups);
+	DEBUG("%s is member in %d groups\n", user, num_groups);
 
 	if (gids_p) {
 		*gids_p = groups;
@@ -618,63 +616,54 @@ static bool test_nwrap_getgrouplist(struct torture_context *tctx,
 	return true;
 }
 
-static bool test_nwrap_user_in_group(struct torture_context *tctx,
-				     const struct passwd *pwd,
+static bool test_nwrap_user_in_group(const struct passwd *pwd,
 				     const struct group *grp)
 {
 	int i;
 
 	for (i=0; grp->gr_mem && grp->gr_mem[i] != NULL; i++) {
-		if (strequal(grp->gr_mem[i], pwd->pw_name)) {
+		if (strcmp(grp->gr_mem[i], pwd->pw_name) == 0) {
 			return true;
 		}
 	}
 
 	return false;
 }
-#endif
 
-#if 0
-static bool test_nwrap_membership_user(struct torture_context *tctx,
-				       const struct passwd *pwd,
+static bool test_nwrap_membership_user(const struct passwd *pwd,
 				       struct group *grp_array,
 				       size_t num_grp)
 {
 	int num_user_groups = 0;
-	int num_user_groups_from_enum = 0;
+	size_t num_user_groups_from_enum = 0;
 	gid_t *user_groups = NULL;
-	int g, i;
+	size_t i;
+	int g;
 	bool primary_group_had_user_member = false;
 
-	torture_assert(tctx, test_nwrap_getgrouplist(tctx,
-						     pwd->pw_name,
-						     pwd->pw_gid,
-						     &user_groups,
-						     &num_user_groups),
-						     "failed to test getgrouplist");
+	test_nwrap_getgrouplist(pwd->pw_name,
+				pwd->pw_gid,
+				&user_groups,
+				&num_user_groups);
 
 	for (g=0; g < num_user_groups; g++) {
-		torture_assert(tctx, test_nwrap_getgrgid(tctx, user_groups[g], NULL),
-			"failed to find the group the user is a member of");
+		test_nwrap_getgrgid(user_groups[g], NULL);
 	}
 
-
 	for (i=0; i < num_grp; i++) {
-
 		struct group grp = grp_array[i];
 
-		if (test_nwrap_user_in_group(tctx, pwd, &grp)) {
+		if (test_nwrap_user_in_group(pwd, &grp)) {
 
 			struct group current_grp;
 			num_user_groups_from_enum++;
 
-			torture_assert(tctx, test_nwrap_getgrnam(tctx, grp.gr_name, &current_grp),
-					"failed to find the group the user is a member of");
+			test_nwrap_getgrnam(grp.gr_name, &current_grp);
 
 			if (current_grp.gr_gid == pwd->pw_gid) {
-				DEBUG(tctx, "primary group %s of user %s lists user as member\n",
-						current_grp.gr_name,
-						pwd->pw_name);
+				DEBUG("primary group %s of user %s lists user as member\n",
+				      current_grp.gr_name,
+				      pwd->pw_name);
 				primary_group_had_user_member = true;
 			}
 
@@ -686,13 +675,12 @@ static bool test_nwrap_membership_user(struct torture_context *tctx,
 		num_user_groups_from_enum++;
 	}
 
-	torture_assert_int_equal(tctx, num_user_groups, num_user_groups_from_enum,
-		"getgrouplist and real inspection of grouplist gave different results\n");
+	assert_int_equal(num_user_groups, num_user_groups_from_enum);
 
 	return true;
 }
 
-static bool test_nwrap_membership(struct torture_context *tctx)
+static void test_nwrap_membership(void **state)
 {
 	const char *old_pwd = getenv("NSS_WRAPPER_PASSWD");
 	const char *old_group = getenv("NSS_WRAPPER_GROUP");
@@ -700,28 +688,20 @@ static bool test_nwrap_membership(struct torture_context *tctx)
 	size_t num_pwd;
 	struct group *grp;
 	size_t num_grp;
-	int i;
+	size_t i;
 
 	if (!old_pwd || !old_group) {
-		DEBUG(tctx, "ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
-		torture_skip(tctx, "nothing to test\n");
+		DEBUG("ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
+		return;
 	}
 
-	torture_assert(tctx, test_nwrap_enum_passwd(tctx, &pwd, &num_pwd),
-						    "failed to enumerate passwd");
-	torture_assert(tctx, test_nwrap_enum_group(tctx, &grp, &num_grp),
-						    "failed to enumerate group");
+	test_nwrap_enum_passwd(&pwd, &num_pwd);
+	test_nwrap_enum_group(&grp, &num_grp);
 
 	for (i=0; i < num_pwd; i++) {
-
-		torture_assert(tctx, test_nwrap_membership_user(tctx, &pwd[i], grp, num_grp),
-			"failed to test membership for user");
-
+		test_nwrap_membership_user(&pwd[i], grp, num_grp);
 	}
-
-	return true;
 }
-#endif
 
 static void test_nwrap_enumeration(void **state)
 {
@@ -880,6 +860,7 @@ int main(void) {
 		unit_test(test_nwrap_enumeration),
 		unit_test(test_nwrap_reentrant_enumeration),
 		unit_test(test_nwrap_reentrant_enumeration_crosschecks),
+		unit_test(test_nwrap_membership),
 	};
 
 	rc = run_tests(tests);
