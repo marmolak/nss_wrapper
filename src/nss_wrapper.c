@@ -2311,13 +2311,13 @@ int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
 
 	memcpy(groups_tmp, &group, sizeof(gid_t));
 
-	grp = nwrap_getgrgid(group);
+	grp = getgrgid(group);
 	if (grp) {
 		name_of_group = grp->gr_name;
 	}
 
-	nwrap_setgrent();
-	while ((grp = nwrap_getgrent()) != NULL) {
+	setgrent();
+	while ((grp = getgrent()) != NULL) {
 		int i = 0;
 
 		NWRAP_VERBOSE(("%s: inspecting %s for group membership\n",
@@ -2344,7 +2344,7 @@ int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
 		}
 	}
 
-	nwrap_endgrent();
+	endgrent();
 
 	NWRAP_VERBOSE(("%s: %s is member of %d groups: %d\n",
 		       __location__, user, *ngroups));
