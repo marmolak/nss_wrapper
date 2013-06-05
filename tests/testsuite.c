@@ -1,51 +1,70 @@
-/*
-   Unix SMB/CIFS implementation.
+#include <stdarg.h>
+#include <stddef.h>
+#include <setjmp.h>
+#include <cmocka.h>
 
-   local testing of the nss wrapper
+#include <errno.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
 
-   Copyright (C) Guenther Deschner 2009-2010
+#include <sys/types.h>
+#include <pwd.h>
+#include <grp.h>
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#include "includes.h"
-
-#ifndef NSS_WRAPPER
-#define NSS_WRAPPER
+#ifdef NDEBUG
+#define DEBUG(...)
+#else
+#define DEBUG(...) printf(__VA_ARGS__)
 #endif
 
-#include "torture/torture.h"
-#include "lib/replace/system/passwd.h"
-
-static bool copy_passwd(struct torture_context *tctx,
-			const struct passwd *pwd,
-			struct passwd *p)
+static void assert_passwd_equal(const struct passwd *p1,
+				const struct passwd *p2)
 {
-	p->pw_name	= talloc_strdup(tctx, pwd->pw_name);
-	p->pw_passwd	= talloc_strdup(tctx, pwd->pw_passwd);
+	assert_string_equal(p1->pw_name, p2->pw_name);
+	assert_string_equal(p1->pw_passwd, p2->pw_passwd);
+	assert_int_equal(p1->pw_uid, p2->pw_uid);
+	assert_int_equal(p1->pw_gid, p2->pw_gid);
+	assert_string_equal(p1->pw_gecos, p2->pw_gecos);
+	assert_string_equal(p1->pw_dir, p2->pw_dir);
+	assert_string_equal(p1->pw_shell, p2->pw_shell);
+}
+
+static void assert_group_equal(const struct group *g1,
+			       const struct group *g2)
+{
+	int i;
+
+	assert_string_equal(g1->gr_name, g2->gr_name);
+	assert_string_equal(g1->gr_passwd, g2->gr_passwd);
+	assert_int_equal(g1->gr_gid, g2->gr_gid);
+	assert_false(g1->gr_mem != NULL && g2->gr_mem == NULL);
+	assert_false(g1->gr_mem == NULL && g2->gr_mem != NULL);
+	if (g1->gr_mem == NULL && g2->gr_mem == NULL) {
+		return;
+	}
+	for (i=0; g1->gr_mem[i] && g2->gr_mem[i]; i++) {
+		assert_string_equal(g1->gr_mem[i], g2->gr_mem[i]);
+	}
+}
+
+static bool copy_passwd(const struct passwd *pwd, struct passwd *p)
+{
+	p->pw_name	= strdup(pwd->pw_name);
+	p->pw_passwd	= strdup(pwd->pw_passwd);
 	p->pw_uid	= pwd->pw_uid;
 	p->pw_gid	= pwd->pw_gid;
-	p->pw_gecos	= talloc_strdup(tctx, pwd->pw_gecos);
-	p->pw_dir	= talloc_strdup(tctx, pwd->pw_dir);
-	p->pw_shell	= talloc_strdup(tctx, pwd->pw_shell);
+	p->pw_gecos	= strdup(pwd->pw_gecos);
+	p->pw_dir	= strdup(pwd->pw_dir);
+	p->pw_shell	= strdup(pwd->pw_shell);
 
 	return true;
 }
 
 static void print_passwd(struct passwd *pwd)
 {
-	printf("%s:%s:%lu:%lu:%s:%s:%s\n",
+	DEBUG("%s:%s:%lu:%lu:%s:%s:%s\n",
 	       pwd->pw_name,
 	       pwd->pw_passwd,
 	       (unsigned long)pwd->pw_uid,
@@ -55,14 +74,11 @@ static void print_passwd(struct passwd *pwd)
 	       pwd->pw_shell);
 }
 
-
-static bool test_nwrap_getpwnam(struct torture_context *tctx,
-				const char *name,
-				struct passwd *pwd_p)
+static bool test_nwrap_getpwnam(const char *name, struct passwd *pwd_p)
 {
 	struct passwd *pwd;
 
-	torture_comment(tctx, "Testing getpwnam: %s\n", name);
+	DEBUG("Testing getpwnam: %s\n", name);
 
 	pwd = getpwnam(name);
 	if (pwd) {
@@ -70,12 +86,13 @@ static bool test_nwrap_getpwnam(struct torture_context *tctx,
 	}
 
 	if (pwd_p) {
-		copy_passwd(tctx, pwd, pwd_p);
+		copy_passwd(pwd, pwd_p);
 	}
 
 	return pwd ? true : false;
 }
 
+#if 0
 static bool test_nwrap_getpwnam_r(struct torture_context *tctx,
 				  const char *name,
 				  struct passwd *pwd_p)
@@ -84,12 +101,12 @@ static bool test_nwrap_getpwnam_r(struct torture_context *tctx,
 	char buffer[4096];
 	int ret;
 
-	torture_comment(tctx, "Testing getpwnam_r: %s\n", name);
+	DEBUG(tctx, "Testing getpwnam_r: %s\n", name);
 
 	ret = getpwnam_r(name, &pwd, buffer, sizeof(buffer), &pwdp);
 	if (ret != 0) {
 		if (ret != ENOENT) {
-			torture_comment(tctx, "got %d return code\n", ret);
+			DEBUG(tctx, "got %d return code\n", ret);
 		}
 		return false;
 	}
@@ -102,14 +119,14 @@ static bool test_nwrap_getpwnam_r(struct torture_context *tctx,
 
 	return true;
 }
+#endif
 
-static bool test_nwrap_getpwuid(struct torture_context *tctx,
-				uid_t uid,
+static bool test_nwrap_getpwuid(uid_t uid,
 				struct passwd *pwd_p)
 {
 	struct passwd *pwd;
 
-	torture_comment(tctx, "Testing getpwuid: %lu\n", (unsigned long)uid);
+	DEBUG("Testing getpwuid: %lu\n", (unsigned long)uid);
 
 	pwd = getpwuid(uid);
 	if (pwd) {
@@ -117,12 +134,13 @@ static bool test_nwrap_getpwuid(struct torture_context *tctx,
 	}
 
 	if (pwd_p) {
-		copy_passwd(tctx, pwd, pwd_p);
+		copy_passwd(pwd, pwd_p);
 	}
 
 	return pwd ? true : false;
 }
 
+#if 0
 static bool test_nwrap_getpwuid_r(struct torture_context *tctx,
 				  uid_t uid,
 				  struct passwd *pwd_p)
@@ -131,12 +149,12 @@ static bool test_nwrap_getpwuid_r(struct torture_context *tctx,
 	char buffer[4096];
 	int ret;
 
-	torture_comment(tctx, "Testing getpwuid_r: %lu\n", (unsigned long)uid);
+	DEBUG(tctx, "Testing getpwuid_r: %lu\n", (unsigned long)uid);
 
 	ret = getpwuid_r(uid, &pwd, buffer, sizeof(buffer), &pwdp);
 	if (ret != 0) {
 		if (ret != ENOENT) {
-			torture_comment(tctx, "got %d return code\n", ret);
+			DEBUG(tctx, "got %d return code\n", ret);
 		}
 		return false;
 	}
@@ -149,22 +167,21 @@ static bool test_nwrap_getpwuid_r(struct torture_context *tctx,
 
 	return true;
 }
+#endif
 
-
-static bool copy_group(struct torture_context *tctx,
-		       const struct group *grp,
+static bool copy_group(const struct group *grp,
 		       struct group *g)
 {
 	int i;
 
-	g->gr_name	= talloc_strdup(tctx, grp->gr_name);
-	g->gr_passwd	= talloc_strdup(tctx, grp->gr_passwd);
+	g->gr_name	= strdup(grp->gr_name);
+	g->gr_passwd	= strdup(grp->gr_passwd);
 	g->gr_gid	= grp->gr_gid;
 	g->gr_mem	= NULL;
 
 	for (i=0; grp->gr_mem && grp->gr_mem[i]; i++) {
-		g->gr_mem = talloc_realloc(tctx, g->gr_mem, char *, i + 2);
-		g->gr_mem[i] = talloc_strdup(g->gr_mem, grp->gr_mem[i]);
+		g->gr_mem = realloc(g->gr_mem, i + 2);
+		g->gr_mem[i] = strdup(grp->gr_mem[i]);
 		g->gr_mem[i+1] = NULL;
 	}
 
@@ -174,29 +191,28 @@ static bool copy_group(struct torture_context *tctx,
 static void print_group(struct group *grp)
 {
 	int i;
-	printf("%s:%s:%lu:",
+	DEBUG("%s:%s:%lu:",
 	       grp->gr_name,
 	       grp->gr_passwd,
 	       (unsigned long)grp->gr_gid);
 
 	if ((grp->gr_mem == NULL) || !grp->gr_mem[0]) {
-		printf("\n");
+		DEBUG("\n");
 		return;
 	}
 
 	for (i=0; grp->gr_mem[i+1]; i++) {
-		printf("%s,", grp->gr_mem[i]);
+		DEBUG("%s,", grp->gr_mem[i]);
 	}
-	printf("%s\n", grp->gr_mem[i]);
+	DEBUG("%s\n", grp->gr_mem[i]);
 }
 
-static bool test_nwrap_getgrnam(struct torture_context *tctx,
-				const char *name,
+static bool test_nwrap_getgrnam(const char *name,
 				struct group *grp_p)
 {
 	struct group *grp;
 
-	torture_comment(tctx, "Testing getgrnam: %s\n", name);
+	DEBUG("Testing getgrnam: %s\n", name);
 
 	grp = getgrnam(name);
 	if (grp) {
@@ -204,12 +220,13 @@ static bool test_nwrap_getgrnam(struct torture_context *tctx,
 	}
 
 	if (grp_p) {
-		copy_group(tctx, grp, grp_p);
+		copy_group(grp, grp_p);
 	}
 
 	return grp ? true : false;
 }
 
+#if 0
 static bool test_nwrap_getgrnam_r(struct torture_context *tctx,
 				  const char *name,
 				  struct group *grp_p)
@@ -218,12 +235,12 @@ static bool test_nwrap_getgrnam_r(struct torture_context *tctx,
 	char buffer[4096];
 	int ret;
 
-	torture_comment(tctx, "Testing getgrnam_r: %s\n", name);
+	DEBUG(tctx, "Testing getgrnam_r: %s\n", name);
 
 	ret = getgrnam_r(name, &grp, buffer, sizeof(buffer), &grpp);
 	if (ret != 0) {
 		if (ret != ENOENT) {
-			torture_comment(tctx, "got %d return code\n", ret);
+			DEBUG(tctx, "got %d return code\n", ret);
 		}
 		return false;
 	}
@@ -236,15 +253,14 @@ static bool test_nwrap_getgrnam_r(struct torture_context *tctx,
 
 	return true;
 }
+#endif
 
-
-static bool test_nwrap_getgrgid(struct torture_context *tctx,
-				gid_t gid,
+static bool test_nwrap_getgrgid(gid_t gid,
 				struct group *grp_p)
 {
 	struct group *grp;
 
-	torture_comment(tctx, "Testing getgrgid: %lu\n", (unsigned long)gid);
+	DEBUG("Testing getgrgid: %lu\n", (unsigned long)gid);
 
 	grp = getgrgid(gid);
 	if (grp) {
@@ -252,12 +268,13 @@ static bool test_nwrap_getgrgid(struct torture_context *tctx,
 	}
 
 	if (grp_p) {
-		copy_group(tctx, grp, grp_p);
+		copy_group(grp, grp_p);
 	}
 
 	return grp ? true : false;
 }
 
+#if 0
 static bool test_nwrap_getgrgid_r(struct torture_context *tctx,
 				  gid_t gid,
 				  struct group *grp_p)
@@ -266,12 +283,12 @@ static bool test_nwrap_getgrgid_r(struct torture_context *tctx,
 	char buffer[4096];
 	int ret;
 
-	torture_comment(tctx, "Testing getgrgid_r: %lu\n", (unsigned long)gid);
+	DEBUG(tctx, "Testing getgrgid_r: %lu\n", (unsigned long)gid);
 
 	ret = getgrgid_r(gid, &grp, buffer, sizeof(buffer), &grpp);
 	if (ret != 0) {
 		if (ret != ENOENT) {
-			torture_comment(tctx, "got %d return code\n", ret);
+			DEBUG(tctx, "got %d return code\n", ret);
 		}
 		return false;
 	}
@@ -284,31 +301,32 @@ static bool test_nwrap_getgrgid_r(struct torture_context *tctx,
 
 	return true;
 }
+#endif
 
-static bool test_nwrap_enum_passwd(struct torture_context *tctx,
-				   struct passwd **pwd_array_p,
+static bool test_nwrap_enum_passwd(struct passwd **pwd_array_p,
 				   size_t *num_pwd_p)
 {
 	struct passwd *pwd;
 	struct passwd *pwd_array = NULL;
 	size_t num_pwd = 0;
 
-	torture_comment(tctx, "Testing setpwent\n");
+	DEBUG("Testing setpwent\n");
+
 	setpwent();
 
 	while ((pwd = getpwent()) != NULL) {
-		torture_comment(tctx, "Testing getpwent\n");
+		DEBUG("Testing getpwent\n");
 
 		print_passwd(pwd);
 		if (pwd_array_p && num_pwd_p) {
-			pwd_array = talloc_realloc(tctx, pwd_array, struct passwd, num_pwd+1);
-			torture_assert(tctx, pwd_array, "out of memory");
-			copy_passwd(tctx, pwd, &pwd_array[num_pwd]);
+			pwd_array = realloc(pwd_array, sizeof(struct passwd) * (num_pwd + 1));
+			assert_non_null(pwd_array);
+			copy_passwd(pwd, &pwd_array[num_pwd]);
 			num_pwd++;
 		}
 	}
 
-	torture_comment(tctx, "Testing endpwent\n");
+	DEBUG("Testing endpwent\n");
 	endpwent();
 
 	if (pwd_array_p) {
@@ -321,6 +339,7 @@ static bool test_nwrap_enum_passwd(struct torture_context *tctx,
 	return true;
 }
 
+#if 0
 static bool test_nwrap_enum_r_passwd(struct torture_context *tctx,
 				     struct passwd **pwd_array_p,
 				     size_t *num_pwd_p)
@@ -331,16 +350,16 @@ static bool test_nwrap_enum_r_passwd(struct torture_context *tctx,
 	char buffer[4096];
 	int ret;
 
-	torture_comment(tctx, "Testing setpwent\n");
+	DEBUG(tctx, "Testing setpwent\n");
 	setpwent();
 
 	while (1) {
-		torture_comment(tctx, "Testing getpwent_r\n");
+		DEBUG(tctx, "Testing getpwent_r\n");
 
 		ret = getpwent_r(&pwd, buffer, sizeof(buffer), &pwdp);
 		if (ret != 0) {
 			if (ret != ENOENT) {
-				torture_comment(tctx, "got %d return code\n", ret);
+				DEBUG(tctx, "got %d return code\n", ret);
 			}
 			break;
 		}
@@ -353,7 +372,7 @@ static bool test_nwrap_enum_r_passwd(struct torture_context *tctx,
 		}
 	}
 
-	torture_comment(tctx, "Testing endpwent\n");
+	DEBUG(tctx, "Testing endpwent\n");
 	endpwent();
 
 	if (pwd_array_p) {
@@ -365,48 +384,28 @@ static bool test_nwrap_enum_r_passwd(struct torture_context *tctx,
 
 	return true;
 }
+#endif
 
-static bool torture_assert_passwd_equal(struct torture_context *tctx,
-					const struct passwd *p1,
-					const struct passwd *p2,
-					const char *comment)
+static bool test_nwrap_passwd(void)
 {
-	torture_assert_str_equal(tctx, p1->pw_name, p2->pw_name, comment);
-	torture_assert_str_equal(tctx, p1->pw_passwd, p2->pw_passwd, comment);
-	torture_assert_int_equal(tctx, p1->pw_uid, p2->pw_uid, comment);
-	torture_assert_int_equal(tctx, p1->pw_gid, p2->pw_gid, comment);
-	torture_assert_str_equal(tctx, p1->pw_gecos, p2->pw_gecos, comment);
-	torture_assert_str_equal(tctx, p1->pw_dir, p2->pw_dir, comment);
-	torture_assert_str_equal(tctx, p1->pw_shell, p2->pw_shell, comment);
-
-	return true;
-}
-
-static bool test_nwrap_passwd(struct torture_context *tctx)
-{
-	int i;
 	struct passwd *pwd, pwd1, pwd2;
-	size_t num_pwd;
+	size_t i, num_pwd;
 
-	torture_assert(tctx, test_nwrap_enum_passwd(tctx, &pwd, &num_pwd),
-						    "failed to enumerate passwd");
+	test_nwrap_enum_passwd(&pwd, &num_pwd);
 
 	for (i=0; i < num_pwd; i++) {
-		torture_assert(tctx, test_nwrap_getpwnam(tctx, pwd[i].pw_name, &pwd1),
-			"failed to call getpwnam for enumerated user");
-		torture_assert_passwd_equal(tctx, &pwd[i], &pwd1,
-			"getpwent and getpwnam gave different results");
-		torture_assert(tctx, test_nwrap_getpwuid(tctx, pwd[i].pw_uid, &pwd2),
-			"failed to call getpwuid for enumerated user");
-		torture_assert_passwd_equal(tctx, &pwd[i], &pwd2,
-			"getpwent and getpwuid gave different results");
-		torture_assert_passwd_equal(tctx, &pwd1, &pwd2,
-			"getpwnam and getpwuid gave different results");
+		test_nwrap_getpwnam(pwd[i].pw_name, &pwd1);
+		assert_passwd_equal(&pwd[i], &pwd1);
+
+		test_nwrap_getpwuid(pwd[i].pw_uid, &pwd2);
+		assert_passwd_equal(&pwd[i], &pwd2);
+		assert_passwd_equal(&pwd1, &pwd2);
 	}
 
 	return true;
 }
 
+#if 0
 static bool test_nwrap_passwd_r(struct torture_context *tctx)
 {
 	int i;
@@ -431,7 +430,9 @@ static bool test_nwrap_passwd_r(struct torture_context *tctx)
 
 	return true;
 }
+#endif
 
+#if 0
 static bool test_nwrap_passwd_r_cross(struct torture_context *tctx)
 {
 	int i;
@@ -466,31 +467,31 @@ static bool test_nwrap_passwd_r_cross(struct torture_context *tctx)
 
 	return true;
 }
+#endif
 
-static bool test_nwrap_enum_group(struct torture_context *tctx,
-				  struct group **grp_array_p,
+static bool test_nwrap_enum_group(struct group **grp_array_p,
 				  size_t *num_grp_p)
 {
 	struct group *grp;
 	struct group *grp_array = NULL;
 	size_t num_grp = 0;
 
-	torture_comment(tctx, "Testing setgrent\n");
+	DEBUG("Testing setgrent\n");
 	setgrent();
 
 	while ((grp = getgrent()) != NULL) {
-		torture_comment(tctx, "Testing getgrent\n");
+		DEBUG("Testing getgrent\n");
 
 		print_group(grp);
 		if (grp_array_p && num_grp_p) {
-			grp_array = talloc_realloc(tctx, grp_array, struct group, num_grp+1);
-			torture_assert(tctx, grp_array, "out of memory");
-			copy_group(tctx, grp, &grp_array[num_grp]);
+			grp_array = realloc(grp_array, sizeof(struct group) * (num_grp + 1));
+			assert_non_null(grp_array);
+			copy_group(grp, &grp_array[num_grp]);
 			num_grp++;
 		}
 	}
 
-	torture_comment(tctx, "Testing endgrent\n");
+	DEBUG("Testing endgrent\n");
 	endgrent();
 
 	if (grp_array_p) {
@@ -503,6 +504,7 @@ static bool test_nwrap_enum_group(struct torture_context *tctx,
 	return true;
 }
 
+#if 0
 static bool test_nwrap_enum_r_group(struct torture_context *tctx,
 				    struct group **grp_array_p,
 				    size_t *num_grp_p)
@@ -513,16 +515,16 @@ static bool test_nwrap_enum_r_group(struct torture_context *tctx,
 	char buffer[4096];
 	int ret;
 
-	torture_comment(tctx, "Testing setgrent\n");
+	DEBUG(tctx, "Testing setgrent\n");
 	setgrent();
 
 	while (1) {
-		torture_comment(tctx, "Testing getgrent_r\n");
+		DEBUG(tctx, "Testing getgrent_r\n");
 
 		ret = getgrent_r(&grp, buffer, sizeof(buffer), &grpp);
 		if (ret != 0) {
 			if (ret != ENOENT) {
-				torture_comment(tctx, "got %d return code\n", ret);
+				DEBUG(tctx, "got %d return code\n", ret);
 			}
 			break;
 		}
@@ -535,7 +537,7 @@ static bool test_nwrap_enum_r_group(struct torture_context *tctx,
 		}
 	}
 
-	torture_comment(tctx, "Testing endgrent\n");
+	DEBUG(tctx, "Testing endgrent\n");
 	endgrent();
 
 	if (grp_array_p) {
@@ -547,57 +549,29 @@ static bool test_nwrap_enum_r_group(struct torture_context *tctx,
 
 	return true;
 }
+#endif
 
-static bool torture_assert_group_equal(struct torture_context *tctx,
-				       const struct group *g1,
-				       const struct group *g2,
-				       const char *comment)
+static bool test_nwrap_group(void)
 {
-	int i;
-	torture_assert_str_equal(tctx, g1->gr_name, g2->gr_name, comment);
-	torture_assert_str_equal(tctx, g1->gr_passwd, g2->gr_passwd, comment);
-	torture_assert_int_equal(tctx, g1->gr_gid, g2->gr_gid, comment);
-	if (g1->gr_mem && !g2->gr_mem) {
-		return false;
-	}
-	if (!g1->gr_mem && g2->gr_mem) {
-		return false;
-	}
-	if (!g1->gr_mem && !g2->gr_mem) {
-		return true;
-	}
-	for (i=0; g1->gr_mem[i] && g2->gr_mem[i]; i++) {
-		torture_assert_str_equal(tctx, g1->gr_mem[i], g2->gr_mem[i], comment);
-	}
-
-	return true;
-}
-
-static bool test_nwrap_group(struct torture_context *tctx)
-{
-	int i;
 	struct group *grp, grp1, grp2;
-	size_t num_grp;
+	size_t i, num_grp;
 
-	torture_assert(tctx, test_nwrap_enum_group(tctx, &grp, &num_grp),
-						   "failed to enumerate group");
+	test_nwrap_enum_group(&grp, &num_grp);
 
 	for (i=0; i < num_grp; i++) {
-		torture_assert(tctx, test_nwrap_getgrnam(tctx, grp[i].gr_name, &grp1),
-			"failed to call getgrnam for enumerated user");
-		torture_assert_group_equal(tctx, &grp[i], &grp1,
-			"getgrent and getgrnam gave different results");
-		torture_assert(tctx, test_nwrap_getgrgid(tctx, grp[i].gr_gid, &grp2),
-			"failed to call getgrgid for enumerated user");
-		torture_assert_group_equal(tctx, &grp[i], &grp2,
-			"getgrent and getgrgid gave different results");
-		torture_assert_group_equal(tctx, &grp1, &grp2,
-			"getgrnam and getgrgid gave different results");
+		test_nwrap_getgrnam(grp[i].gr_name, &grp1);
+		assert_group_equal(&grp[i], &grp1);
+
+		test_nwrap_getgrgid(grp[i].gr_gid, &grp2);
+		assert_group_equal(&grp[i], &grp2);
+
+		assert_group_equal(&grp1, &grp2);
 	}
 
 	return true;
 }
 
+#if 0
 static bool test_nwrap_group_r(struct torture_context *tctx)
 {
 	int i;
@@ -622,7 +596,9 @@ static bool test_nwrap_group_r(struct torture_context *tctx)
 
 	return true;
 }
+#endif
 
+#if 0
 static bool test_nwrap_group_r_cross(struct torture_context *tctx)
 {
 	int i;
@@ -657,7 +633,9 @@ static bool test_nwrap_group_r_cross(struct torture_context *tctx)
 
 	return true;
 }
+#endif
 
+#if 0
 static bool test_nwrap_getgrouplist(struct torture_context *tctx,
 				    const char *user,
 				    gid_t gid,
@@ -668,7 +646,7 @@ static bool test_nwrap_getgrouplist(struct torture_context *tctx,
 	int num_groups = 0;
 	gid_t *groups = NULL;
 
-	torture_comment(tctx, "Testing getgrouplist: %s\n", user);
+	DEBUG(tctx, "Testing getgrouplist: %s\n", user);
 
 	ret = getgrouplist(user, gid, NULL, &num_groups);
 	if (ret == -1 || num_groups != 0) {
@@ -681,7 +659,7 @@ static bool test_nwrap_getgrouplist(struct torture_context *tctx,
 
 	torture_assert(tctx, (ret != -1), "failed to call getgrouplist");
 
-	torture_comment(tctx, "%s is member in %d groups\n", user, num_groups);
+	DEBUG(tctx, "%s is member in %d groups\n", user, num_groups);
 
 	if (gids_p) {
 		*gids_p = groups;
@@ -707,7 +685,9 @@ static bool test_nwrap_user_in_group(struct torture_context *tctx,
 
 	return false;
 }
+#endif
 
+#if 0
 static bool test_nwrap_membership_user(struct torture_context *tctx,
 				       const struct passwd *pwd,
 				       struct group *grp_array,
@@ -745,7 +725,7 @@ static bool test_nwrap_membership_user(struct torture_context *tctx,
 					"failed to find the group the user is a member of");
 
 			if (current_grp.gr_gid == pwd->pw_gid) {
-				torture_comment(tctx, "primary group %s of user %s lists user as member\n",
+				DEBUG(tctx, "primary group %s of user %s lists user as member\n",
 						current_grp.gr_name,
 						pwd->pw_name);
 				primary_group_had_user_member = true;
@@ -776,7 +756,7 @@ static bool test_nwrap_membership(struct torture_context *tctx)
 	int i;
 
 	if (!old_pwd || !old_group) {
-		torture_comment(tctx, "ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
+		DEBUG(tctx, "ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
 		torture_skip(tctx, "nothing to test\n");
 	}
 
@@ -794,36 +774,34 @@ static bool test_nwrap_membership(struct torture_context *tctx)
 
 	return true;
 }
+#endif
 
-static bool test_nwrap_enumeration(struct torture_context *tctx)
+static void test_nwrap_enumeration(void **state)
 {
 	const char *old_pwd = getenv("NSS_WRAPPER_PASSWD");
 	const char *old_group = getenv("NSS_WRAPPER_GROUP");
 
 	if (!old_pwd || !old_group) {
-		torture_comment(tctx, "ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
-		torture_skip(tctx, "nothing to test\n");
+		DEBUG("ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
+		return;
 	}
 
-	torture_assert(tctx, test_nwrap_passwd(tctx),
-			"failed to test users");
-	torture_assert(tctx, test_nwrap_group(tctx),
-			"failed to test groups");
-
-	return true;
+	test_nwrap_passwd();
+	test_nwrap_group();
 }
 
+#if 0
 static bool test_nwrap_reentrant_enumeration(struct torture_context *tctx)
 {
 	const char *old_pwd = getenv("NSS_WRAPPER_PASSWD");
 	const char *old_group = getenv("NSS_WRAPPER_GROUP");
 
 	if (!old_pwd || !old_group) {
-		torture_comment(tctx, "ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
+		DEBUG(tctx, "ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
 		torture_skip(tctx, "nothing to test\n");
 	}
 
-	torture_comment(tctx, "Testing re-entrant calls\n");
+	DEBUG(tctx, "Testing re-entrant calls\n");
 
 	torture_assert(tctx, test_nwrap_passwd_r(tctx),
 			"failed to test users");
@@ -839,11 +817,11 @@ static bool test_nwrap_reentrant_enumeration_crosschecks(struct torture_context 
 	const char *old_group = getenv("NSS_WRAPPER_GROUP");
 
 	if (!old_pwd || !old_group) {
-		torture_comment(tctx, "ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
+		DEBUG(tctx, "ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
 		torture_skip(tctx, "nothing to test\n");
 	}
 
-	torture_comment(tctx, "Testing re-entrant calls with cross checks\n");
+	DEBUG(tctx, "Testing re-entrant calls with cross checks\n");
 
 	torture_assert(tctx, test_nwrap_passwd_r_cross(tctx),
 			"failed to test users");
@@ -882,7 +860,7 @@ static bool test_nwrap_passwd_duplicates(struct torture_context *tctx)
 	}
 
 	if (duplicates) {
-		torture_fail(tctx, talloc_asprintf(tctx, "found %d duplicate names", duplicates));
+		torture_fail(tctx, talloc_asDEBUG(tctx, "found %d duplicate names", duplicates));
 	}
 
 	return true;
@@ -917,7 +895,7 @@ static bool test_nwrap_group_duplicates(struct torture_context *tctx)
 	}
 
 	if (duplicates) {
-		torture_fail(tctx, talloc_asprintf(tctx, "found %d duplicate names", duplicates));
+		torture_fail(tctx, talloc_asDEBUG(tctx, "found %d duplicate names", duplicates));
 	}
 
 	return true;
@@ -930,7 +908,7 @@ static bool test_nwrap_duplicates(struct torture_context *tctx)
 	const char *old_group = getenv("NSS_WRAPPER_GROUP");
 
 	if (!old_pwd || !old_group) {
-		torture_comment(tctx, "ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
+		DEBUG(tctx, "ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
 		torture_skip(tctx, "nothing to test\n");
 	}
 
@@ -941,7 +919,6 @@ static bool test_nwrap_duplicates(struct torture_context *tctx)
 
 	return true;
 }
-
 
 struct torture_suite *torture_local_nss_wrapper(TALLOC_CTX *mem_ctx)
 {
@@ -954,4 +931,17 @@ struct torture_suite *torture_local_nss_wrapper(TALLOC_CTX *mem_ctx)
 	torture_suite_add_simple_test(suite, "duplicates", test_nwrap_duplicates);
 
 	return suite;
+}
+#endif
+
+int main(void) {
+	int rc;
+
+	const UnitTest tests[] = {
+		unit_test(test_nwrap_enumeration),
+	};
+
+	rc = run_tests(tests);
+
+	return rc;
 }
