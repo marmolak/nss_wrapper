@@ -51,8 +51,6 @@
 #include <grp.h>
 #include <nss.h>
 
-#include "nss_wrapper.h"
-
 #include <dlfcn.h>
 
 typedef enum nss_status NSS_STATUS;
@@ -1925,18 +1923,14 @@ static void nwrap_module_endgrent(struct nwrap_backend *b)
 	b->fns->_nss_endgrent();
 }
 
-/*
- * PUBLIC interface
- */
+/****************************************************************************
+ *   GETPWNAM
+ ***************************************************************************/
 
-struct passwd *getpwnam(const char *name)
+static struct passwd *nwrap_getpwnam(const char *name)
 {
 	int i;
 	struct passwd *pwd;
-
-	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getpwnam(name);
-	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -1949,15 +1943,23 @@ struct passwd *getpwnam(const char *name)
 	return NULL;
 }
 
-#ifdef HAVE_GETPWNAM_R
-int getpwnam_r(const char *name, struct passwd *pwdst,
-	       char *buf, size_t buflen, struct passwd **pwdstp)
+struct passwd *getpwnam(const char *name)
+{
+	if (!nwrap_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_getpwnam(name);
+	}
+
+	return nwrap_getpwnam(name);
+}
+
+/****************************************************************************
+ *   GETPWNAM_R
+ ***************************************************************************/
+
+static int nwrap_getpwnam_r(const char *name, struct passwd *pwdst,
+			    char *buf, size_t buflen, struct passwd **pwdstp)
 {
 	int i,ret;
-
-	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getpwnam_r(name, pwdst, buf, buflen, pwdstp);
-	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -1970,16 +1972,27 @@ int getpwnam_r(const char *name, struct passwd *pwdst,
 
 	return ENOENT;
 }
+
+#ifdef HAVE_GETPWNAM_R
+int getpwnam_r(const char *name, struct passwd *pwdst,
+	       char *buf, size_t buflen, struct passwd **pwdstp)
+{
+	if (!nwrap_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_getpwnam_r(name, pwdst, buf, buflen, pwdstp);
+	}
+
+	return nwrap_getpwnam_r(name, pwdst, buf, buflen, pwdstp);
+}
 #endif
 
-struct passwd *getpwuid(uid_t uid)
+/****************************************************************************
+ *   GETPWUID
+ ***************************************************************************/
+
+static struct passwd *nwrap_getpwuid(uid_t uid)
 {
 	int i;
 	struct passwd *pwd;
-
-	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getpwuid(uid);
-	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -1992,14 +2005,23 @@ struct passwd *getpwuid(uid_t uid)
 	return NULL;
 }
 
-int getpwuid_r(uid_t uid, struct passwd *pwdst,
-	       char *buf, size_t buflen, struct passwd **pwdstp)
+struct passwd *getpwuid(uid_t uid)
+{
+	if (!nwrap_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_getpwuid(uid);
+	}
+
+	return nwrap_getpwuid(uid);
+}
+
+/****************************************************************************
+ *   GETPWUID_R
+ ***************************************************************************/
+
+static int nwrap_getpwuid_r(uid_t uid, struct passwd *pwdst,
+			    char *buf, size_t buflen, struct passwd **pwdstp)
 {
 	int i,ret;
-
-	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getpwuid_r(uid, pwdst, buf, buflen, pwdstp);
-	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -2013,14 +2035,23 @@ int getpwuid_r(uid_t uid, struct passwd *pwdst,
 	return ENOENT;
 }
 
-void setpwent(void)
+int getpwuid_r(uid_t uid, struct passwd *pwdst,
+	       char *buf, size_t buflen, struct passwd **pwdstp)
+{
+	if (!nwrap_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_getpwuid_r(uid, pwdst, buf, buflen, pwdstp);
+	}
+
+	return nwrap_getpwuid_r(uid, pwdst, buf, buflen, pwdstp);
+}
+
+/****************************************************************************
+ *   SETPWENT
+ ***************************************************************************/
+
+static void nwrap_setpwent(void)
 {
 	int i;
-
-	if (!nwrap_enabled()) {
-		nwrap_main_global->libc->fns->_libc_setpwent();
-		return;
-	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -2028,14 +2059,24 @@ void setpwent(void)
 	}
 }
 
-struct passwd *getpwent(void)
+void setpwent(void)
+{
+	if (!nwrap_enabled()) {
+		nwrap_main_global->libc->fns->_libc_setpwent();
+		return;
+	}
+
+	nwrap_setpwent();
+}
+
+/****************************************************************************
+ *   GETPWENT
+ ***************************************************************************/
+
+static struct passwd *nwrap_getpwent(void)
 {
 	int i;
 	struct passwd *pwd;
-
-	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getpwent();
-	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -2048,11 +2089,39 @@ struct passwd *getpwent(void)
 	return NULL;
 }
 
-int getpwent_r(struct passwd *pwdst, char *buf,
-	       size_t buflen, struct passwd **pwdstp)
+struct passwd *getpwent(void)
+{
+	if (!nwrap_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_getpwent();
+	}
+
+	return nwrap_getpwent();
+}
+
+/****************************************************************************
+ *   GETPWENT_R
+ ***************************************************************************/
+
+static int nwrap_getpwent_r(struct passwd *pwdst, char *buf,
+			    size_t buflen, struct passwd **pwdstp)
 {
 	int i,ret;
 
+	for (i=0; i < nwrap_main_global->num_backends; i++) {
+		struct nwrap_backend *b = &nwrap_main_global->backends[i];
+		ret = b->ops->nw_getpwent_r(b, pwdst, buf, buflen, pwdstp);
+		if (ret == ENOENT) {
+			continue;
+		}
+		return ret;
+	}
+
+	return ENOENT;
+}
+
+int getpwent_r(struct passwd *pwdst, char *buf,
+	       size_t buflen, struct passwd **pwdstp)
+{
 	if (!nwrap_enabled()) {
 #ifdef SOLARIS_GETPWENT_R
 		struct passwd *pw;
@@ -2072,26 +2141,16 @@ int getpwent_r(struct passwd *pwdst, char *buf,
 #endif
 	}
 
-	for (i=0; i < nwrap_main_global->num_backends; i++) {
-		struct nwrap_backend *b = &nwrap_main_global->backends[i];
-		ret = b->ops->nw_getpwent_r(b, pwdst, buf, buflen, pwdstp);
-		if (ret == ENOENT) {
-			continue;
-		}
-		return ret;
-	}
-
-	return ENOENT;
+	return nwrap_getpwent_r(pwdst, buf, buflen, pwdstp);
 }
 
-void endpwent(void)
+/****************************************************************************
+ *   ENDPWENT
+ ***************************************************************************/
+
+static void nwrap_endpwent(void)
 {
 	int i;
-
-	if (!nwrap_enabled()) {
-		nwrap_main_global->libc->fns->_libc_endpwent();
-		return;
-	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -2099,13 +2158,23 @@ void endpwent(void)
 	}
 }
 
-int initgroups(const char *user, gid_t group)
+void endpwent(void)
+{
+	if (!nwrap_enabled()) {
+		nwrap_main_global->libc->fns->_libc_endpwent();
+		return;
+	}
+
+	nwrap_endpwent();
+}
+
+/****************************************************************************
+ *   INITGROUPS
+ ***************************************************************************/
+
+static int nwrap_initgroups(const char *user, gid_t group)
 {
 	int i;
-
-	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_initgroups(user, group);
-	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -2116,14 +2185,23 @@ int initgroups(const char *user, gid_t group)
 	return -1;
 }
 
-struct group *getgrnam(const char *name)
+int initgroups(const char *user, gid_t group)
+{
+	if (!nwrap_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_initgroups(user, group);
+	}
+
+	return nwrap_initgroups(user, group);
+}
+
+/****************************************************************************
+ *   GETGRNAM
+ ***************************************************************************/
+
+static struct group *nwrap_getgrnam(const char *name)
 {
 	int i;
 	struct group *grp;
-
-	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getgrnam(name);
-	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -2136,15 +2214,23 @@ struct group *getgrnam(const char *name)
 	return NULL;
 }
 
-#ifdef HAVE_GETGRNAM_R
-int getgrnam_r(const char *name, struct group *grdst,
-	       char *buf, size_t buflen, struct group **grdstp)
+struct group *getgrnam(const char *name)
 {
-	int i,ret;
-
 	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getgrnam_r(name, grdst, buf, buflen, grdstp);
+		return nwrap_main_global->libc->fns->_libc_getgrnam(name);
 	}
+
+	return nwrap_getgrnam(name);
+}
+
+/****************************************************************************
+ *   GETGRNAM_R
+ ***************************************************************************/
+
+static int nwrap_getgrnam_r(const char *name, struct group *grdst,
+			    char *buf, size_t buflen, struct group **grdstp)
+{
+	int i, ret;
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -2157,16 +2243,28 @@ int getgrnam_r(const char *name, struct group *grdst,
 
 	return ENOENT;
 }
+
+#ifdef HAVE_GETGRNAM_R
+int getgrnam_r(const char *name, struct group *grdst,
+	       char *buf, size_t buflen, struct group **grdstp)
+{
+	if (!nwrap_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_getgrnam_r(name,
+				grdst, buf, buflen, grdstp);
+	}
+
+	return nwrap_getgrnam_r(name, grdst, buf, buflen, grdstp);
+}
 #endif
 
-struct group *getgrgid(gid_t gid)
+/****************************************************************************
+ *   GETGRGID
+ ***************************************************************************/
+
+static struct group *nwrap_getgrgid(gid_t gid)
 {
 	int i;
 	struct group *grp;
-
-	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getgrgid(gid);
-	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -2179,15 +2277,23 @@ struct group *getgrgid(gid_t gid)
 	return NULL;
 }
 
-#ifdef HAVE_GETGRGID_R
-int getgrgid_r(gid_t gid, struct group *grdst,
-			      char *buf, size_t buflen, struct group **grdstp)
+struct group *getgrgid(gid_t gid)
+{
+	if (!nwrap_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_getgrgid(gid);
+	}
+
+	return nwrap_getgrgid(gid);
+}
+
+/****************************************************************************
+ *   GETGRGID_R
+ ***************************************************************************/
+
+static int nwrap_getgrgid_r(gid_t gid, struct group *grdst,
+			    char *buf, size_t buflen, struct group **grdstp)
 {
 	int i,ret;
-
-	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getgrgid_r(gid, grdst, buf, buflen, grdstp);
-	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -2200,16 +2306,27 @@ int getgrgid_r(gid_t gid, struct group *grdst,
 
 	return ENOENT;
 }
+
+#ifdef HAVE_GETGRGID_R
+int getgrgid_r(gid_t gid, struct group *grdst,
+	       char *buf, size_t buflen, struct group **grdstp)
+{
+	if (!nwrap_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_getgrgid_r(gid,
+				grdst, buf, buflen, grdstp);
+	}
+
+	return nwrap_getgrgid_r(gid, grdst, buf, buflen, grdstp);
+}
 #endif
 
-void setgrent(void)
+/****************************************************************************
+ *   SETGRENT
+ ***************************************************************************/
+
+static void nwrap_setgrent(void)
 {
 	int i;
-
-	if (!nwrap_enabled()) {
-		nwrap_main_global->libc->fns->_libc_setgrent();
-		return;
-	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -2217,14 +2334,24 @@ void setgrent(void)
 	}
 }
 
-struct group *getgrent(void)
+void setgrent(void)
+{
+	if (!nwrap_enabled()) {
+		nwrap_main_global->libc->fns->_libc_setgrent();
+		return;
+	}
+
+	nwrap_setgrent();
+}
+
+/****************************************************************************
+ *   GETGRENT
+ ***************************************************************************/
+
+static struct group *nwrap_getgrent(void)
 {
 	int i;
 	struct group *grp;
-
-	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getgrent();
-	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -2237,11 +2364,39 @@ struct group *getgrent(void)
 	return NULL;
 }
 
-int getgrent_r(struct group *grdst, char *buf,
-	       size_t buflen, struct group **grdstp)
+struct group *getgrent(void)
+{
+	if (!nwrap_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_getgrent();
+	}
+
+	return nwrap_getgrent();
+}
+
+/****************************************************************************
+ *   GETGRENT_R
+ ***************************************************************************/
+
+static int nwrap_getgrent_r(struct group *grdst, char *buf,
+			    size_t buflen, struct group **grdstp)
 {
 	int i,ret;
 
+	for (i=0; i < nwrap_main_global->num_backends; i++) {
+		struct nwrap_backend *b = &nwrap_main_global->backends[i];
+		ret = b->ops->nw_getgrent_r(b, grdst, buf, buflen, grdstp);
+		if (ret == ENOENT) {
+			continue;
+		}
+		return ret;
+	}
+
+	return ENOENT;
+}
+
+int getgrent_r(struct group *grdst, char *buf,
+	       size_t buflen, struct group **grdstp)
+{
 	if (!nwrap_enabled()) {
 #ifdef SOLARIS_GETGRENT_R
 		struct group *gr;
@@ -2261,26 +2416,16 @@ int getgrent_r(struct group *grdst, char *buf,
 #endif
 	}
 
-	for (i=0; i < nwrap_main_global->num_backends; i++) {
-		struct nwrap_backend *b = &nwrap_main_global->backends[i];
-		ret = b->ops->nw_getgrent_r(b, grdst, buf, buflen, grdstp);
-		if (ret == ENOENT) {
-			continue;
-		}
-		return ret;
-	}
-
-	return ENOENT;
+	return nwrap_getgrent_r(grdst, buf, buflen, grdstp);
 }
 
-void endgrent(void)
+/****************************************************************************
+ *   ENDGRENT
+ ***************************************************************************/
+
+static void nwrap_endgrent(void)
 {
 	int i;
-
-	if (!nwrap_enabled()) {
-		nwrap_main_global->libc->fns->_libc_endgrent();
-		return;
-	}
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
@@ -2288,17 +2433,27 @@ void endgrent(void)
 	}
 }
 
-#ifdef HAVE_GETGROUPLIST
-int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
+void endgrent(void)
+{
+	if (!nwrap_enabled()) {
+		nwrap_main_global->libc->fns->_libc_endgrent();
+		return;
+	}
+
+	nwrap_endgrent();
+}
+
+/****************************************************************************
+ *   GETGROUPLIST
+ ***************************************************************************/
+
+static int nwrap_getgrouplist(const char *user, gid_t group,
+			      gid_t *groups, int *ngroups)
 {
 	struct group *grp;
 	gid_t *groups_tmp;
 	int count = 1;
 	const char *name_of_group = "";
-
-	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getgrouplist(user, group, groups, ngroups);
-	}
 
 	NWRAP_DEBUG(("%s: getgrouplist called for %s\n", __location__, user));
 
@@ -2311,13 +2466,13 @@ int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
 
 	memcpy(groups_tmp, &group, sizeof(gid_t));
 
-	grp = getgrgid(group);
+	grp = nwrap_getgrgid(group);
 	if (grp) {
 		name_of_group = grp->gr_name;
 	}
 
-	setgrent();
-	while ((grp = getgrent()) != NULL) {
+	nwrap_setgrent();
+	while ((grp = nwrap_getgrent()) != NULL) {
 		int i = 0;
 
 		NWRAP_VERBOSE(("%s: inspecting %s for group membership\n",
@@ -2344,7 +2499,7 @@ int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
 		}
 	}
 
-	endgrent();
+	nwrap_endgrent();
 
 	NWRAP_VERBOSE(("%s: %s is member of %d groups: %d\n",
 		       __location__, user, *ngroups));
@@ -2360,5 +2515,15 @@ int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
 	free(groups_tmp);
 
 	return count;
+}
+
+#ifdef HAVE_GETGROUPLIST
+int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
+{
+	if (!nwrap_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_getgrouplist(user, group, groups, ngroups);
+	}
+
+	return nwrap_getgrouplist(user, group, groups, ngroups);
 }
 #endif
