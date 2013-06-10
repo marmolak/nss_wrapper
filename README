@@ -1,0 +1,2 @@
+nss_wrapper - Wrapper for the user and group NSS API allowing the use
+              of other data sources.
