@@ -50,6 +50,12 @@ configure_file(config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 # check subdirectories
 add_subdirectory(src)
 
+install(
+    PROGRAMS
+        nss_wrapper.pl
+    DESTINATION
+        ${BIN_INSTALL_DIR})
+
 if (UNIT_TESTING)
     find_package(CMocka REQUIRED)
     include(AddCMockaTest)
