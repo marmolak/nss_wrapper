@@ -131,6 +131,9 @@ struct nwrap_libc_fns {
 #endif
 	void (*_libc_endgrent)(void);
 	int (*_libc_getgrouplist)(const char *user, gid_t group, id_t *groups, int *ngroups);
+
+	struct hostent *(*_libc_gethostbyname)(const char *name);
+	struct hostent *(*_libc_gethostbyaddr)(const void *addr, socklen_t len, int type);
 };
 
 struct nwrap_module_nss_fns {
@@ -581,6 +584,11 @@ static void nwrap_libc_init(struct nwrap_main *r)
 #ifdef HAVE_GETGROUPLIST
 	*(void **) (&r->libc->fns->_libc_getgrouplist) = nwrap_libc_fn(r->libc, "getgrouplist");
 #endif
+
+	*(void **) (&r->libc->fns->_libc_gethostbyname) =
+		nwrap_libc_fn(r->libc, "gethostbyname");
+	*(void **) (&r->libc->fns->_libc_gethostbyaddr) =
+		nwrap_libc_fn(r->libc, "gethostbyaddr");
 }
 
 static void nwrap_backend_init(struct nwrap_main *r)
@@ -1648,6 +1656,62 @@ static void nwrap_files_endgrent(struct nwrap_backend *b)
 	nwrap_gr_global.idx = 0;
 }
 
+/* hosts functions */
+static struct hostent *nwrap_files_gethostbyname(const char *name)
+{
+	struct hostent *he;
+	int i;
+
+	nwrap_files_cache_reload(nwrap_he_global.cache);
+
+	for (i = 0; i < nwrap_he_global.num; i++) {
+		he = &nwrap_he_global.list[i];
+
+		if (strcmp(he->h_name, name) == 0) {
+			NWRAP_DEBUG(("%s: name[%s] found\n",
+				     __location__, name));
+			return he;
+		}
+	}
+
+	errno = ENOENT;
+	return NULL;
+}
+
+static struct hostent *nwrap_files_gethostbyaddr(const void *addr,
+						 socklen_t len, int type)
+{
+	struct hostent *he;
+	char ip[INET6_ADDRSTRLEN] = {0};
+	const char *a;
+	int i;
+
+	a = inet_ntop(type, addr, ip, sizeof(ip));
+	if (a == NULL) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	for (i = 0; i < nwrap_he_global.num; i++) {
+		int j;
+
+		he = &nwrap_he_global.list[i];
+
+		if (he->h_addrtype != type) {
+			continue;
+		}
+
+		for (j = 0; he->h_addr_list[j] != NULL; j++) {
+			if (strcmp(he->h_addr_list[j], a) == 0) {
+				return he;
+			}
+		}
+	}
+
+	errno = ENOENT;
+	return NULL;
+}
+
 /* hosts enum functions */
 static void nwrap_files_sethostent(void)
 {
@@ -2708,3 +2772,47 @@ int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
 	return nwrap_getgrouplist(user, group, groups, ngroups);
 }
 #endif
+
+static struct hostent *nwrap_gethostbyname(const char *name)
+{
+	struct hostent *he;
+
+	he = nwrap_main_global->libc->fns->_libc_gethostbyname(name);
+	if (he != NULL) {
+		return he;
+	}
+
+	return nwrap_files_gethostbyname(name);
+}
+
+struct hostent *gethostbyname(const char *name)
+{
+	if (!nwrap_hosts_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_gethostbyname(name);
+	}
+
+	return nwrap_gethostbyname(name);
+}
+
+static struct hostent *nwrap_gethostbyaddr(const void *addr,
+					   socklen_t len, int type)
+{
+	struct hostent *he;
+
+	he = nwrap_main_global->libc->fns->_libc_gethostbyaddr(addr, len, type);
+	if (he != NULL) {
+		return he;
+	}
+
+	return nwrap_files_gethostbyaddr(addr, len, type);
+}
+
+struct hostent *gethostbyaddr(const void *addr,
+			      socklen_t len, int type)
+{
+	if (!nwrap_hosts_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_gethostbyaddr(addr, len, type);
+	}
+
+	return nwrap_gethostbyaddr(addr, len, type);
+}

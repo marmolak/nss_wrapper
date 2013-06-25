@@ -10,8 +10,13 @@
 #include <stdbool.h>
 
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <pwd.h>
 #include <grp.h>
+
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #ifdef NDEBUG
 #define DEBUG(...)
@@ -827,6 +832,39 @@ static void test_nwrap_duplicates(void **state)
 	test_nwrap_group_duplicates();
 }
 
+static void test_nwrap_gethostbyname(void **state)
+{
+	struct hostent *he;
+
+	(void) state; /* unused */
+
+	he = gethostbyname("magrathea.galaxy.site");
+	assert_non_null(he);
+
+	assert_string_equal(he->h_name, "magrathea.galaxy.site");
+	assert_int_equal(he->h_addrtype, AF_INET);
+	assert_string_equal(he->h_addr_list[0], "127.0.0.11");
+}
+
+static void test_nwrap_gethostbyaddr(void **state)
+{
+	struct hostent *he;
+	struct in_addr in;
+	int rc;
+
+	(void) state; /* unused */
+
+	rc = inet_aton("127.0.0.11", &in);
+	assert_int_equal(rc, 1);
+
+	he = gethostbyaddr(&in, sizeof(struct in_addr), AF_INET);
+	assert_non_null(he);
+
+	assert_string_equal(he->h_name, "magrathea.galaxy.site");
+	assert_int_equal(he->h_addrtype, AF_INET);
+	assert_string_equal(he->h_addr_list[0], "127.0.0.11");
+}
+
 int main(void) {
 	int rc;
 
@@ -836,6 +874,8 @@ int main(void) {
 		unit_test(test_nwrap_reentrant_enumeration_crosschecks),
 		unit_test(test_nwrap_membership),
 		unit_test(test_nwrap_duplicates),
+		unit_test(test_nwrap_gethostbyname),
+		unit_test(test_nwrap_gethostbyaddr),
 	};
 
 	rc = run_tests(tests);
