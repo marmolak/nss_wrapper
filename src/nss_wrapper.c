@@ -370,10 +370,20 @@ struct nwrap_gr nwrap_gr_global;
 static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line);
 static void nwrap_he_unload(struct nwrap_cache *nwrap);
 
+struct nwrap_addrdata {
+	unsigned char host_addr[16]; /* IPv4 or IPv6 address */
+	char *h_addr_ptrs[2]; /* host_addr pointer + NULL */
+};
+
+struct nwrap_entdata {
+	struct nwrap_addrdata *addr;
+	struct hostent ht;
+};
+
 struct nwrap_he {
 	struct nwrap_cache *cache;
 
-	struct hostent *list;
+	struct nwrap_entdata *list;
 	int num;
 	int idx;
 };
@@ -1252,54 +1262,62 @@ static int nwrap_gr_copy_r(const struct group *src, struct group *dst,
 static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
 {
 	struct nwrap_he *nwrap_he = (struct nwrap_he *)nwrap->private_data;
-	struct in_addr dest;
-	struct hostent *ht;
+	struct nwrap_entdata *ed;
 	size_t list_size;
 	char *p;
 	char *i;
 	char *n;
 
-	list_size = sizeof(*nwrap_he->list) * (nwrap_he->num + 1);
-	ht = (struct hostent *)realloc(nwrap_he->list, list_size);
-	if (ht == NULL) {
+	list_size = sizeof(struct nwrap_entdata) * (nwrap_he->num + 1);
+
+	ed = (struct nwrap_entdata *)realloc(nwrap_he->list, list_size);
+	if (ed == NULL) {
 		NWRAP_ERROR(("%s:realloc failed\n", __location__));
 		return false;
 	}
-	nwrap_he->list = ht;
+	nwrap_he->list = ed;
 
-	ht->h_length = 0;
+	/* set it to the last element */
+	ed = &(nwrap_he->list[nwrap_he->num]);
 
-	ht = &nwrap_he->list[nwrap_he->num];
+	ed->addr = malloc(sizeof(struct nwrap_addrdata));
+	if (ed->addr == NULL) {
+		NWRAP_ERROR(("%s:realloc failed\n", __location__));
+		return false;
+	}
 
 	i = line;
 
-	/* ip */
-	for (p = i; p != '\0' && !isspace((int)*p); p++);
+	/*
+	 * IP
+	 */
 
-	if (*p == '\0') {
-		NWRAP_ERROR(("%s:invalid line[%s]: '%s'\n",
-			     __location__, line, i));
-		return false;
+	/* Walk to first char */
+	for (p = i; *p != '.' && *p != ':' && !isxdigit((int) *p); p++) {
+		if (*p == '\0') {
+			NWRAP_ERROR(("%s:invalid line[%s]: '%s'\n",
+				    __location__, line, i));
+			return false;
+		}
 	}
+
+	for (i = p; !isspace((int)*p); p++) {
+		if (*p == '\0') {
+			NWRAP_ERROR(("%s:invalid line[%s]: '%s'\n",
+				    __location__, line, i));
+			return false;
+		}
+	}
+
 	*p = '\0';
 
-	ht->h_addr_list = (char **)malloc((ht->h_length + 1) * sizeof(char));
-	if (ht->h_addr_list == NULL) {
-		NWRAP_ERROR(("%s:invalid line[%s]: '%s'\n",
-			     __location__, line, i));
-		return false;
-	}
-	ht->h_addr_list[ht->h_length] = i;
-
-	if (inet_pton(AF_INET, i, &dest)) {
-		ht->h_addrtype = AF_INET;
+	if (inet_pton(AF_INET, i, ed->addr->host_addr)) {
+		ed->ht.h_addrtype = AF_INET;
+		ed->ht.h_length = 4;
 #ifdef HAVE_IPV6
-	} else if (strchr(i, ':')) {
-		struct in6_addr dest6;
-
-		if (inet_pton(AF_INET6, i, &dest6)) {
-			ht->h_addrtype = AF_INET6;
-		}
+	} else if (inet_pton(AF_INET6, i, ed->addr->host_addr)) {
+		ed->ht.h_addrtype = AF_INET6;
+		ed->ht.h_length = 16;
 #endif
 	} else {
 		NWRAP_ERROR(("%s:invalid line[%s]: '%s'\n",
@@ -1307,25 +1325,46 @@ static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
 		return false;
 	}
 
-	/* FIXME IPV6 check! */
+	ed->addr->h_addr_ptrs[0] = (char *)ed->addr->host_addr;
+	ed->addr->h_addr_ptrs[1] = NULL;
 
-	/* fqdn */
-	for (n = ++p; *p != '\0' && !isspace((int)*p); p++);
-	if (*p == '\0') {
-		NWRAP_ERROR(("%s:invalid line[%s]: '%s'\n",
-			     __location__, line, n));
-		return false;
+	ed->ht.h_addr_list = ed->addr->h_addr_ptrs;
+
+	p++;
+
+	/*
+	 * FQDN
+	 */
+
+	/* Walk to first char */
+	for (n = p; *p != '_' && !isalnum((int) *p); p++) {
+		if (*p == '\0') {
+			NWRAP_ERROR(("%s:invalid line[%s]: '%s'\n",
+				    __location__, line, n));
+			return false;
+		}
 	}
+
+	for (n = p; !isspace((int)*p); p++) {
+		if (*p == '\0') {
+			NWRAP_ERROR(("%s:invalid line[%s]: '%s'\n",
+				    __location__, line, n));
+			return false;
+		}
+	}
+
 	*p = '\0';
 
-	ht->h_name = n;
+	ed->ht.h_name = n;
+
+	p++;
 
 	/* aliases */
-	ht->h_aliases = (char **)malloc(1 * sizeof(char));
-	if (ht->h_aliases == NULL) {
+	ed->ht.h_aliases = (char **)malloc(1 * sizeof(char *));
+	if (ed->ht.h_aliases == NULL) {
 		return false;
 	}
-	ht->h_aliases[0] = NULL;
+	ed->ht.h_aliases[0] = NULL;
 
 	/* FIXME Support aliases */
 
@@ -1341,14 +1380,11 @@ static void nwrap_he_unload(struct nwrap_cache *nwrap)
 
 	if (nwrap_he->list != NULL) {
 		for (i = 0; i < nwrap_he->num; i++) {
-			if (nwrap_he->list[i].h_name != NULL) {
-				free(nwrap_he->list[i].h_name);
+			if (nwrap_he->list[i].ht.h_aliases != NULL) {
+				free(nwrap_he->list[i].ht.h_aliases);
 			}
-			if (nwrap_he->list[i].h_addr_list != NULL) {
-				free(nwrap_he->list[i].h_addr_list);
-			}
-			if (nwrap_he->list[i].h_aliases != NULL) {
-				free(nwrap_he->list[i].h_aliases);
+			if (nwrap_he->list[i].addr != NULL) {
+				free(nwrap_he->list[i].addr);
 			}
 		}
 		free(nwrap_he->list);
@@ -1665,7 +1701,7 @@ static struct hostent *nwrap_files_gethostbyname(const char *name)
 	nwrap_files_cache_reload(nwrap_he_global.cache);
 
 	for (i = 0; i < nwrap_he_global.num; i++) {
-		he = &nwrap_he_global.list[i];
+		he = &nwrap_he_global.list[i].ht;
 
 		if (strcmp(he->h_name, name) == 0) {
 			NWRAP_DEBUG(("%s: name[%s] found\n",
@@ -1686,6 +1722,10 @@ static struct hostent *nwrap_files_gethostbyaddr(const void *addr,
 	const char *a;
 	int i;
 
+	(void) len; /* unused */
+
+	nwrap_files_cache_reload(nwrap_he_global.cache);
+
 	a = inet_ntop(type, addr, ip, sizeof(ip));
 	if (a == NULL) {
 		errno = EINVAL;
@@ -1695,16 +1735,14 @@ static struct hostent *nwrap_files_gethostbyaddr(const void *addr,
 	for (i = 0; i < nwrap_he_global.num; i++) {
 		int j;
 
-		he = &nwrap_he_global.list[i];
+		he = &nwrap_he_global.list[i].ht;
 
 		if (he->h_addrtype != type) {
 			continue;
 		}
 
-		for (j = 0; he->h_addr_list[j] != NULL; j++) {
-			if (strcmp(he->h_addr_list[j], a) == 0) {
-				return he;
-			}
+		if (memcmp(addr, he->h_addr_list[0], he->h_length) == 0) {
+			return he;
 		}
 	}
 
@@ -1731,7 +1769,7 @@ static struct hostent *nwrap_files_gethostent(void)
 		return NULL;
 	}
 
-	he = &nwrap_he_global.list[nwrap_he_global.idx++];
+	he = &nwrap_he_global.list[nwrap_he_global.idx++].ht;
 
 	NWRAP_VERBOSE(("%s: return hosts[%s]\n",
 		       __location__, he->h_name));

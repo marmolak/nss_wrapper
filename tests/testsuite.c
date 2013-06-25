@@ -834,7 +834,9 @@ static void test_nwrap_duplicates(void **state)
 
 static void test_nwrap_gethostbyname(void **state)
 {
+	char ip[INET_ADDRSTRLEN];
 	struct hostent *he;
+	const char *a;
 
 	(void) state; /* unused */
 
@@ -843,7 +845,11 @@ static void test_nwrap_gethostbyname(void **state)
 
 	assert_string_equal(he->h_name, "magrathea.galaxy.site");
 	assert_int_equal(he->h_addrtype, AF_INET);
-	assert_string_equal(he->h_addr_list[0], "127.0.0.11");
+
+	a = inet_ntop(AF_INET, he->h_addr_list[0], ip, sizeof(ip));
+	assert_non_null(a);
+
+	assert_string_equal(ip, "127.0.0.11");
 }
 
 static void test_nwrap_gethostbyaddr(void **state)
@@ -862,7 +868,7 @@ static void test_nwrap_gethostbyaddr(void **state)
 
 	assert_string_equal(he->h_name, "magrathea.galaxy.site");
 	assert_int_equal(he->h_addrtype, AF_INET);
-	assert_string_equal(he->h_addr_list[0], "127.0.0.11");
+	assert_memory_equal(&in, he->h_addr_list[0], he->h_length);
 }
 
 int main(void) {
