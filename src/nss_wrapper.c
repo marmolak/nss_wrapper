@@ -46,10 +46,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include <pwd.h>
 #include <grp.h>
 #include <nss.h>
+
+#include <netdb.h>
+#include <arpa/inet.h>
 
 #include <dlfcn.h>
 
@@ -360,6 +364,20 @@ struct nwrap_gr {
 struct nwrap_cache __nwrap_cache_gr;
 struct nwrap_gr nwrap_gr_global;
 
+static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line);
+static void nwrap_he_unload(struct nwrap_cache *nwrap);
+
+struct nwrap_he {
+	struct nwrap_cache *cache;
+
+	struct hostent *list;
+	int num;
+	int idx;
+};
+
+struct nwrap_cache __nwrap_cache_he;
+struct nwrap_he nwrap_he_global;
+
 static bool nwrap_gr_parse_line(struct nwrap_cache *nwrap, char *line);
 static void nwrap_gr_unload(struct nwrap_cache *nwrap);
 
@@ -625,6 +643,14 @@ static void nwrap_init(void)
 	nwrap_gr_global.cache->private_data = &nwrap_gr_global;
 	nwrap_gr_global.cache->parse_line = nwrap_gr_parse_line;
 	nwrap_gr_global.cache->unload = nwrap_gr_unload;
+
+	nwrap_he_global.cache = &__nwrap_cache_he;
+
+	nwrap_he_global.cache->path = getenv("NSS_WRAPPER_HOSTS");
+	nwrap_he_global.cache->fd = -1;
+	nwrap_he_global.cache->private_data = &nwrap_he_global;
+	nwrap_he_global.cache->parse_line = nwrap_he_parse_line;
+	nwrap_he_global.cache->unload = nwrap_he_unload;
 }
 
 static bool nwrap_enabled(void)
@@ -637,6 +663,18 @@ static bool nwrap_enabled(void)
 	}
 	if (nwrap_gr_global.cache->path == NULL ||
 	    nwrap_gr_global.cache->path[0] == '\0') {
+		return false;
+	}
+
+	return true;
+}
+
+static bool nwrap_hosts_enabled(void)
+{
+	nwrap_init();
+
+	if (nwrap_he_global.cache->path == NULL ||
+	    nwrap_he_global.cache->path[0] == '\0') {
 		return false;
 	}
 
@@ -1203,6 +1241,117 @@ static int nwrap_gr_copy_r(const struct group *src, struct group *dst,
 	return 0;
 }
 
+static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
+{
+	struct nwrap_he *nwrap_he = (struct nwrap_he *)nwrap->private_data;
+	struct in_addr dest;
+	struct hostent *ht;
+	size_t list_size;
+	char *p;
+	char *i;
+	char *n;
+
+	list_size = sizeof(*nwrap_he->list) * (nwrap_he->num + 1);
+	ht = (struct hostent *)realloc(nwrap_he->list, list_size);
+	if (ht == NULL) {
+		NWRAP_ERROR(("%s:realloc failed\n", __location__));
+		return false;
+	}
+	nwrap_he->list = ht;
+
+	ht->h_length = 0;
+
+	ht = &nwrap_he->list[nwrap_he->num];
+
+	i = line;
+
+	/* ip */
+	for (p = i; p != '\0' && !isspace((int)*p); p++);
+
+	if (*p == '\0') {
+		NWRAP_ERROR(("%s:invalid line[%s]: '%s'\n",
+			     __location__, line, i));
+		return false;
+	}
+	*p = '\0';
+
+	ht->h_addr_list = (char **)malloc((ht->h_length + 1) * sizeof(char));
+	if (ht->h_addr_list == NULL) {
+		NWRAP_ERROR(("%s:invalid line[%s]: '%s'\n",
+			     __location__, line, i));
+		return false;
+	}
+	ht->h_addr_list[ht->h_length] = i;
+
+	if (inet_pton(AF_INET, i, &dest)) {
+		ht->h_addrtype = AF_INET;
+#ifdef HAVE_IPV6
+	} else if (strchr(i, ':')) {
+		struct in6_addr dest6;
+
+		if (inet_pton(AF_INET6, i, &dest6)) {
+			ht->h_addrtype = AF_INET6;
+		}
+#endif
+	} else {
+		NWRAP_ERROR(("%s:invalid line[%s]: '%s'\n",
+			     __location__, line, i));
+		return false;
+	}
+
+	/* FIXME IPV6 check! */
+
+	/* fqdn */
+	for (n = ++p; *p != '\0' && !isspace((int)*p); p++);
+	if (*p == '\0') {
+		NWRAP_ERROR(("%s:invalid line[%s]: '%s'\n",
+			     __location__, line, n));
+		return false;
+	}
+	*p = '\0';
+
+	ht->h_name = n;
+
+	/* aliases */
+	ht->h_aliases = (char **)malloc(1 * sizeof(char));
+	if (ht->h_aliases == NULL) {
+		return false;
+	}
+	ht->h_aliases[0] = NULL;
+
+	/* FIXME Support aliases */
+
+	nwrap_he->num++;
+	return true;
+}
+
+static void nwrap_he_unload(struct nwrap_cache *nwrap)
+{
+	struct nwrap_he *nwrap_he =
+		(struct nwrap_he *)nwrap->private_data;
+	int i;
+
+	if (nwrap_he->list != NULL) {
+		for (i = 0; i < nwrap_he->num; i++) {
+			if (nwrap_he->list[i].h_name != NULL) {
+				free(nwrap_he->list[i].h_name);
+			}
+			if (nwrap_he->list[i].h_addr_list != NULL) {
+				free(nwrap_he->list[i].h_addr_list);
+			}
+			if (nwrap_he->list[i].h_aliases != NULL) {
+				free(nwrap_he->list[i].h_aliases);
+			}
+		}
+		free(nwrap_he->list);
+	}
+
+	nwrap_he->list = NULL;
+	nwrap_he->num = 0;
+	nwrap_he->idx = 0;
+}
+
+
 /* user functions */
 static struct passwd *nwrap_files_getpwnam(struct nwrap_backend *b,
 					   const char *name)
@@ -1497,6 +1646,38 @@ static void nwrap_files_endgrent(struct nwrap_backend *b)
 	(void) b; /* unused */
 
 	nwrap_gr_global.idx = 0;
+}
+
+/* hosts enum functions */
+static void nwrap_files_sethostent(void)
+{
+	nwrap_he_global.idx = 0;
+}
+
+static struct hostent *nwrap_files_gethostent(void)
+{
+	struct hostent *he;
+
+	if (nwrap_he_global.idx == 0) {
+		nwrap_files_cache_reload(nwrap_he_global.cache);
+	}
+
+	if (nwrap_he_global.idx >= nwrap_he_global.num) {
+		errno = ENOENT;
+		return NULL;
+	}
+
+	he = &nwrap_he_global.list[nwrap_he_global.idx++];
+
+	NWRAP_VERBOSE(("%s: return hosts[%s]\n",
+		       __location__, he->h_name));
+
+	return he;
+}
+
+static void nwrap_files_endhostent(void)
+{
+	nwrap_he_global.idx = 0;
 }
 
 /*

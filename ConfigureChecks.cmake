@@ -91,6 +91,38 @@ check_prototype_definition(getpwent_r
  "unistd.h;pwd.h"
  SOLARIS_GETGRENT_R)
 
+# IPV6
+check_c_source_compiles("
+    #include <stdlib.h>
+    #include <sys/socket.h>
+    #include <netdb.h>
+    #include <netinet/in.h>
+    #include <net/if.h>
+
+int main(void) {
+    struct sockaddr_storage sa_store;
+    struct addrinfo *ai = NULL;
+    struct in6_addr in6addr;
+    int idx = if_nametoindex(\"iface1\");
+    int s = socket(AF_INET6, SOCK_STREAM, 0);
+    int ret = getaddrinfo(NULL, NULL, NULL, &ai);
+    if (ret != 0) {
+        const char *es = gai_strerror(ret);
+    }
+
+    freeaddrinfo(ai);
+    {
+        int val = 1;
+#ifdef HAVE_LINUX_IPV6_V6ONLY_26
+#define IPV6_V6ONLY 26
+#endif
+        ret = setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY,
+                         (const void *)&val, sizeof(val));
+    }
+
+    return 0;
+}" HAVE_IPV6)
+
 check_library_exists(dl dlopen "" HAVE_LIBDL)
 if (HAVE_LIBDL)
     find_library(DLFCN_LIBRARY dl)

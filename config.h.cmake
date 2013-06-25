@@ -49,6 +49,8 @@
 #cmakedefine SOLARIS_GETPWENT_R 1
 #cmakedefine SOLARIS_GETGRENT_R 1
 
+#cmakedefine HAVE_IPV6 1
+
 /*************************** ENDIAN *****************************/
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
