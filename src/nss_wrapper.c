@@ -2914,10 +2914,14 @@ static int nwrap_convert_he_ai(const struct hostent *he,
 			struct sockaddr_in *sinp =
 				(struct sockaddr_in *) ai->ai_addr;
 
+			memset(sinp, 0, sizeof(struct sockaddr_in));
+
 			sinp->sin_port = port;
-			memcpy(&sinp->sin_addr, he->h_addr_list[0], he->h_length);
+			sinp->sin_family = AF_INET;
 
 			memset (sinp->sin_zero, '\0', sizeof (sinp->sin_zero));
+			memcpy(&sinp->sin_addr, he->h_addr_list[0], he->h_length);
+
 		}
 		break;
 #ifdef HAVE_IPV6
@@ -2926,8 +2930,9 @@ static int nwrap_convert_he_ai(const struct hostent *he,
 			struct sockaddr_in6 *sin6p =
 				(struct sockaddr_in6 *) ai->ai_addr;
 
+			memset(sin6p, 0, sizeof(struct sockaddr_in6));
+
 			sin6p->sin6_port = port;
-			sin6p->sin6_flowinfo = 0;
 
 			memcpy(&sin6p->sin6_addr, he->h_addr_list[0], he->h_length);
 		}
