@@ -134,6 +134,10 @@ struct nwrap_libc_fns {
 
 	struct hostent *(*_libc_gethostbyname)(const char *name);
 	struct hostent *(*_libc_gethostbyaddr)(const void *addr, socklen_t len, int type);
+
+	int (*_libc_getaddrinfo)(const char *node, const char *service,
+				 const struct addrinfo *hints,
+				 struct addrinfo **res);
 };
 
 struct nwrap_module_nss_fns {
@@ -599,6 +603,8 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		nwrap_libc_fn(r->libc, "gethostbyname");
 	*(void **) (&r->libc->fns->_libc_gethostbyaddr) =
 		nwrap_libc_fn(r->libc, "gethostbyaddr");
+	*(void **) (&r->libc->fns->_libc_getaddrinfo) =
+		nwrap_libc_fn(r->libc, "getaddrinfo");
 }
 
 static void nwrap_backend_init(struct nwrap_main *r)
@@ -2853,4 +2859,233 @@ struct hostent *gethostbyaddr(const void *addr,
 	}
 
 	return nwrap_gethostbyaddr(addr, len, type);
+}
+
+static const struct addrinfo default_hints =
+{
+	.ai_flags = AI_ADDRCONFIG|AI_V4MAPPED,
+	.ai_family = AF_UNSPEC,
+	.ai_socktype = 0,
+	.ai_protocol = 0,
+	.ai_addrlen = 0,
+	.ai_addr = NULL,
+	.ai_canonname = NULL,
+	.ai_next = NULL
+};
+
+static int nwrap_convert_he_ai(const struct hostent *he,
+			       unsigned short port,
+			       const struct addrinfo *hints,
+			       struct addrinfo **pai)
+{
+	struct addrinfo *ai;
+	socklen_t socklen;
+
+	switch (he->h_addrtype) {
+		case AF_INET:
+			socklen = sizeof(struct sockaddr_in);
+			break;
+#ifdef HAVE_IPV6
+		case AF_INET6:
+			socklen = sizeof(struct sockaddr_in6);
+			break;
+#endif
+	}
+
+	ai = (struct addrinfo *)malloc(sizeof(struct addrinfo) + socklen);
+	if (ai == NULL) {
+		return -1;
+	}
+
+	ai->ai_flags = 0;
+	ai->ai_family = he->h_addrtype;
+	ai->ai_socktype = hints->ai_socktype;
+	ai->ai_protocol = hints->ai_protocol;
+
+	ai->ai_addrlen = socklen;
+	ai->ai_addr = (void *)(ai + 1);
+
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+	ai->ai_addr->sa_len = socklen;
+#endif
+	switch (he->h_addrtype) {
+		case AF_INET:
+		{
+			struct sockaddr_in *sinp =
+				(struct sockaddr_in *) ai->ai_addr;
+
+			sinp->sin_port = port;
+			memcpy(&sinp->sin_addr, he->h_addr_list[0], he->h_length);
+
+			memset (sinp->sin_zero, '\0', sizeof (sinp->sin_zero));
+		}
+		break;
+#ifdef HAVE_IPV6
+		case AF_INET6:
+		{
+			struct sockaddr_in6 *sin6p =
+				(struct sockaddr_in6 *) ai->ai_addr;
+
+			sin6p->sin6_port = port;
+			sin6p->sin6_flowinfo = 0;
+
+			memcpy(&sin6p->sin6_addr, he->h_addr_list[0], he->h_length);
+		}
+		break;
+#endif
+	}
+
+	ai->ai_next = NULL;
+
+	ai->ai_canonname = strdup(he->h_name);
+	if (ai->ai_canonname == NULL) {
+		freeaddrinfo(ai);
+		return -1;
+	}
+
+	*pai = ai;
+	return 0;
+}
+
+/* We only support ip -> name */
+static int nwrap_getaddrinfo(const char *node,
+			     const char *service,
+			     const struct addrinfo *hints,
+			     struct addrinfo **res)
+{
+	struct addrinfo *ai = NULL;
+	struct addrinfo *p = NULL;
+	unsigned short port = 0;
+	struct hostent *he;
+	struct in_addr in;
+	int ret, rc, af;
+
+	if (node == NULL && service == NULL) {
+		return EAI_NONAME;
+	}
+
+	ret = nwrap_main_global->libc->fns->_libc_getaddrinfo(node,
+							      service,
+							      hints,
+							      &p);
+	if (ret == 0) {
+		*res = p;
+		switch (p->ai_family) {
+			case AF_INET:
+				{
+					struct sockaddr_in *sin =
+						(struct sockaddr_in *)p->ai_addr;
+
+					if (sin->sin_addr.s_addr == htonl(INADDR_LOOPBACK)) {
+						return ret;
+					}
+				}
+				break;
+#ifdef HAVE_IPV6
+			case AF_INET6:
+				{
+					struct sockaddr_in6 *sin6 =
+						(struct sockaddr_in6 *)p->ai_addr;
+
+					if (IN6_IS_ADDR_LOOPBACK(&sin6->sin6_addr)) {
+						return ret;
+					}
+				}
+				break;
+#endif
+		}
+	}
+
+	if (service != NULL && service[0] != '\0') {
+		if (isalnum((int)service[0])) {
+			port = (unsigned short)atoi(service);
+		} else {
+			struct servent *s;
+
+			s = getservbyname(service, NULL);
+			if (s != NULL) {
+				port = s->s_port;
+			}
+		}
+	}
+
+	if (hints == NULL) {
+		hints = &default_hints;
+	}
+
+	af = hints->ai_family;
+	if (af == AF_UNSPEC) {
+		af = AF_INET;
+	}
+
+	if (af == AF_INET) {
+		rc = inet_pton(af, node, &in);
+		if (rc <= 0 && hints->ai_family == AF_INET) {
+			return ret == 0 ? 0 : EAI_ADDRFAMILY;
+#if HAVE_IPV6
+		} else if (rc == 0 && hints->ai_family == AF_UNSPEC) {
+			af = AF_INET6;
+#endif
+		} else {
+			he = nwrap_gethostbyaddr(&in, sizeof(struct in_addr), af);
+			if (he != NULL) {
+				rc = nwrap_convert_he_ai(he, port, hints, &ai);
+			} else {
+				rc = EAI_NODATA;
+			}
+		}
+	}
+
+#ifdef HAVE_IPV6
+	if (af == AF_INET6) {
+		struct in6_addr in6;
+
+		rc =  inet_pton(af, node, &in6);
+		if (rc <= 0) {
+			return ret == 0 ? 0 : EAI_ADDRFAMILY;
+		}
+
+		he = nwrap_gethostbyaddr(&in6, sizeof(struct in6_addr), af);
+		if (he != NULL) {
+			rc = nwrap_convert_he_ai(he, port, hints, &ai);
+		} else {
+			rc = EAI_NODATA;
+		}
+	}
+#endif
+
+	if (rc < 0) {
+		return ret == 0 ? 0 : rc;
+	}
+
+	if (ai->ai_flags == 0) {
+		ai->ai_flags = hints->ai_flags;
+	}
+	if (ai->ai_socktype == 0) {
+		ai->ai_socktype = SOCK_DGRAM;
+	}
+	if (ai->ai_protocol == 0) {
+		ai->ai_protocol = 17; /* UDP */
+	}
+
+	if (ret == 0) {
+		freeaddrinfo(p);
+	}
+	*res = ai;
+
+	return 0;
+}
+
+int getaddrinfo(const char *node, const char *service,
+		const struct addrinfo *hints,
+		struct addrinfo **res)
+{
+	if (!nwrap_hosts_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_getaddrinfo(node,
+								       service,
+								       hints,
+								       res);
+	}
+
+	return nwrap_getaddrinfo(node, service, hints, res);
 }

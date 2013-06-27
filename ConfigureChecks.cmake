@@ -91,6 +91,9 @@ check_prototype_definition(getpwent_r
  "unistd.h;pwd.h"
  SOLARIS_GETGRENT_R)
 
+# STRUCT MEMBERS
+check_struct_has_member("struct sockaddr" sa_len "sys/socket.h netinet/in.h" HAVE_STRUCT_SOCKADDR_SA_LEN)
+
 # IPV6
 check_c_source_compiles("
     #include <stdlib.h>

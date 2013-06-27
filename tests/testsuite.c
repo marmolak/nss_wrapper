@@ -871,6 +871,149 @@ static void test_nwrap_gethostbyaddr(void **state)
 	assert_memory_equal(&in, he->h_addr_list[0], he->h_length);
 }
 
+static void test_nwrap_getaddrinfo(void **state)
+{
+	struct addrinfo hints;
+	struct addrinfo *res;
+	struct sockaddr_in *sinp;
+	struct sockaddr_in6 *sin6p;
+	char ip6[INET6_ADDRSTRLEN];
+	char *ip;
+	int rc;
+
+	/* IPv4 */
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
+	hints.ai_flags = AI_PASSIVE;    /* For wildcard IP address */
+	hints.ai_protocol = 0;          /* Any protocol */
+	hints.ai_canonname = NULL;
+	hints.ai_addr = NULL;
+	hints.ai_next = NULL;
+
+	rc = getaddrinfo("127.0.0.11", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+
+	assert_non_null(res->ai_canonname);
+	assert_string_equal(res->ai_canonname, "magrathea.galaxy.site");
+
+	assert_int_equal(res->ai_family, AF_INET);
+
+	sinp = (struct sockaddr_in *)res->ai_addr;
+	ip = inet_ntoa(sinp->sin_addr);
+
+	assert_string_equal(ip, "127.0.0.11");
+
+	freeaddrinfo(res);
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
+	hints.ai_flags = AI_PASSIVE;    /* For wildcard IP address */
+	hints.ai_protocol = 0;          /* Any protocol */
+	hints.ai_canonname = NULL;
+	hints.ai_addr = NULL;
+	hints.ai_next = NULL;
+
+	rc = getaddrinfo("::13", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+
+	assert_non_null(res->ai_canonname);
+	assert_string_equal(res->ai_canonname, "beteigeuze.galaxy.site");
+
+	assert_int_equal(res->ai_family, AF_INET6);
+
+	sin6p = (struct sockaddr_in6 *)res->ai_addr;
+	inet_ntop(AF_INET6, (void *)&sin6p->sin6_addr, ip6, sizeof(ip6));
+
+	assert_string_equal(ip6, "::13");
+
+	freeaddrinfo(res);
+}
+
+static void test_nwrap_getaddrinfo_any(void **state)
+{
+	struct addrinfo hints;
+	struct addrinfo *res;
+	struct sockaddr_in *sinp;
+	struct sockaddr_in6 *sin6p;
+	char ip6[INET6_ADDRSTRLEN];
+	char *ip;
+	int rc;
+
+	/* IPv4 */
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
+
+	rc = getaddrinfo("0.0.0.0", "389", &hints, &res);
+	assert_int_equal(rc, 0);
+
+	assert_int_equal(res->ai_family, AF_INET);
+	assert_int_equal(res->ai_socktype, SOCK_STREAM);
+
+	assert_null(res->ai_canonname);
+
+	sinp = (struct sockaddr_in *)res->ai_addr;
+	ip = inet_ntoa(sinp->sin_addr);
+
+	assert_string_equal(ip, "0.0.0.0");
+
+	freeaddrinfo(res);
+
+	/* IPv4 */
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_INET6;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
+
+	rc = getaddrinfo("::", "389", &hints, &res);
+	assert_int_equal(rc, 0);
+
+	assert_int_equal(res->ai_family, AF_INET6);
+	assert_int_equal(res->ai_socktype, SOCK_STREAM);
+
+	assert_null(res->ai_canonname);
+
+	sin6p = (struct sockaddr_in6 *)res->ai_addr;
+	inet_ntop(AF_INET6, (void *)&sin6p->sin6_addr, ip6, sizeof(ip6));
+
+	assert_string_equal(ip6, "::");
+
+	freeaddrinfo(res);
+}
+
+static void test_nwrap_getaddrinfo_local(void **state)
+{
+	struct addrinfo hints;
+	struct addrinfo *res;
+	struct sockaddr_in *sinp;
+	char *ip;
+	int rc;
+
+	/* IPv4 */
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_ADDRCONFIG;
+
+	rc = getaddrinfo("127.0.0.1", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+
+	assert_int_equal(res->ai_family, AF_INET);
+	assert_int_equal(res->ai_socktype, SOCK_STREAM);
+
+	assert_null(res->ai_canonname);
+
+	sinp = (struct sockaddr_in *)res->ai_addr;
+	ip = inet_ntoa(sinp->sin_addr);
+
+	assert_string_equal(ip, "127.0.0.1");
+
+	freeaddrinfo(res);
+}
+
 int main(void) {
 	int rc;
 
@@ -882,6 +1025,9 @@ int main(void) {
 		unit_test(test_nwrap_duplicates),
 		unit_test(test_nwrap_gethostbyname),
 		unit_test(test_nwrap_gethostbyaddr),
+		unit_test(test_nwrap_getaddrinfo),
+		unit_test(test_nwrap_getaddrinfo_any),
+		unit_test(test_nwrap_getaddrinfo_local),
 	};
 
 	rc = run_tests(tests);
