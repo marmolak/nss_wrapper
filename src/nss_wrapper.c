@@ -2970,13 +2970,15 @@ static int nwrap_getaddrinfo(const char *node,
 							      &p);
 	if (ret == 0) {
 		*res = p;
+
 		switch (p->ai_family) {
 			case AF_INET:
 				{
 					struct sockaddr_in *sin =
 						(struct sockaddr_in *)p->ai_addr;
 
-					if (sin->sin_addr.s_addr == htonl(INADDR_LOOPBACK)) {
+					if (sin->sin_addr.s_addr == htonl(INADDR_LOOPBACK) ||
+					    sin->sin_addr.s_addr == htonl(INADDR_ANY)) {
 						return ret;
 					}
 				}
@@ -2987,7 +2989,8 @@ static int nwrap_getaddrinfo(const char *node,
 					struct sockaddr_in6 *sin6 =
 						(struct sockaddr_in6 *)p->ai_addr;
 
-					if (IN6_IS_ADDR_LOOPBACK(&sin6->sin6_addr)) {
+					if (IN6_IS_ADDR_LOOPBACK(&sin6->sin6_addr) ||
+					    IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
 						return ret;
 					}
 				}
