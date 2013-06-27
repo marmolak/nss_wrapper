@@ -1014,6 +1014,37 @@ static void test_nwrap_getaddrinfo_local(void **state)
 	freeaddrinfo(res);
 }
 
+static void test_nwrap_getaddrinfo_name(void **state)
+{
+	struct addrinfo hints;
+	struct addrinfo *res;
+	struct sockaddr_in *sinp;
+	char *ip;
+	int rc;
+
+	/* IPv4 */
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_ADDRCONFIG;
+
+	rc = getaddrinfo("maximegalon.galaxy.site", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+
+	assert_int_equal(res->ai_family, AF_INET);
+	assert_int_equal(res->ai_socktype, SOCK_STREAM);
+
+	assert_non_null(res->ai_canonname);
+	assert_string_equal(res->ai_canonname, "maximegalon.galaxy.site");
+
+	sinp = (struct sockaddr_in *)res->ai_addr;
+	ip = inet_ntoa(sinp->sin_addr);
+
+	assert_string_equal(ip, "127.0.0.12");
+
+	freeaddrinfo(res);
+}
+
 int main(void) {
 	int rc;
 
@@ -1028,6 +1059,7 @@ int main(void) {
 		unit_test(test_nwrap_getaddrinfo),
 		unit_test(test_nwrap_getaddrinfo_any),
 		unit_test(test_nwrap_getaddrinfo_local),
+		unit_test(test_nwrap_getaddrinfo_name),
 	};
 
 	rc = run_tests(tests);

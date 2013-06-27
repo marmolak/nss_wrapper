@@ -2908,6 +2908,8 @@ static int nwrap_convert_he_ai(const struct hostent *he,
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
 	ai->ai_addr->sa_len = socklen;
 #endif
+	ai->ai_addr->sa_family = he->h_addrtype;
+
 	switch (he->h_addrtype) {
 		case AF_INET:
 		{
@@ -2916,7 +2918,7 @@ static int nwrap_convert_he_ai(const struct hostent *he,
 
 			memset(sinp, 0, sizeof(struct sockaddr_in));
 
-			sinp->sin_port = port;
+			sinp->sin_port = htons(port);
 			sinp->sin_family = AF_INET;
 
 			memset (sinp->sin_zero, '\0', sizeof (sinp->sin_zero));
@@ -2932,7 +2934,7 @@ static int nwrap_convert_he_ai(const struct hostent *he,
 
 			memset(sin6p, 0, sizeof(struct sockaddr_in6));
 
-			sin6p->sin6_port = port;
+			sin6p->sin6_port = htons(port);
 
 			memcpy(&sin6p->sin6_addr, he->h_addr_list[0], he->h_length);
 		}
@@ -2942,17 +2944,18 @@ static int nwrap_convert_he_ai(const struct hostent *he,
 
 	ai->ai_next = NULL;
 
-	ai->ai_canonname = strdup(he->h_name);
-	if (ai->ai_canonname == NULL) {
-		freeaddrinfo(ai);
-		return -1;
+	if (he->h_name) {
+		ai->ai_canonname = strdup(he->h_name);
+		if (ai->ai_canonname == NULL) {
+			freeaddrinfo(ai);
+			return -1;
+		}
 	}
 
 	*pai = ai;
 	return 0;
 }
 
-/* We only support ip -> name */
 static int nwrap_getaddrinfo(const char *node,
 			     const char *service,
 			     const struct addrinfo *hints,
@@ -2963,7 +2966,12 @@ static int nwrap_getaddrinfo(const char *node,
 	unsigned short port = 0;
 	struct hostent *he;
 	struct in_addr in;
-	int ret, rc, af;
+	bool is_addr_ipv4 = false;
+	bool is_addr_ipv6 = false;
+	int ret;
+	int rc;
+	int eai;
+	int af;
 
 	if (node == NULL && service == NULL) {
 		return EAI_NONAME;
@@ -3013,6 +3021,9 @@ static int nwrap_getaddrinfo(const char *node,
 			s = getservbyname(service, NULL);
 			if (s != NULL) {
 				port = s->s_port;
+			} else {
+				eai = EAI_SERVICE;
+				rc = -1;
 			}
 		}
 	}
@@ -3021,49 +3032,67 @@ static int nwrap_getaddrinfo(const char *node,
 		hints = &default_hints;
 	}
 
-	af = hints->ai_family;
-	if (af == AF_UNSPEC) {
+	if (hints->ai_family == AF_UNSPEC) {
 		af = AF_INET;
 	}
 
-	if (af == AF_INET) {
-		rc = inet_pton(af, node, &in);
-		if (rc <= 0 && hints->ai_family == AF_INET) {
-			return ret == 0 ? 0 : EAI_ADDRFAMILY;
-#if HAVE_IPV6
-		} else if (rc == 0 && hints->ai_family == AF_UNSPEC) {
-			af = AF_INET6;
-#endif
-		} else {
-			he = nwrap_gethostbyaddr(&in, sizeof(struct in_addr), af);
-			if (he != NULL) {
-				rc = nwrap_convert_he_ai(he, port, hints, &ai);
-			} else {
-				rc = EAI_NODATA;
-			}
+	rc = inet_pton(af, node, &in);
+	if (rc == 1) {
+		is_addr_ipv4 = true;
+		if (af == AF_UNSPEC) {
+			af = AF_INET;
 		}
+#ifdef HAVE_IPV6
+	} else {
+		struct in6_addr in6;
+
+		af = AF_INET6;
+
+		rc = inet_pton(af, node, &in6);
+		if (rc == 1) {
+			is_addr_ipv6 = true;
+		}
+#endif
 	}
 
+	if (is_addr_ipv4) {
+		he = nwrap_gethostbyaddr(&in, sizeof(struct in_addr), af);
+		if (he != NULL) {
+			rc = nwrap_convert_he_ai(he, port, hints, &ai);
+		} else {
+			eai = EAI_NODATA;
+			rc = -1;
+		}
 #ifdef HAVE_IPV6
-	if (af == AF_INET6) {
+	} else if (is_addr_ipv6) {
 		struct in6_addr in6;
 
 		rc =  inet_pton(af, node, &in6);
 		if (rc <= 0) {
-			return ret == 0 ? 0 : EAI_ADDRFAMILY;
+			eai = EAI_ADDRFAMILY;
+			return ret == 0 ? 0 : eai;
 		}
 
 		he = nwrap_gethostbyaddr(&in6, sizeof(struct in6_addr), af);
 		if (he != NULL) {
 			rc = nwrap_convert_he_ai(he, port, hints, &ai);
 		} else {
-			rc = EAI_NODATA;
+			eai = EAI_NODATA;
+			rc = -1;
+		}
+#endif
+	} else {
+		he = nwrap_gethostbyname(node);
+		if (he != NULL) {
+			rc = nwrap_convert_he_ai(he, port, hints, &ai);
+		} else {
+			eai = EAI_NODATA;
+			rc = -1;
 		}
 	}
-#endif
 
 	if (rc < 0) {
-		return ret == 0 ? 0 : rc;
+		return ret == 0 ? 0 : eai;
 	}
 
 	if (ai->ai_flags == 0) {
