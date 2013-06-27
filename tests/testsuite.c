@@ -956,6 +956,9 @@ static void test_nwrap_getaddrinfo_any(void **state)
 	assert_null(res->ai_canonname);
 
 	sinp = (struct sockaddr_in *)res->ai_addr;
+
+	assert_int_equal(389, htons(sinp->sin_port));
+
 	ip = inet_ntoa(sinp->sin_addr);
 
 	assert_string_equal(ip, "0.0.0.0");
@@ -977,6 +980,9 @@ static void test_nwrap_getaddrinfo_any(void **state)
 	assert_null(res->ai_canonname);
 
 	sin6p = (struct sockaddr_in6 *)res->ai_addr;
+
+	assert_int_equal(389, htons(sin6p->sin6_port));
+
 	inet_ntop(AF_INET6, (void *)&sin6p->sin6_addr, ip6, sizeof(ip6));
 
 	assert_string_equal(ip6, "::");
