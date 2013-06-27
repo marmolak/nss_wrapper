@@ -2815,12 +2815,12 @@ static struct hostent *nwrap_gethostbyname(const char *name)
 {
 	struct hostent *he;
 
-	he = nwrap_main_global->libc->fns->_libc_gethostbyname(name);
+	he = nwrap_files_gethostbyname(name);
 	if (he != NULL) {
 		return he;
 	}
 
-	return nwrap_files_gethostbyname(name);
+	return nwrap_main_global->libc->fns->_libc_gethostbyname(name);
 }
 
 struct hostent *gethostbyname(const char *name)
@@ -2837,12 +2837,12 @@ static struct hostent *nwrap_gethostbyaddr(const void *addr,
 {
 	struct hostent *he;
 
-	he = nwrap_main_global->libc->fns->_libc_gethostbyaddr(addr, len, type);
+	he = nwrap_files_gethostbyaddr(addr, len, type);
 	if (he != NULL) {
 		return he;
 	}
 
-	return nwrap_files_gethostbyaddr(addr, len, type);
+	return nwrap_main_global->libc->fns->_libc_gethostbyaddr(addr, len, type);
 }
 
 struct hostent *gethostbyaddr(const void *addr,
