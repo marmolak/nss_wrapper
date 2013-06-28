@@ -1745,7 +1745,7 @@ static struct hostent *nwrap_files_gethostbyname(const char *name)
 
 		he = &nwrap_he_global.list[i].ht;
 
-		if (strcmp(he->h_name, name) == 0) {
+		if (strcasecmp(he->h_name, name) == 0) {
 			NWRAP_DEBUG(("%s: name[%s] found\n",
 				     __location__, name));
 			return he;
@@ -1756,7 +1756,7 @@ static struct hostent *nwrap_files_gethostbyname(const char *name)
 		}
 
 		for (j = 0; he->h_aliases[j] != NULL; j++) {
-			if (strcmp(he->h_aliases[j], name) == 0) {
+			if (strcasecmp(he->h_aliases[j], name) == 0) {
 				NWRAP_DEBUG(("%s: name[%s] found\n",
 					     __location__, name));
 				return he;

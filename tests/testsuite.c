@@ -1056,7 +1056,7 @@ static void test_nwrap_getaddrinfo_name(void **state)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_ADDRCONFIG;
 
-	rc = getaddrinfo("magrathea", NULL, &hints, &res);
+	rc = getaddrinfo("MAGRATHEA", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
 
 	assert_int_equal(res->ai_family, AF_INET);
