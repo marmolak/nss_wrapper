@@ -544,6 +544,11 @@ static void *nwrap_libc_fn(struct nwrap_libc *c, const char *fn_name)
 static void nwrap_libc_init(struct nwrap_main *r)
 {
 	unsigned int i;
+	int flags = RTLD_LAZY;
+
+#ifdef RTLD_DEEPBIND
+	flags |= RTLD_DEEPBIND;
+#endif
 
 	r->libc = malloc(sizeof(struct nwrap_libc));
 	if (r->libc == NULL) {
@@ -555,7 +560,7 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		char soname[256] = {0};
 
 		snprintf(soname, sizeof(soname), "%s.%u", LIBC_NAME, i);
-		r->libc->handle = dlopen(soname, RTLD_LAZY);
+		r->libc->handle = dlopen(soname, flags);
 	}
 
 	if (r->libc->handle == NULL) {
