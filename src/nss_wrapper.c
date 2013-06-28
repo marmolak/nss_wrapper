@@ -1270,6 +1270,7 @@ static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
 	struct nwrap_he *nwrap_he = (struct nwrap_he *)nwrap->private_data;
 	struct nwrap_entdata *ed;
 	size_t list_size;
+	bool do_aliases = true;
 	char *p;
 	char *i;
 	char *n;
@@ -1353,9 +1354,8 @@ static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
 
 	for (n = p; !isspace((int)*p); p++) {
 		if (*p == '\0') {
-			NWRAP_ERROR(("%s:invalid line[%s]: '%s'\n",
-				    __location__, line, n));
-			return false;
+			do_aliases = false;
+			break;
 		}
 	}
 
@@ -1363,14 +1363,20 @@ static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
 
 	ed->ht.h_name = n;
 
-	p++;
+	ed->ht.h_aliases = NULL;
 
-	/* aliases */
-	ed->ht.h_aliases = (char **)malloc(1 * sizeof(char *));
-	if (ed->ht.h_aliases == NULL) {
-		return false;
+	/*
+	 * Aliases
+	 */
+	if (do_aliases) {
+		p++;
+
+		ed->ht.h_aliases = (char **)malloc(1 * sizeof(char *));
+		if (ed->ht.h_aliases == NULL) {
+			return false;
+		}
+		ed->ht.h_aliases[0] = NULL;
 	}
-	ed->ht.h_aliases[0] = NULL;
 
 	/* FIXME Support aliases */
 
