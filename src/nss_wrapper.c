@@ -1271,6 +1271,7 @@ static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
 	struct nwrap_entdata *ed;
 	size_t list_size;
 	bool do_aliases = true;
+	int aliases_count = 0;
 	char *p;
 	char *i;
 	char *n;
@@ -1368,17 +1369,44 @@ static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
 	/*
 	 * Aliases
 	 */
-	if (do_aliases) {
+	while (do_aliases) {
+		char **aliases;
+		char *a;
+
 		p++;
 
-		ed->ht.h_aliases = (char **)malloc(1 * sizeof(char *));
-		if (ed->ht.h_aliases == NULL) {
+		/* Walk to first char */
+		for (a = p; *p != '_' && !isalnum((int) *p); p++) {
+			if (*p == '\0') {
+				do_aliases = false;
+				break;
+			}
+		}
+		/* Only trailing spaces are left */
+		if (!do_aliases) {
+			break;
+		}
+
+		for (a = p; !isspace((int)*p); p++) {
+			if (*p == '\0') {
+				do_aliases = false;
+				break;
+			}
+		}
+
+		*p = '\0';
+
+		aliases = realloc(ed->ht.h_aliases, sizeof(char *) * (aliases_count + 2));
+		if (aliases == NULL) {
 			return false;
 		}
-		ed->ht.h_aliases[0] = NULL;
-	}
+		ed->ht.h_aliases = aliases;
 
-	/* FIXME Support aliases */
+		aliases[aliases_count] = a;
+		aliases[aliases_count + 1] = NULL;
+
+		aliases_count++;
+	}
 
 	nwrap_he->num++;
 	return true;
@@ -1713,12 +1741,26 @@ static struct hostent *nwrap_files_gethostbyname(const char *name)
 	nwrap_files_cache_reload(nwrap_he_global.cache);
 
 	for (i = 0; i < nwrap_he_global.num; i++) {
+		int j;
+
 		he = &nwrap_he_global.list[i].ht;
 
 		if (strcmp(he->h_name, name) == 0) {
 			NWRAP_DEBUG(("%s: name[%s] found\n",
 				     __location__, name));
 			return he;
+		}
+
+		if (he->h_aliases == NULL) {
+			continue;
+		}
+
+		for (j = 0; he->h_aliases[j] != NULL; j++) {
+			if (strcmp(he->h_aliases[j], name) == 0) {
+				NWRAP_DEBUG(("%s: name[%s] found\n",
+					     __location__, name));
+				return he;
+			}
 		}
 	}
 

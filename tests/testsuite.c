@@ -1049,6 +1049,28 @@ static void test_nwrap_getaddrinfo_name(void **state)
 	assert_string_equal(ip, "127.0.0.12");
 
 	freeaddrinfo(res);
+
+	/* IPv4 */
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_ADDRCONFIG;
+
+	rc = getaddrinfo("magrathea", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+
+	assert_int_equal(res->ai_family, AF_INET);
+	assert_int_equal(res->ai_socktype, SOCK_STREAM);
+
+	assert_non_null(res->ai_canonname);
+	assert_string_equal(res->ai_canonname, "magrathea.galaxy.site");
+
+	sinp = (struct sockaddr_in *)res->ai_addr;
+	ip = inet_ntoa(sinp->sin_addr);
+
+	assert_string_equal(ip, "127.0.0.11");
+
+	freeaddrinfo(res);
 }
 
 int main(void) {
