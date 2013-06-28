@@ -2942,7 +2942,7 @@ static int nwrap_convert_he_ai(const struct hostent *he,
 
 	ai = (struct addrinfo *)malloc(sizeof(struct addrinfo) + socklen);
 	if (ai == NULL) {
-		return -1;
+		return EAI_MEMORY;
 	}
 
 	ai->ai_flags = 0;
@@ -2996,7 +2996,7 @@ static int nwrap_convert_he_ai(const struct hostent *he,
 		ai->ai_canonname = strdup(he->h_name);
 		if (ai->ai_canonname == NULL) {
 			freeaddrinfo(ai);
-			return -1;
+			return EAI_MEMORY;
 		}
 	}
 
@@ -3125,6 +3125,7 @@ static int nwrap_getaddrinfo(const char *node,
 		he = nwrap_gethostbyaddr(&in6, sizeof(struct in6_addr), af);
 		if (he != NULL) {
 			rc = nwrap_convert_he_ai(he, port, hints, &ai);
+			eai = rc;
 		} else {
 			eai = EAI_NODATA;
 			rc = -1;
@@ -3134,6 +3135,7 @@ static int nwrap_getaddrinfo(const char *node,
 		he = nwrap_gethostbyname(node);
 		if (he != NULL) {
 			rc = nwrap_convert_he_ai(he, port, hints, &ai);
+			eai = rc;
 		} else {
 			eai = EAI_NODATA;
 			rc = -1;
@@ -3144,19 +3146,43 @@ static int nwrap_getaddrinfo(const char *node,
 		return ret == 0 ? 0 : eai;
 	}
 
+	if (ret == 0) {
+		freeaddrinfo(p);
+	}
+
 	if (ai->ai_flags == 0) {
 		ai->ai_flags = hints->ai_flags;
 	}
 	if (ai->ai_socktype == 0) {
 		ai->ai_socktype = SOCK_DGRAM;
 	}
-	if (ai->ai_protocol == 0) {
+	if (ai->ai_protocol == 0 && ai->ai_socktype == SOCK_DGRAM) {
 		ai->ai_protocol = 17; /* UDP */
+	} else if (ai->ai_protocol == 0 && ai->ai_socktype == SOCK_STREAM) {
+		ai->ai_protocol = 6; /* TCP */
 	}
 
-	if (ret == 0) {
-		freeaddrinfo(p);
+	/* Add second ai */
+	rc = nwrap_convert_he_ai(he, port, hints, &ai->ai_next);
+	if (rc < 0) {
+		freeaddrinfo(ai);
+		return rc;
 	}
+
+	if (ai->ai_next->ai_flags == 0) {
+		ai->ai_next->ai_flags = hints->ai_flags;
+	}
+	if (ai->ai_socktype == SOCK_DGRAM) {
+		ai->ai_next->ai_socktype = SOCK_STREAM;
+	} else if (ai->ai_socktype == SOCK_STREAM) {
+		ai->ai_next->ai_socktype = SOCK_DGRAM;
+	}
+	if (ai->ai_next->ai_socktype == SOCK_DGRAM) {
+		ai->ai_next->ai_protocol = 6; /* UDP */
+	} else if (ai->ai_next->ai_socktype == SOCK_STREAM) {
+		ai->ai_next->ai_protocol = 17; /* TCP */
+	}
+
 	*res = ai;
 
 	return 0;
