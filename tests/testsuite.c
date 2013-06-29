@@ -176,10 +176,17 @@ static bool copy_group(const struct group *grp,
 	g->gr_gid	= grp->gr_gid;
 	g->gr_mem	= NULL;
 
-	for (i=0; grp->gr_mem && grp->gr_mem[i]; i++) {
-		g->gr_mem = realloc(g->gr_mem, i + 2);
+	for (i = 0; grp->gr_mem != NULL && grp->gr_mem[i] != NULL; i++) {
+		char **mem;
+
+		mem = realloc(g->gr_mem, sizeof(char *) * (i + 2));
+		assert_non_null(mem);
+		g->gr_mem = mem;
+
 		g->gr_mem[i] = strdup(grp->gr_mem[i]);
-		g->gr_mem[i+1] = NULL;
+		assert_non_null(g->gr_mem[i]);
+
+		g->gr_mem[i + 1] = NULL;
 	}
 
 	return true;
@@ -626,7 +633,7 @@ static bool test_nwrap_user_in_group(const struct passwd *pwd,
 {
 	int i;
 
-	for (i=0; grp->gr_mem && grp->gr_mem[i] != NULL; i++) {
+	for (i = 0; grp->gr_mem != NULL && grp->gr_mem[i] != NULL; i++) {
 		if (strcmp(grp->gr_mem[i], pwd->pw_name) == 0) {
 			return true;
 		}
