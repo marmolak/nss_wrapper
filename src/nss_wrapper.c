@@ -3183,9 +3183,9 @@ static int nwrap_getaddrinfo(const char *node,
 		ai->ai_next->ai_socktype = SOCK_DGRAM;
 	}
 	if (ai->ai_next->ai_socktype == SOCK_DGRAM) {
-		ai->ai_next->ai_protocol = 6; /* UDP */
+		ai->ai_next->ai_protocol = 17; /* UDP */
 	} else if (ai->ai_next->ai_socktype == SOCK_STREAM) {
-		ai->ai_next->ai_protocol = 17; /* TCP */
+		ai->ai_next->ai_protocol = 6; /* TCP */
 	}
 
 	*res = ai;
