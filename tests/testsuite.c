@@ -67,6 +67,35 @@ static bool copy_passwd(const struct passwd *pwd, struct passwd *p)
 	return true;
 }
 
+static void free_passwd(const struct passwd *p)
+{
+	if (p->pw_name != NULL) {
+		free(p->pw_name);
+	}
+	if (p->pw_passwd != NULL) {
+		free(p->pw_passwd);
+	}
+	if (p->pw_gecos != NULL) {
+		free(p->pw_gecos);
+	}
+	if (p->pw_dir != NULL) {
+		free(p->pw_dir);
+	}
+	if (p->pw_shell != NULL) {
+		free(p->pw_shell);
+	}
+}
+
+static void free_passwds(struct passwd *pwds, size_t num_pwds)
+{
+	size_t i;
+
+	for(i = 0; i < num_pwds; i++) {
+		free_passwd(&pwds[i]);
+	}
+	free(pwds);
+}
+
 static void print_passwd(struct passwd *pwd)
 {
 	DEBUG("%s:%s:%lu:%lu:%s:%s:%s\n",
@@ -190,6 +219,35 @@ static bool copy_group(const struct group *grp,
 	}
 
 	return true;
+}
+
+static void free_group(const struct group *g)
+{
+	if (g->gr_name != NULL) {
+		free(g->gr_name);
+	}
+	if (g->gr_passwd != NULL) {
+		free(g->gr_passwd);
+	}
+	if (g->gr_mem != NULL) {
+		int i;
+
+		for (i = 0; g->gr_mem[i] != NULL; i++) {
+			free(g->gr_mem[i]);
+		}
+
+		free(g->gr_mem);
+	}
+}
+
+static void free_groups(struct group *grps, size_t num_grps)
+{
+	size_t i;
+
+	for(i = 0; i < num_grps; i++) {
+		free_group(&grps[i]);
+	}
+	free(grps);
 }
 
 static void print_group(struct group *grp)
@@ -395,7 +453,11 @@ static bool test_nwrap_passwd(void)
 		test_nwrap_getpwuid(pwd[i].pw_uid, &pwd2);
 		assert_passwd_equal(&pwd[i], &pwd2);
 		assert_passwd_equal(&pwd1, &pwd2);
+
+		free_passwd(&pwd1);
+		free_passwd(&pwd2);
 	}
+	free_passwds(pwd, num_pwd);
 
 	return true;
 }
@@ -415,7 +477,11 @@ static void test_nwrap_passwd_r(void)
 		assert_passwd_equal(&pwd[i], &pwd2);
 
 		assert_passwd_equal(&pwd1, &pwd2);
+
+		free_passwd(&pwd1);
+		free_passwd(&pwd2);
 	}
+	free_passwds(pwd, num_pwd);
 }
 
 static bool test_nwrap_passwd_r_cross(void)
@@ -441,7 +507,13 @@ static bool test_nwrap_passwd_r_cross(void)
 		assert_passwd_equal(&pwd[i], &pwd4);
 
 		assert_passwd_equal(&pwd3, &pwd4);
+
+		free_passwd(&pwd1);
+		free_passwd(&pwd2);
+		free_passwd(&pwd3);
+		free_passwd(&pwd4);
 	}
+	free_passwds(pwd, num_pwd);
 
 	return true;
 }
@@ -540,7 +612,11 @@ static bool test_nwrap_group(void)
 		assert_group_equal(&grp[i], &grp2);
 
 		assert_group_equal(&grp1, &grp2);
+
+		free_group(&grp1);
+		free_group(&grp2);
 	}
+	free_groups(grp, num_grp);
 
 	return true;
 }
@@ -560,7 +636,11 @@ static bool test_nwrap_group_r(void)
 		assert_group_equal(&grp[i], &grp2);
 
 		assert_group_equal(&grp1, &grp2);
+
+		free_group(&grp1);
+		free_group(&grp2);
 	}
+	free_groups(grp, num_grp);
 
 	return true;
 }
@@ -589,7 +669,12 @@ static bool test_nwrap_group_r_cross(void)
 
 		assert_group_equal(&grp3, &grp4);
 
+		free_group(&grp1);
+		free_group(&grp2);
+		free_group(&grp3);
+		free_group(&grp4);
 	}
+	free_groups(grp, num_grp);
 
 	return true;
 }
@@ -661,6 +746,7 @@ static bool test_nwrap_membership_user(const struct passwd *pwd,
 	for (g=0; g < num_user_groups; g++) {
 		test_nwrap_getgrgid(user_groups[g], NULL);
 	}
+	free(user_groups);
 
 	for (i=0; i < num_grp; i++) {
 		struct group grp = grp_array[i];
@@ -678,6 +764,7 @@ static bool test_nwrap_membership_user(const struct passwd *pwd,
 				      pwd->pw_name);
 				primary_group_had_user_member = true;
 			}
+			free_group(&current_grp);
 
 			continue;
 		}
@@ -713,6 +800,8 @@ static void test_nwrap_membership(void **state)
 	for (i=0; i < num_pwd; i++) {
 		test_nwrap_membership_user(&pwd[i], grp, num_grp);
 	}
+	free_passwds(pwd, num_pwd);
+	free_groups(grp, num_grp);
 }
 
 static void test_nwrap_enumeration(void **state)
@@ -787,6 +876,7 @@ static bool test_nwrap_passwd_duplicates(void)
 			duplicates++;
 		}
 	}
+	free_passwds(pwd, num_pwd);
 
 	assert_false(duplicates);
 
@@ -819,6 +909,7 @@ static bool test_nwrap_group_duplicates(void)
 			duplicates++;
 		}
 	}
+	free_groups(grp, num_grp);
 
 	assert_false(duplicates);
 
@@ -1030,7 +1121,7 @@ static void test_nwrap_getaddrinfo_local(void **state)
 static void test_nwrap_getaddrinfo_name(void **state)
 {
 	struct addrinfo hints;
-	struct addrinfo *res;
+	struct addrinfo *res = NULL;
 	struct sockaddr_in *sinp;
 	char *ip;
 	int rc;
