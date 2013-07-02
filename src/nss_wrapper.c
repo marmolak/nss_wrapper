@@ -3079,6 +3079,10 @@ static int nwrap_getaddrinfo(const char *node,
 		return EAI_NONAME;
 	}
 
+	if ((hints->ai_flags & AI_CANONNAME) && node == NULL) {
+		return EAI_BADFLAGS;
+	}
+
 	ret = nwrap_main_global->libc->fns->_libc_getaddrinfo(node,
 							      service,
 							      hints,
