@@ -3139,7 +3139,8 @@ static int nwrap_getaddrinfo(const char *node,
 		hints = &default_hints;
 	}
 
-	if (hints->ai_family == AF_UNSPEC) {
+	af = hints->ai_family;
+	if (af == AF_UNSPEC) {
 		af = AF_INET;
 	}
 
