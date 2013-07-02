@@ -4,6 +4,15 @@ include_directories(${CMAKE_BINARY_DIR})
 add_library(nss_wrapper SHARED nss_wrapper.c)
 target_link_libraries(nss_wrapper ${NSSWRAP_REQUIRED_LIBRARIES})
 
+set_target_properties(
+  nss_wrapper
+    PROPERTIES
+      VERSION
+        ${LIBRARY_VERSION}
+      SOVERSION
+        ${LIBRARY_SOVERSION}
+)
+
 install(
   TARGETS
     nss_wrapper
