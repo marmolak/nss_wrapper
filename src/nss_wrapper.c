@@ -132,6 +132,10 @@ struct nwrap_libc_fns {
 	void (*_libc_endgrent)(void);
 	int (*_libc_getgrouplist)(const char *user, gid_t group, id_t *groups, int *ngroups);
 
+	void (*_libc_sethostent)(int stayopen);
+	struct hostent *(*_libc_gethostent)(void);
+	void (*_libc_endhostent)(void);
+
 	struct hostent *(*_libc_gethostbyname)(const char *name);
 	struct hostent *(*_libc_gethostbyaddr)(const void *addr, socklen_t len, int type);
 
@@ -604,8 +608,13 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	*(void **) (&r->libc->fns->_libc_getgrouplist) = nwrap_libc_fn(r->libc, "getgrouplist");
 #endif
 
-	*(void **) (&r->libc->fns->_libc_gethostbyname) =
-		nwrap_libc_fn(r->libc, "gethostbyname");
+	*(void **) (&r->libc->fns->_libc_sethostent) =
+		nwrap_libc_fn(r->libc, "sethostent");
+	*(void **) (&r->libc->fns->_libc_gethostent) =
+		nwrap_libc_fn(r->libc, "gethostent");
+	*(void **) (&r->libc->fns->_libc_endhostent) =
+		nwrap_libc_fn(r->libc, "endhostent");
+
 	*(void **) (&r->libc->fns->_libc_gethostbyaddr) =
 		nwrap_libc_fn(r->libc, "gethostbyaddr");
 	*(void **) (&r->libc->fns->_libc_getaddrinfo) =
@@ -2878,6 +2887,51 @@ int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
 	return nwrap_getgrouplist(user, group, groups, ngroups);
 }
 #endif
+
+/**********************************************************
+ * NETDB
+ **********************************************************/
+
+static void nwrap_sethostent(int stayopen) {
+	(void) stayopen; /* ignored */
+
+	nwrap_files_sethostent();
+}
+
+void sethostent(int stayopen) {
+	if (!nwrap_hosts_enabled()) {
+		nwrap_main_global->libc->fns->_libc_sethostent(stayopen);
+		return;
+	}
+
+	nwrap_sethostent(stayopen);
+}
+
+static struct hostent *nwrap_gethostent(void)
+{
+	return nwrap_files_gethostent();
+}
+
+struct hostent *gethostent(void) {
+	if (!nwrap_hosts_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_gethostent();
+	}
+
+	return nwrap_gethostent();
+}
+
+static void nwrap_endhostent(void) {
+	nwrap_files_endhostent();
+}
+
+void endhostent(void) {
+	if (!nwrap_hosts_enabled()) {
+		nwrap_main_global->libc->fns->_libc_endhostent();
+		return;
+	}
+
+	nwrap_endhostent();
+}
 
 static struct hostent *nwrap_gethostbyname(const char *name)
 {
