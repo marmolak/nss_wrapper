@@ -1171,6 +1171,43 @@ static void test_nwrap_getaddrinfo_name(void **state)
 	freeaddrinfo(res);
 }
 
+static void test_nwrap_getaddrinfo_service(void **state)
+{
+	struct addrinfo hints;
+	struct addrinfo *res = NULL;
+	struct sockaddr_in *sinp;
+	char *ip;
+	int rc;
+
+	/* IPv4 */
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_ADDRCONFIG;
+
+	rc = getaddrinfo("magrathea", "wurst", &hints, &res);
+	assert_int_equal(rc, EAI_SERVICE);
+
+	/* Check ldap port */
+	rc = getaddrinfo("magrathea", "ldap", &hints, &res);
+	assert_int_equal(rc, 0);
+
+	assert_int_equal(res->ai_family, AF_INET);
+	assert_int_equal(res->ai_socktype, SOCK_STREAM);
+
+	assert_non_null(res->ai_canonname);
+	assert_string_equal(res->ai_canonname, "magrathea.galaxy.site");
+
+	sinp = (struct sockaddr_in *)res->ai_addr;
+	ip = inet_ntoa(sinp->sin_addr);
+
+	assert_string_equal(ip, "127.0.0.11");
+
+	assert_int_equal(ntohs(sinp->sin_port), 389);
+
+	freeaddrinfo(res);
+}
+
 static void test_nwrap_getaddrinfo_null(void **state)
 {
 	struct addrinfo hints;
@@ -1222,6 +1259,7 @@ int main(void) {
 		unit_test(test_nwrap_getaddrinfo_any),
 		unit_test(test_nwrap_getaddrinfo_local),
 		unit_test(test_nwrap_getaddrinfo_name),
+		unit_test(test_nwrap_getaddrinfo_service),
 		unit_test(test_nwrap_getaddrinfo_null),
 	};
 

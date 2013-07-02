@@ -3127,17 +3127,27 @@ static int nwrap_getaddrinfo(const char *node,
 	}
 
 	if (service != NULL && service[0] != '\0') {
-		if (isalnum((int)service[0])) {
+		if (isdigit((int)service[0])) {
 			port = (unsigned short)atoi(service);
 		} else {
+			const char *proto = NULL;
 			struct servent *s;
 
-			s = getservbyname(service, NULL);
+			if (hints->ai_protocol != 0) {
+				struct protoent *pent;
+
+				pent = getprotobynumber(hints->ai_protocol);
+				if (pent != NULL) {
+					proto = pent->p_name;
+				}
+			}
+
+			s = getservbyname(service, proto);
 			if (s != NULL) {
-				port = s->s_port;
+				port = ntohs(s->s_port);
 			} else {
-				eai = EAI_SERVICE;
-				rc = -1;
+				freeaddrinfo(p);
+				return EAI_SERVICE;
 			}
 		}
 	}
