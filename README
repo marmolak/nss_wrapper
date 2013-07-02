@@ -1,2 +1,17 @@
-nss_wrapper - Wrapper for the user and group NSS API allowing the use
-              of other data sources.
+NSS wrapper library
+====================
+
+This is a wrapper for the user, group and hosts NSS API allowing the use of
+other data sources.
+
+To be able to use it you need to set the following environment variables:
+
+LD_PRELOAD=libnss_wrapper.so
+NSS_WRAPPER_PASSWD=/path/to/your/passwd
+NSS_WRAPPER_GROUP=/path/to/your/group
+
+NSS_WRAPPER_HOSTS=/path/to/your/hosts
+
+You can either enable user and group resolving or only hosts. If you don't know
+how the passwd file should look like, please read 'man 5 passwd', for the
+groups file 'man 5 group' and for hosts 'man 5 hosts'.
