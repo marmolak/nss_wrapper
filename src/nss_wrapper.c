@@ -1792,8 +1792,6 @@ static struct hostent *nwrap_files_gethostbyaddr(const void *addr,
 	}
 
 	for (i = 0; i < nwrap_he_global.num; i++) {
-		int j;
-
 		he = &nwrap_he_global.list[i].ht;
 
 		if (he->h_addrtype != type) {
