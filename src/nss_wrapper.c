@@ -3072,9 +3072,9 @@ static int nwrap_getaddrinfo(const char *node,
 	struct in_addr in;
 	bool is_addr_ipv4 = false;
 	bool is_addr_ipv6 = false;
+	int eai = EAI_SYSTEM;
 	int ret;
 	int rc;
-	int eai;
 	int af;
 
 	if (node == NULL && service == NULL) {
