@@ -2538,7 +2538,12 @@ static int nwrap_initgroups(const char *user, gid_t group)
 
 	for (i=0; i < nwrap_main_global->num_backends; i++) {
 		struct nwrap_backend *b = &nwrap_main_global->backends[i];
-		return b->ops->nw_initgroups(b, user, group);
+		int rc;
+
+		rc = b->ops->nw_initgroups(b, user, group);
+		if (rc == 0) {
+			return 0;
+		}
 	}
 
 	errno = ENOENT;
