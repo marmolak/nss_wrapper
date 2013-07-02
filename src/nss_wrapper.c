@@ -2870,8 +2870,6 @@ int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
 
 static struct hostent *nwrap_gethostbyname(const char *name)
 {
-	struct hostent *he;
-
 	return nwrap_files_gethostbyname(name);
 }
 
@@ -2887,8 +2885,6 @@ struct hostent *gethostbyname(const char *name)
 static struct hostent *nwrap_gethostbyaddr(const void *addr,
 					   socklen_t len, int type)
 {
-	struct hostent *he;
-
 	return nwrap_files_gethostbyaddr(addr, len, type);
 }
 
