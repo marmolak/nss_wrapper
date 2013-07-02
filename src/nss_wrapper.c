@@ -2992,6 +2992,8 @@ static int nwrap_convert_he_ai(const struct hostent *he,
 			socklen = sizeof(struct sockaddr_in6);
 			break;
 #endif
+		default:
+			return EAI_FAMILY;
 	}
 
 	ai = (struct addrinfo *)malloc(sizeof(struct addrinfo) + socklen);
