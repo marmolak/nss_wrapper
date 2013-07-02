@@ -789,6 +789,8 @@ static void test_nwrap_membership(void **state)
 	size_t num_grp;
 	size_t i;
 
+	(void) state; /* unused */
+
 	if (!old_pwd || !old_group) {
 		DEBUG("ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
 		return;
@@ -809,6 +811,8 @@ static void test_nwrap_enumeration(void **state)
 	const char *old_pwd = getenv("NSS_WRAPPER_PASSWD");
 	const char *old_group = getenv("NSS_WRAPPER_GROUP");
 
+	(void) state; /* unused */
+
 	if (!old_pwd || !old_group) {
 		DEBUG("ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
 		return;
@@ -822,6 +826,8 @@ static void test_nwrap_reentrant_enumeration(void **state)
 {
 	const char *old_pwd = getenv("NSS_WRAPPER_PASSWD");
 	const char *old_group = getenv("NSS_WRAPPER_GROUP");
+
+	(void) state; /* unused */
 
 	if (!old_pwd || !old_group) {
 		DEBUG("ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
@@ -838,6 +844,8 @@ static void test_nwrap_reentrant_enumeration_crosschecks(void **state)
 {
 	const char *old_pwd = getenv("NSS_WRAPPER_PASSWD");
 	const char *old_group = getenv("NSS_WRAPPER_GROUP");
+
+	(void) state; /* unused */
 
 	if (!old_pwd || !old_group) {
 		DEBUG("ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
@@ -921,6 +929,8 @@ static void test_nwrap_duplicates(void **state)
 	const char *old_pwd = getenv("NSS_WRAPPER_PASSWD");
 	const char *old_group = getenv("NSS_WRAPPER_GROUP");
 
+	(void) state; /* unused */
+
 	if (!old_pwd || !old_group) {
 		DEBUG("ENV NSS_WRAPPER_PASSWD or NSS_WRAPPER_GROUP not set\n");
 		return;
@@ -978,6 +988,8 @@ static void test_nwrap_getaddrinfo(void **state)
 	char ip6[INET6_ADDRSTRLEN];
 	char *ip;
 	int rc;
+
+	(void) state; /* unused */
 
 	/* IPv4 */
 	memset(&hints, 0, sizeof(struct addrinfo));
@@ -1039,6 +1051,8 @@ static void test_nwrap_getaddrinfo_any(void **state)
 	char *ip;
 	int rc;
 
+	(void) state; /* unused */
+
 	/* IPv4 */
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_INET;
@@ -1096,6 +1110,8 @@ static void test_nwrap_getaddrinfo_local(void **state)
 	char *ip;
 	int rc;
 
+	(void) state; /* unused */
+
 	/* IPv4 */
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
@@ -1125,6 +1141,8 @@ static void test_nwrap_getaddrinfo_name(void **state)
 	struct sockaddr_in *sinp;
 	char *ip;
 	int rc;
+
+	(void) state; /* unused */
 
 	/* IPv4 */
 	memset(&hints, 0, sizeof(struct addrinfo));
@@ -1178,6 +1196,8 @@ static void test_nwrap_getaddrinfo_service(void **state)
 	struct sockaddr_in *sinp;
 	char *ip;
 	int rc;
+
+	(void) state; /* unused */
 
 	/* IPv4 */
 	memset(&hints, 0, sizeof(struct addrinfo));
