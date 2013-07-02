@@ -1876,6 +1876,7 @@ static int nwrap_module_getpwnam_r(struct nwrap_backend *b,
 
 	(void) b; /* unused */
 	(void) pwdst; /* unused */
+	(void) pwdstp; /* unused */
 
 	if (!b->fns->_nss_getpwnam_r) {
 		return NSS_STATUS_NOTFOUND;
@@ -1929,6 +1930,8 @@ static int nwrap_module_getpwuid_r(struct nwrap_backend *b,
 				   char *buf, size_t buflen, struct passwd **pwdstp)
 {
 	int ret;
+
+	(void) pwdstp; /* unused */
 
 	if (!b->fns->_nss_getpwuid_r) {
 		return ENOENT;
@@ -1990,6 +1993,8 @@ static int nwrap_module_getpwent_r(struct nwrap_backend *b,
 				   size_t buflen, struct passwd **pwdstp)
 {
 	int ret;
+
+	(void) pwdstp; /* unused */
 
 	if (!b->fns->_nss_getpwent_r) {
 		return ENOENT;
@@ -2082,6 +2087,8 @@ static int nwrap_module_getgrnam_r(struct nwrap_backend *b,
 {
 	int ret;
 
+	(void) grdstp; /* unused */
+
 	if (!b->fns->_nss_getgrnam_r) {
 		return ENOENT;
 	}
@@ -2150,6 +2157,8 @@ static int nwrap_module_getgrgid_r(struct nwrap_backend *b,
 				   char *buf, size_t buflen, struct group **grdstp)
 {
 	int ret;
+
+	(void) grdstp; /* unused */
 
 	if (!b->fns->_nss_getgrgid_r) {
 		return ENOENT;
@@ -2227,6 +2236,8 @@ static int nwrap_module_getgrent_r(struct nwrap_backend *b,
 				   size_t buflen, struct group **grdstp)
 {
 	int ret;
+
+	(void) grdstp; /* unused */
 
 	if (!b->fns->_nss_getgrent_r) {
 		return ENOENT;
