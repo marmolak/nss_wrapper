@@ -170,6 +170,10 @@ struct nwrap_libc_fns {
 	int (*_libc_getaddrinfo)(const char *node, const char *service,
 				 const struct addrinfo *hints,
 				 struct addrinfo **res);
+	int (*_libc_getnameinfo)(const struct sockaddr *sa, socklen_t salen,
+				 char *host, size_t hostlen,
+				 char *serv, size_t servlen,
+				 int flags);
 };
 
 struct nwrap_module_nss_fns {
@@ -647,6 +651,8 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		nwrap_libc_fn(r->libc, "gethostbyaddr");
 	*(void **) (&r->libc->fns->_libc_getaddrinfo) =
 		nwrap_libc_fn(r->libc, "getaddrinfo");
+	*(void **) (&r->libc->fns->_libc_getnameinfo) =
+		nwrap_libc_fn(r->libc, "getnameinfo");
 }
 
 static void nwrap_backend_init(struct nwrap_main *r)
@@ -3326,4 +3332,95 @@ int getaddrinfo(const char *node, const char *service,
 	}
 
 	return nwrap_getaddrinfo(node, service, hints, res);
+}
+
+static int nwrap_getnameinfo(const struct sockaddr *sa, socklen_t salen,
+			     char *host, size_t hostlen,
+			     char *serv, size_t servlen,
+			     int flags)
+{
+	struct hostent *he;
+	struct servent *service;
+	const char *proto;
+	const void *addr;
+	socklen_t addrlen;
+	uint16_t port;
+	sa_family_t type;
+
+	if (host == NULL && serv == NULL)
+		return EAI_NONAME;
+
+	type = sa->sa_family;
+	switch (type) {
+		case AF_INET:
+			if (salen < sizeof(struct sockaddr_in))
+				return EAI_FAMILY;
+			addr = &((struct sockaddr_in *)sa)->sin_addr;
+			addrlen = sizeof(((struct sockaddr_in *)sa)->sin_addr);
+			port = ntohs(((struct sockaddr_in *)sa)->sin_port);
+			break;
+#ifdef HAVE_IPV6
+		case AF_INET6:
+			if (salen < sizeof(struct sockaddr_in6))
+				return EAI_FAMILY;
+			addr = &((struct sockaddr_in6 *)sa)->sin6_addr;
+			addrlen = sizeof(((struct sockaddr_in6 *)sa)->sin6_addr);
+			port = ntohs(((struct sockaddr_in6 *)sa)->sin6_port);
+			break;
+#endif
+		default:
+			return EAI_FAMILY;
+	}
+
+	if (host != NULL) {
+		he = NULL;
+		if ((flags & NI_NUMERICHOST) == 0) {
+			he = nwrap_files_gethostbyaddr(addr, addrlen, type);
+			if ((flags & NI_NAMEREQD) && (he == NULL || he->h_name == NULL))
+				return EAI_NONAME;
+		}
+		if (he != NULL && he->h_name != NULL) {
+			if (strlen(he->h_name) >= hostlen)
+				return EAI_OVERFLOW;
+			strcpy(host, he->h_name);
+			if (flags & NI_NOFQDN)
+				host[strcspn(host, ".")] = '\0';
+		} else {
+			if (inet_ntop(type, addr, host, hostlen) == NULL)
+				return (errno == ENOSPC) ? EAI_OVERFLOW : EAI_FAIL;
+		}
+	}
+
+	if (serv != NULL) {
+		service = NULL;
+		if ((flags & NI_NUMERICSERV) == 0) {
+			proto = (flags & NI_DGRAM) ? "udp" : "tcp";
+			service = getservbyport(htons(port), proto);
+		}
+		if (service != NULL) {
+			if (strlen(service->s_name) >= servlen)
+				return EAI_OVERFLOW;
+			strcpy(serv, service->s_name);
+		} else {
+			if (snprintf(serv, servlen, "%u", port) >= (int) servlen)
+				return EAI_OVERFLOW;
+		}
+	}
+
+	return 0;
+}
+
+int getnameinfo(const struct sockaddr *sa, socklen_t salen,
+		char *host, socklen_t hostlen,
+		char *serv, socklen_t servlen,
+		int flags)
+{
+	if (!nwrap_hosts_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_getnameinfo(sa, salen,
+								       host, hostlen,
+								       serv, servlen,
+								       flags);
+	}
+
+	return nwrap_getnameinfo(sa, salen, host, hostlen, serv, servlen, flags);
 }
