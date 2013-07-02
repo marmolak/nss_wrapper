@@ -1171,6 +1171,42 @@ static void test_nwrap_getaddrinfo_name(void **state)
 	freeaddrinfo(res);
 }
 
+static void test_nwrap_getaddrinfo_null(void **state)
+{
+	struct addrinfo hints;
+	struct addrinfo *res = NULL;
+	struct sockaddr_in6 *sin6p;
+	char ip6[INET6_ADDRSTRLEN];
+	int rc;
+
+	(void) state; /* unused */
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_protocol = 17;
+	hints.ai_flags = AI_ADDRCONFIG;
+
+	rc = getaddrinfo(NULL, NULL, &hints, &res);
+	assert_int_equal(rc, EAI_NONAME);
+
+	/* Check dns service */
+	rc = getaddrinfo(NULL, "domain", &hints, &res);
+	assert_int_equal(rc, 0);
+
+	assert_null(res->ai_canonname);
+
+	assert_int_equal(res->ai_family, AF_INET6);
+	assert_int_equal(res->ai_socktype, SOCK_DGRAM);
+
+	sin6p = (struct sockaddr_in6 *)res->ai_addr;
+	inet_ntop(AF_INET6, (void *)&sin6p->sin6_addr, ip6, sizeof(ip6));
+
+	assert_string_equal(ip6, "::1");
+
+	freeaddrinfo(res);
+}
+
 int main(void) {
 	int rc;
 
@@ -1186,6 +1222,7 @@ int main(void) {
 		unit_test(test_nwrap_getaddrinfo_any),
 		unit_test(test_nwrap_getaddrinfo_local),
 		unit_test(test_nwrap_getaddrinfo_name),
+		unit_test(test_nwrap_getaddrinfo_null),
 	};
 
 	rc = run_tests(tests);

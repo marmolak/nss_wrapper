@@ -3121,6 +3121,11 @@ static int nwrap_getaddrinfo(const char *node,
 		}
 	}
 
+	/* If no node has been specified, let glibc deal with it */
+	if (node == NULL) {
+		return ret;
+	}
+
 	if (service != NULL && service[0] != '\0') {
 		if (isalnum((int)service[0])) {
 			port = (unsigned short)atoi(service);
