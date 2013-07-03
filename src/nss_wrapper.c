@@ -3086,10 +3086,6 @@ static int nwrap_getaddrinfo(const char *node,
 		return EAI_NONAME;
 	}
 
-	if ((hints->ai_flags & AI_CANONNAME) && node == NULL) {
-		return EAI_BADFLAGS;
-	}
-
 	ret = nwrap_main_global->libc->fns->_libc_getaddrinfo(node,
 							      service,
 							      hints,
@@ -3131,6 +3127,14 @@ static int nwrap_getaddrinfo(const char *node,
 		return ret;
 	}
 
+	if (hints == NULL) {
+		hints = &default_hints;
+	}
+
+	if ((hints->ai_flags & AI_CANONNAME) && node == NULL) {
+		return EAI_BADFLAGS;
+	}
+
 	if (service != NULL && service[0] != '\0') {
 		if (isdigit((int)service[0])) {
 			port = (unsigned short)atoi(service);
@@ -3155,10 +3159,6 @@ static int nwrap_getaddrinfo(const char *node,
 				return EAI_SERVICE;
 			}
 		}
-	}
-
-	if (hints == NULL) {
-		hints = &default_hints;
 	}
 
 	af = hints->ai_family;

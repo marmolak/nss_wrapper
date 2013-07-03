@@ -1262,6 +1262,14 @@ static void test_nwrap_getaddrinfo_null(void **state)
 	assert_string_equal(ip6, "::1");
 
 	freeaddrinfo(res);
+
+	/* Check dns service */
+	rc = getaddrinfo("magrathea", "domain", NULL, &res);
+	assert_int_equal(rc, 0);
+
+	assert_non_null(res->ai_canonname);
+
+	freeaddrinfo(res);
 }
 
 int main(void) {
