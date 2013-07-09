@@ -50,7 +50,9 @@
 
 #include <pwd.h>
 #include <grp.h>
+#ifdef HAVE_NSS_H
 #include <nss.h>
+#endif
 
 #include <netdb.h>
 #include <arpa/inet.h>
