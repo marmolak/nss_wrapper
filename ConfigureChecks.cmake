@@ -51,6 +51,7 @@ check_include_file(sys/types.h HAVE_SYS_TYPES_H)
 check_include_file(pwd.h HAVE_PWD_H)
 check_include_file(grp.h HAVE_GRP_H)
 check_include_file(nss.h HAVE_NSS_H)
+check_include_file(nss_common.h HAVE_NSS_COMMON_H)
 
 # FUNCTIONS
 check_function_exists(strncpy HAVE_STRNCPY)
