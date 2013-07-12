@@ -3286,25 +3286,27 @@ static int nwrap_getaddrinfo(const char *node,
 		ai->ai_protocol = 6; /* TCP */
 	}
 
-	/* Add second ai */
-	rc = nwrap_convert_he_ai(he, port, hints, &ai->ai_next);
-	if (rc < 0) {
-		freeaddrinfo(ai);
-		return rc;
-	}
+	if (hints->ai_socktype == 0) {
+		/* Add second ai */
+		rc = nwrap_convert_he_ai(he, port, hints, &ai->ai_next);
+		if (rc < 0) {
+			freeaddrinfo(ai);
+			return rc;
+		}
 
-	if (ai->ai_next->ai_flags == 0) {
-		ai->ai_next->ai_flags = hints->ai_flags;
-	}
-	if (ai->ai_socktype == SOCK_DGRAM) {
-		ai->ai_next->ai_socktype = SOCK_STREAM;
-	} else if (ai->ai_socktype == SOCK_STREAM) {
-		ai->ai_next->ai_socktype = SOCK_DGRAM;
-	}
-	if (ai->ai_next->ai_socktype == SOCK_DGRAM) {
-		ai->ai_next->ai_protocol = 17; /* UDP */
-	} else if (ai->ai_next->ai_socktype == SOCK_STREAM) {
-		ai->ai_next->ai_protocol = 6; /* TCP */
+		if (ai->ai_next->ai_flags == 0) {
+			ai->ai_next->ai_flags = hints->ai_flags;
+		}
+		if (ai->ai_socktype == SOCK_DGRAM) {
+			ai->ai_next->ai_socktype = SOCK_STREAM;
+		} else if (ai->ai_socktype == SOCK_STREAM) {
+			ai->ai_next->ai_socktype = SOCK_DGRAM;
+		}
+		if (ai->ai_next->ai_socktype == SOCK_DGRAM) {
+			ai->ai_next->ai_protocol = 17; /* UDP */
+		} else if (ai->ai_next->ai_socktype == SOCK_STREAM) {
+			ai->ai_next->ai_protocol = 6; /* TCP */
+		}
 	}
 
 	*res = ai;
