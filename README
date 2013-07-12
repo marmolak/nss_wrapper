@@ -12,6 +12,8 @@ NSS_WRAPPER_GROUP=/path/to/your/group
 
 NSS_WRAPPER_HOSTS=/path/to/your/hosts
 
+NSS_WRAPPER_HOSTNAME=test.example.org
+
 You can either enable user and group resolving or only hosts. If you don't know
 how the passwd file should look like, please read 'man 5 passwd', for the
 groups file 'man 5 group' and for hosts 'man 5 hosts'.

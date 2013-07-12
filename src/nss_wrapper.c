@@ -174,6 +174,7 @@ struct nwrap_libc_fns {
 				 char *host, size_t hostlen,
 				 char *serv, size_t servlen,
 				 int flags);
+	int (*_libc_gethostname)(char *name, size_t len);
 };
 
 struct nwrap_module_nss_fns {
@@ -653,6 +654,8 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		nwrap_libc_fn(r->libc, "getaddrinfo");
 	*(void **) (&r->libc->fns->_libc_getnameinfo) =
 		nwrap_libc_fn(r->libc, "getnameinfo");
+	*(void **) (&r->libc->fns->_libc_gethostname) =
+		nwrap_libc_fn(r->libc, "gethostname");
 }
 
 static void nwrap_backend_init(struct nwrap_main *r)
@@ -747,6 +750,17 @@ static bool nwrap_hosts_enabled(void)
 
 	if (nwrap_he_global.cache->path == NULL ||
 	    nwrap_he_global.cache->path[0] == '\0') {
+		return false;
+	}
+
+	return true;
+}
+
+static bool nwrap_hostname_enabled(void)
+{
+	nwrap_init();
+
+	if (getenv("NSS_WRAPPER_HOSTNAME") == NULL) {
 		return false;
 	}
 
@@ -3428,4 +3442,22 @@ int getnameinfo(const struct sockaddr *sa, socklen_t salen,
 	}
 
 	return nwrap_getnameinfo(sa, salen, host, hostlen, serv, servlen, flags);
+}
+
+static int nwrap_gethostname(char *name, size_t len)
+{
+	const char *hostname = getenv("NSS_WRAPPER_HOSTNAME");
+	if (strlen(hostname) >= len)
+		return ENAMETOOLONG;
+	strcpy(name, hostname);
+	return 0;
+}
+
+int gethostname(char *name, size_t len)
+{
+	if (!nwrap_hostname_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_gethostname(name, len);
+	}
+
+	return nwrap_gethostname(name, len);
 }
