@@ -175,6 +175,14 @@ struct nwrap_libc_fns {
 				 char *serv, size_t servlen,
 				 int flags);
 	int (*_libc_gethostname)(char *name, size_t len);
+	int (*_libc_gethostbyname_r)(const char *name,
+				     struct hostent *ret,
+				     char *buf, size_t buflen,
+				     struct hostent **result, int *h_errnop);
+	int (*_libc_gethostbyaddr_r)(const void *addr, socklen_t len, int type,
+				     struct hostent *ret,
+				     char *buf, size_t buflen,
+				     struct hostent **result, int *h_errnop);
 };
 
 struct nwrap_module_nss_fns {
@@ -656,6 +664,10 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		nwrap_libc_fn(r->libc, "getnameinfo");
 	*(void **) (&r->libc->fns->_libc_gethostname) =
 		nwrap_libc_fn(r->libc, "gethostname");
+	*(void **) (&r->libc->fns->_libc_gethostbyname_r) =
+		nwrap_libc_fn(r->libc, "gethostbyname_r");
+	*(void **) (&r->libc->fns->_libc_gethostbyaddr_r) =
+		nwrap_libc_fn(r->libc, "gethostbyaddr_r");
 }
 
 static void nwrap_backend_init(struct nwrap_main *r)
@@ -1830,6 +1842,36 @@ static struct hostent *nwrap_files_gethostbyname(const char *name)
 	return NULL;
 }
 
+static int nwrap_gethostbyname_r(const char *name,
+				 struct hostent *ret,
+				 char *buf, size_t buflen,
+				 struct hostent **result, int *h_errnop)
+{
+	*result = nwrap_files_gethostbyname(name);
+	if (*result != NULL) {
+		memset(buf, '\0', buflen);
+		*ret = **result;
+		return 0;
+	} else {
+		*h_errnop = h_errno;
+		return -1;
+	}
+}
+
+int gethostbyname_r(const char *name,
+		    struct hostent *ret,
+		    char *buf, size_t buflen,
+		    struct hostent **result, int *h_errnop)
+{
+	if (!nwrap_hosts_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_gethostbyname_r(name, ret,
+									   buf, buflen,
+									   result, h_errnop);
+	}
+
+	return nwrap_gethostbyname_r(name, ret, buf, buflen, result, h_errnop);
+}
+
 static struct hostent *nwrap_files_gethostbyaddr(const void *addr,
 						 socklen_t len, int type)
 {
@@ -1862,6 +1904,36 @@ static struct hostent *nwrap_files_gethostbyaddr(const void *addr,
 
 	errno = ENOENT;
 	return NULL;
+}
+
+static int nwrap_gethostbyaddr_r(const void *addr, socklen_t len, int type,
+				 struct hostent *ret,
+				 char *buf, size_t buflen,
+				 struct hostent **result, int *h_errnop)
+{
+	*result = nwrap_files_gethostbyaddr(addr, len, type);
+	if (*result != NULL) {
+		memset(buf, '\0', buflen);
+		*ret = **result;
+		return 0;
+	} else {
+		*h_errnop = h_errno;
+		return -1;
+	}
+}
+
+int gethostbyaddr_r(const void *addr, socklen_t len, int type,
+		    struct hostent *ret,
+		    char *buf, size_t buflen,
+		    struct hostent **result, int *h_errnop)
+{
+	if (!nwrap_hosts_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_gethostbyaddr_r(addr, len, type, ret,
+									   buf, buflen,
+									   result, h_errnop);
+	}
+
+	return nwrap_gethostbyaddr_r(addr, len, type, ret, buf, buflen, result, h_errnop);
 }
 
 /* hosts enum functions */
