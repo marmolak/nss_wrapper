@@ -3204,7 +3204,7 @@ static int nwrap_getaddrinfo(const char *node,
 	}
 
 	if (is_addr_ipv4) {
-		he = nwrap_gethostbyaddr(&in, sizeof(struct in_addr), af);
+		he = nwrap_files_gethostbyaddr(&in, sizeof(struct in_addr), af);
 		if (he != NULL) {
 			rc = nwrap_convert_he_ai(he, port, hints, &ai);
 		} else {
@@ -3221,7 +3221,9 @@ static int nwrap_getaddrinfo(const char *node,
 			return ret == 0 ? 0 : eai;
 		}
 
-		he = nwrap_gethostbyaddr(&in6, sizeof(struct in6_addr), af);
+		he = nwrap_files_gethostbyaddr(&in6,
+					       sizeof(struct in6_addr),
+					       af);
 		if (he != NULL) {
 			rc = nwrap_convert_he_ai(he, port, hints, &ai);
 			eai = rc;
@@ -3231,7 +3233,7 @@ static int nwrap_getaddrinfo(const char *node,
 		}
 #endif
 	} else {
-		he = nwrap_gethostbyname(node);
+		he = nwrap_files_gethostbyname(node);
 		if (he != NULL) {
 			rc = nwrap_convert_he_ai(he, port, hints, &ai);
 			eai = rc;
