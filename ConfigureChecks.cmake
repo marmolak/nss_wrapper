@@ -93,6 +93,12 @@ check_prototype_definition(getpwent_r
  "unistd.h;pwd.h"
  SOLARIS_GETGRENT_R)
 
+check_prototype_definition(setgrent
+ "int setgrent(void)"
+ "-1"
+ "unistd.h;grp.h"
+ BSD_SETGRENT)
+
 # STRUCT MEMBERS
 check_struct_has_member("struct sockaddr" sa_len "sys/socket.h netinet/in.h" HAVE_STRUCT_SOCKADDR_SA_LEN)
 

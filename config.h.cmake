@@ -50,6 +50,7 @@
 
 #cmakedefine SOLARIS_GETPWENT_R 1
 #cmakedefine SOLARIS_GETGRENT_R 1
+#cmakedefine BSD_SETGRENT 1
 
 #cmakedefine HAVE_STRUCT_SOCKADDR_SA_LEN 1
 #cmakedefine HAVE_IPV6 1
