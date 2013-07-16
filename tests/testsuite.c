@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
@@ -679,6 +681,7 @@ static bool test_nwrap_group_r_cross(void)
 	return true;
 }
 
+#ifdef HAVE_GETGROUPLIST
 static bool test_nwrap_getgrouplist(const char *user,
 				    gid_t gid,
 				    gid_t **gids_p,
@@ -805,6 +808,7 @@ static void test_nwrap_membership(void **state)
 	free_passwds(pwd, num_pwd);
 	free_groups(grp, num_grp);
 }
+#endif /* HAVE_GETGROUPLIST */
 
 static void test_nwrap_enumeration(void **state)
 {
@@ -1279,7 +1283,9 @@ int main(void) {
 		unit_test(test_nwrap_enumeration),
 		unit_test(test_nwrap_reentrant_enumeration),
 		unit_test(test_nwrap_reentrant_enumeration_crosschecks),
+#ifdef HAVE_GETGROUPLIST
 		unit_test(test_nwrap_membership),
+#endif
 		unit_test(test_nwrap_duplicates),
 		unit_test(test_nwrap_gethostbyname),
 		unit_test(test_nwrap_gethostbyaddr),
