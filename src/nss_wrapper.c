@@ -54,6 +54,7 @@
 
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 
 #include <dlfcn.h>
 
@@ -90,6 +91,14 @@ typedef nss_status_t NSS_STATUS;
 
 #ifndef _PUBLIC_
 #define _PUBLIC_
+#endif
+
+#ifndef EAI_NODATA
+#define EAI_NODATA EAI_NONAME
+#endif
+
+#ifndef EAI_ADDRFAMILY
+#define EAI_ADDRFAMILY EAI_FAMILY
 #endif
 
 #if 0
