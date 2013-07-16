@@ -3194,7 +3194,9 @@ static int nwrap_getaddrinfo(const char *node,
 			if (s != NULL) {
 				port = ntohs(s->s_port);
 			} else {
-				freeaddrinfo(p);
+				if (p != NULL) {
+					freeaddrinfo(p);
+				}
 				return EAI_SERVICE;
 			}
 		}
