@@ -158,7 +158,7 @@ struct nwrap_libc_fns {
 	int (*_libc_getgrent_r)(struct group *group, char *buf, size_t buflen, struct group **result);
 #endif
 	void (*_libc_endgrent)(void);
-	int (*_libc_getgrouplist)(const char *user, gid_t group, id_t *groups, int *ngroups);
+	int (*_libc_getgrouplist)(const char *user, gid_t group, gid_t *groups, int *ngroups);
 
 	void (*_libc_sethostent)(int stayopen);
 	struct hostent *(*_libc_gethostent)(void);
