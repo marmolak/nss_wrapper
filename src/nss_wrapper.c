@@ -2726,13 +2726,16 @@ void setgrent(void)
 {
 	if (!nwrap_enabled()) {
 		nwrap_main_global->libc->fns->_libc_setgrent();
-		return;
+		goto out;
 	}
 
 	nwrap_setgrent();
 
+out:
 #ifdef BSD_SETGRENT
 	return 0;
+#else
+	return;
 #endif
 }
 
