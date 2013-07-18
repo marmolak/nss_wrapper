@@ -5,6 +5,7 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -20,7 +21,8 @@
 static void test_nwrap_gethostname(void **state)
 {
 	const char *hostname = "milliways";
-	char host[256] = {0};
+	char sys_host[256] = {0};
+	char host[16] = {0};
 	int rc;
 
 	(void) state; /* unused */
@@ -33,7 +35,18 @@ static void test_nwrap_gethostname(void **state)
 
 	assert_string_equal(host, hostname);
 
+	rc = setenv(NSS_WRAPPER_HOSTNAME_ENV, "this_hostname_is_too_long", 1);
+	assert_int_equal(rc, 0);
+
+	rc = gethostname(host, sizeof(host));
+	assert_int_equal(rc, -1);
+	assert_int_equal(errno, ENAMETOOLONG);
+
 	unsetenv(NSS_WRAPPER_HOSTNAME_ENV);
+
+	rc = gethostname(sys_host, sizeof(sys_host));
+	assert_int_equal(rc, 0);
+
 }
 
 static void test_nwrap_gethostbyname(void **state)
