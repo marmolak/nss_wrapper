@@ -3447,9 +3447,12 @@ int getnameinfo(const struct sockaddr *sa, socklen_t salen,
 static int nwrap_gethostname(char *name, size_t len)
 {
 	const char *hostname = getenv("NSS_WRAPPER_HOSTNAME");
-	if (strlen(hostname) >= len)
+
+	if (strlen(hostname) >= len) {
 		return ENAMETOOLONG;
-	strcpy(name, hostname);
+	}
+	snprintf(name, len, "%s", hostname);
+
 	return 0;
 }
 
