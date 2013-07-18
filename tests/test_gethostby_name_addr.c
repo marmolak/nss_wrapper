@@ -118,6 +118,35 @@ static void test_nwrap_gethostbyname_r(void **state)
 }
 #endif
 
+#ifdef HAVE_GETHOSTBYADDR_R
+static void test_nwrap_gethostbyaddr_r(void **state)
+{
+	char buf[1024] = {0};
+	struct hostent hb, *he;
+	struct in_addr in;
+	int herr = 0;
+	int rc;
+
+	(void) state; /* unused */
+
+	rc = inet_aton("127.0.0.11", &in);
+	assert_int_equal(rc, 1);
+
+	rc = gethostbyaddr_r(&in, sizeof(struct in_addr),
+			     AF_INET,
+			     &hb,
+			     buf, sizeof(buf),
+			     &he,
+			     &herr);
+	assert_int_equal(rc, 0);
+	assert_non_null(he);
+
+	assert_string_equal(he->h_name, "magrathea.galaxy.site");
+	assert_int_equal(he->h_addrtype, AF_INET);
+	assert_memory_equal(&in, he->h_addr_list[0], he->h_length);
+}
+#endif
+
 int main(void) {
 	int rc;
 
@@ -127,6 +156,9 @@ int main(void) {
 		unit_test(test_nwrap_gethostbyaddr),
 #ifdef HAVE_GETHOSTBYNAME_R
 		unit_test(test_nwrap_gethostbyname_r),
+#endif
+#ifdef HAVE_GETHOSTBYADDR_R
+		unit_test(test_nwrap_gethostbyaddr_r),
 #endif
 	};
 
