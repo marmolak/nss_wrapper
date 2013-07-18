@@ -27,3 +27,10 @@ set_property(
         test_getaddrinfo
     PROPERTY
         ENVIRONMENT ${TEST_ENVIRONMENT})
+
+add_cmocka_test(test_gethostby_name_addr test_gethostby_name_addr.c ${CMOCKA_LIBRARY})
+set_property(
+    TEST
+        test_gethostby_name_addr
+    PROPERTY
+        ENVIRONMENT ${TEST_ENVIRONMENT})
