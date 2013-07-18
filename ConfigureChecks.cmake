@@ -83,17 +83,16 @@ if (UNIX AND HAVE_ASPRINTF)
     add_definitions(-D_GNU_SOURCE)
 endif (UNIX AND HAVE_ASPRINTF)
 
-
 check_prototype_definition(getpwent_r
  "struct passwd *getpwent_r(struct passwd *src, char *buf, int buflen)"
  "NULL"
  "unistd.h;pwd.h"
  SOLARIS_GETPWENT_R)
 
-check_prototype_definition(getpwent_r
- "struct group *getpwent_r(struct group *src, char *buf, int buflen)"
+check_prototype_definition(getgrent_r
+ "struct group *getgrent_r(struct group *src, char *buf, int buflen)"
  "NULL"
- "unistd.h;pwd.h"
+ "unistd.h;grp.h"
  SOLARIS_GETGRENT_R)
 
 check_prototype_definition(setgrent
