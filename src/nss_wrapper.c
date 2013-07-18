@@ -3347,6 +3347,10 @@ static int nwrap_getnameinfo(const struct sockaddr *sa, socklen_t salen,
 	uint16_t port;
 	sa_family_t type;
 
+	if (sa == NULL || salen < sizeof(sa_family_t)) {
+		return EAI_FAMILY;
+	}
+
 	if (host == NULL && serv == NULL)
 		return EAI_NONAME;
 
