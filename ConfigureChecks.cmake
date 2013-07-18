@@ -102,6 +102,12 @@ check_prototype_definition(setgrent
  "unistd.h;grp.h"
  BSD_SETGRENT)
 
+check_prototype_definition(getnameinfo
+ "int getnameinfo (const struct sockaddr *sa, socklen_t salen, char *host, socklen_t __hostlen, char *serv, socklen_t servlen, int flags)"
+ "-1"
+ "unistd.h;netdb.h"
+ LINUX_GETNAMEINFO)
+
 # STRUCT MEMBERS
 check_struct_has_member("struct sockaddr" sa_len "sys/socket.h netinet/in.h" HAVE_STRUCT_SOCKADDR_SA_LEN)
 

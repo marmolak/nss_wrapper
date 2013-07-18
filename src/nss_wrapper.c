@@ -3513,10 +3513,17 @@ static int nwrap_getnameinfo(const struct sockaddr *sa, socklen_t salen,
 	return 0;
 }
 
+#ifdef LINUX_GETNAMEINFO
 int getnameinfo(const struct sockaddr *sa, socklen_t salen,
 		char *host, socklen_t hostlen,
 		char *serv, socklen_t servlen,
 		int flags)
+#else
+int getnameinfo(const struct sockaddr *sa, socklen_t salen,
+		char *host, size_t hostlen,
+		char *serv, size_t servlen,
+		int flags)
+#endif
 {
 	if (!nwrap_hosts_enabled()) {
 		return nwrap_main_global->libc->fns->_libc_getnameinfo(sa, salen,
