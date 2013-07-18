@@ -7,12 +7,34 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+
+#define NSS_WRAPPER_HOSTNAME_ENV "NSS_WRAPPER_HOSTNAME"
+
+static void test_nwrap_gethostname(void **state)
+{
+	const char *hostname = "milliways";
+	char host[256] = {0};
+	int rc;
+
+	(void) state; /* unused */
+
+	rc = setenv(NSS_WRAPPER_HOSTNAME_ENV, hostname, 1);
+	assert_int_equal(rc, 0);
+
+	rc = gethostname(host, sizeof(host));
+	assert_int_equal(rc, 0);
+
+	assert_string_equal(host, hostname);
+
+	unsetenv(NSS_WRAPPER_HOSTNAME_ENV);
+}
 
 static void test_nwrap_gethostbyname(void **state)
 {
@@ -57,6 +79,7 @@ int main(void) {
 	int rc;
 
 	const UnitTest tests[] = {
+		unit_test(test_nwrap_gethostname),
 		unit_test(test_nwrap_gethostbyname),
 		unit_test(test_nwrap_gethostbyaddr),
 	};
