@@ -311,6 +311,18 @@ static void test_nwrap_getnameinfo_flags(void **state)
 	assert_int_equal(rc, 0);
 
 	assert_string_equal(serv, "login");
+
+	/* NI_NOFQDN */
+	flags = NI_NOFQDN;
+
+	rc = getnameinfo((const struct sockaddr *)&sin,
+			 sizeof(struct sockaddr_in),
+			 host, sizeof(host),
+			 serv, sizeof(serv),
+			 flags);
+	assert_int_equal(rc, 0);
+
+	assert_string_equal(host, "magrathea");
 }
 
 int main(void) {
