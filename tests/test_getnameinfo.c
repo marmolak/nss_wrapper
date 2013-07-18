@@ -241,6 +241,48 @@ static void test_nwrap_getnameinfo_null(void **state)
 	assert_int_equal(rc, 0);
 
 	assert_string_equal(host, "beteigeuze.galaxy.site");
+
+	/* IPv6 */
+	sin6.sin6_family = AF_INET6;
+	sin6.sin6_port = htons(22);
+	rc = inet_pton(AF_INET6, "::13", &sin6.sin6_addr);
+	assert_int_equal(rc, 1);
+
+	rc = getnameinfo((const struct sockaddr *)&sin6,
+			 sizeof(struct sockaddr_in6),
+			 NULL, 0,
+			 NULL, 0,
+			 flags);
+	assert_int_equal(rc, 0);
+
+	assert_string_equal(host, "beteigeuze.galaxy.site");
+}
+
+static void test_nwrap_getnameinfo_flags(void **state)
+{
+	char host[256] = {0};
+	char serv[256] = {0};
+	struct sockaddr_in sin;
+	struct sockaddr_in6 sin6;
+	int flags = 0;
+	int rc;
+
+	(void) state; /* unused */
+
+	/* IPv4 */
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons(22);
+	rc = inet_pton(AF_INET, "127.0.0.11", &sin.sin_addr);
+	assert_int_equal(rc, 1);
+
+	flags = NI_NAMEREQD;
+
+	rc = getnameinfo((const struct sockaddr *)&sin,
+			 sizeof(struct sockaddr_in),
+			 NULL, 0,
+			 NULL, 0,
+			 flags);
+	assert_int_equal(rc, EAI_NONAME);
 }
 
 int main(void) {
@@ -252,6 +294,7 @@ int main(void) {
 		unit_test(test_nwrap_getnameinfo_any),
 		unit_test(test_nwrap_getnameinfo_local),
 		unit_test(test_nwrap_getnameinfo_null),
+		unit_test(test_nwrap_getnameinfo_flags),
 	};
 
 	rc = run_tests(tests);
