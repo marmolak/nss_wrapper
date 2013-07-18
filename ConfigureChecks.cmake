@@ -78,6 +78,14 @@ if (WIN32)
     check_function_exists(_snprintf_s HAVE__SNPRINTF_S)
 endif (WIN32)
 
+if (SOLARIS)
+    check_function_exists(__posix_getpwnam_r HAVE___POSIX_GETPWNAM_R)
+    check_function_exists(__posix_getpwuid_r HAVE___POSIX_GETPWUID_R)
+
+    check_function_exists(__posix_getgrgid_r HAVE___POSIX_GETGRGID_R)
+    check_function_exists(__posix_getgrnam_r HAVE___POSIX_GETGRNAM_R)
+endif (SOLARIS)
+
 check_function_exists(asprintf HAVE_ASPRINTF)
 if (UNIX AND HAVE_ASPRINTF)
     add_definitions(-D_GNU_SOURCE)

@@ -49,6 +49,15 @@
 #include <unistd.h>
 #include <ctype.h>
 
+/*
+ * Defining _POSIX_PTHREAD_SEMANTICS before including pwd.h and grp.h  gives us
+ * the posix getpwnam_r(), getpwuid_r(), getgrnam_r and getgrgid_r calls on
+ * Solaris
+ */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
+
 #include <pwd.h>
 #include <grp.h>
 
@@ -77,12 +86,6 @@ typedef nss_status_t NSS_STATUS;
 # define NSS_STATUS_TRYAGAIN    NSS_TRYAGAIN
 #else
 # error "No nsswitch support detected"
-#endif
-
-/* defining this gives us the posix getpwnam_r() calls on solaris
-   Thanks to heimdal for this */
-#ifndef _POSIX_PTHREAD_SEMANTICS
-#define _POSIX_PTHREAD_SEMANTICS
 #endif
 
 #ifndef PTR_DIFF
@@ -635,16 +638,40 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	*(void **) (&r->libc->fns->_libc_getgrent) = nwrap_libc_fn(r->libc, "getgrent");
 	*(void **) (&r->libc->fns->_libc_endgrent) = nwrap_libc_fn(r->libc, "endgrent");
 #ifdef HAVE_GETPWNAM_R
-	*(void **) (&r->libc->fns->_libc_getpwnam_r) = nwrap_libc_fn(r->libc, "getpwnam_r");
+# ifdef HAVE___POSIX_GETPWNAM_R
+	*(void **) (&r->libc->fns->_libc_getpwnam_r) =
+		nwrap_libc_fn(r->libc, "__posix_getpwnam_r");
+# else
+	*(void **) (&r->libc->fns->_libc_getpwnam_r) =
+		nwrap_libc_fn(r->libc, "getpwnam_r");
+# endif
 #endif
 #ifdef HAVE_GETPWUID_R
-	*(void **) (&r->libc->fns->_libc_getpwuid_r) = nwrap_libc_fn(r->libc, "getpwuid_r");
+# ifdef HAVE___POSIX_GETPWUID_R
+	*(void **) (&r->libc->fns->_libc_getpwuid_r) =
+		nwrap_libc_fn(r->libc, "__posix_getpwuid_r");
+# else
+	*(void **) (&r->libc->fns->_libc_getpwuid_r) =
+		nwrap_libc_fn(r->libc, "getpwuid_r");
+# endif
 #endif
 #ifdef HAVE_GETGRNAM_R
-	*(void **) (&r->libc->fns->_libc_getgrnam_r) = nwrap_libc_fn(r->libc, "getgrnam_r");
+# ifdef HAVE___POSIX_GETGRNAM_R
+	*(void **) (&r->libc->fns->_libc_getgrnam_r) =
+		nwrap_libc_fn(r->libc, "__posix_getgrnam_r");
+# else
+	*(void **) (&r->libc->fns->_libc_getgrnam_r) =
+		nwrap_libc_fn(r->libc, "getgrnam_r");
+# endif
 #endif
 #ifdef HAVE_GETGRGID_R
-	*(void **) (&r->libc->fns->_libc_getgrgid_r) = nwrap_libc_fn(r->libc, "getgrgid_r");
+# ifdef HAVE___POSIX_GETGRGID_R
+	*(void **) (&r->libc->fns->_libc_getgrgid_r) =
+		nwrap_libc_fn(r->libc, "__posix_getgrgid_r");
+# else
+	*(void **) (&r->libc->fns->_libc_getgrgid_r) =
+		nwrap_libc_fn(r->libc, "getgrgid_r");
+# endif
 #endif
 #ifdef HAVE_GETGRENT_R
 	*(void **) (&r->libc->fns->_libc_getgrent_r) = nwrap_libc_fn(r->libc, "getgrent_r");
