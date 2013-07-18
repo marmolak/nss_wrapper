@@ -28,6 +28,13 @@ set_property(
     PROPERTY
         ENVIRONMENT ${TEST_ENVIRONMENT})
 
+add_cmocka_test(test_getnameinfo test_getnameinfo.c ${CMOCKA_LIBRARY})
+set_property(
+    TEST
+        test_getnameinfo
+    PROPERTY
+        ENVIRONMENT ${TEST_ENVIRONMENT})
+
 add_cmocka_test(test_gethostby_name_addr test_gethostby_name_addr.c ${CMOCKA_LIBRARY})
 set_property(
     TEST
