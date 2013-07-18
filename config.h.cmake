@@ -43,6 +43,12 @@
 /* Define to 1 if you have the `getgrouplist' function. */
 #cmakedefine HAVE_GETGROUPLIST 1
 
+/* Define to 1 if you have the `gethostbyaddr_r' function. */
+#cmakedefine HAVE_GETHOSTBYADDR_R 1
+
+/* Define to 1 if you have the `gethostbyname_r' function. */
+#cmakedefine HAVE_GETHOSTBYNAME_R 1
+
 /*************************** LIBRARIES ***************************/
 
 

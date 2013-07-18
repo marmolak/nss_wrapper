@@ -175,14 +175,18 @@ struct nwrap_libc_fns {
 				 char *serv, size_t servlen,
 				 int flags);
 	int (*_libc_gethostname)(char *name, size_t len);
+#ifdef HAVE_GETHOSTBYNAME_R
 	int (*_libc_gethostbyname_r)(const char *name,
 				     struct hostent *ret,
 				     char *buf, size_t buflen,
 				     struct hostent **result, int *h_errnop);
+#endif
+#ifdef HAVE_GETHOSTBYADDR_R
 	int (*_libc_gethostbyaddr_r)(const void *addr, socklen_t len, int type,
 				     struct hostent *ret,
 				     char *buf, size_t buflen,
 				     struct hostent **result, int *h_errnop);
+#endif
 };
 
 struct nwrap_module_nss_fns {
@@ -664,10 +668,14 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		nwrap_libc_fn(r->libc, "getnameinfo");
 	*(void **) (&r->libc->fns->_libc_gethostname) =
 		nwrap_libc_fn(r->libc, "gethostname");
+#ifdef HAVE_GETHOSTBYNAME_R
 	*(void **) (&r->libc->fns->_libc_gethostbyname_r) =
 		nwrap_libc_fn(r->libc, "gethostbyname_r");
+#endif
+#ifdef HAVE_GETHOSTBYADDR_R
 	*(void **) (&r->libc->fns->_libc_gethostbyaddr_r) =
 		nwrap_libc_fn(r->libc, "gethostbyaddr_r");
+#endif
 }
 
 static void nwrap_backend_init(struct nwrap_main *r)
@@ -1842,6 +1850,7 @@ static struct hostent *nwrap_files_gethostbyname(const char *name)
 	return NULL;
 }
 
+#ifdef HAVE_GETHOSTBYNAME_R
 static int nwrap_gethostbyname_r(const char *name,
 				 struct hostent *ret,
 				 char *buf, size_t buflen,
@@ -1871,6 +1880,7 @@ int gethostbyname_r(const char *name,
 
 	return nwrap_gethostbyname_r(name, ret, buf, buflen, result, h_errnop);
 }
+#endif
 
 static struct hostent *nwrap_files_gethostbyaddr(const void *addr,
 						 socklen_t len, int type)
@@ -1906,6 +1916,7 @@ static struct hostent *nwrap_files_gethostbyaddr(const void *addr,
 	return NULL;
 }
 
+#ifdef HAVE_GETHOSTBYADDR_R
 static int nwrap_gethostbyaddr_r(const void *addr, socklen_t len, int type,
 				 struct hostent *ret,
 				 char *buf, size_t buflen,
@@ -1935,6 +1946,7 @@ int gethostbyaddr_r(const void *addr, socklen_t len, int type,
 
 	return nwrap_gethostbyaddr_r(addr, len, type, ret, buf, buflen, result, h_errnop);
 }
+#endif
 
 /* hosts enum functions */
 static void nwrap_files_sethostent(void)
