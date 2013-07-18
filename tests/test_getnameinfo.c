@@ -263,13 +263,12 @@ static void test_nwrap_getnameinfo_flags(void **state)
 	char host[256] = {0};
 	char serv[256] = {0};
 	struct sockaddr_in sin;
-	struct sockaddr_in6 sin6;
 	int flags = 0;
 	int rc;
 
 	(void) state; /* unused */
 
-	/* IPv4 */
+	/* NI_NAMEREQD */
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(22);
 	rc = inet_pton(AF_INET, "127.0.0.11", &sin.sin_addr);
@@ -283,6 +282,35 @@ static void test_nwrap_getnameinfo_flags(void **state)
 			 NULL, 0,
 			 flags);
 	assert_int_equal(rc, EAI_NONAME);
+
+	/* NI_DGRAM */
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons(513);
+	rc = inet_pton(AF_INET, "127.0.0.11", &sin.sin_addr);
+	assert_int_equal(rc, 1);
+
+	flags = NI_DGRAM;
+
+	rc = getnameinfo((const struct sockaddr *)&sin,
+			 sizeof(struct sockaddr_in),
+			 host, sizeof(host),
+			 serv, sizeof(serv),
+			 flags);
+	assert_int_equal(rc, 0);
+
+	assert_string_equal(serv, "who");
+
+	/* STREAM (port 513) */
+	flags = 0;
+
+	rc = getnameinfo((const struct sockaddr *)&sin,
+			 sizeof(struct sockaddr_in),
+			 host, sizeof(host),
+			 serv, sizeof(serv),
+			 flags);
+	assert_int_equal(rc, 0);
+
+	assert_string_equal(serv, "login");
 }
 
 int main(void) {
