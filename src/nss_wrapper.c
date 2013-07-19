@@ -2853,8 +2853,13 @@ static int nwrap_getgrgid_r(gid_t gid, struct group *grdst,
 }
 
 #ifdef HAVE_GETGRGID_R
+# ifdef HAVE_SOLARIS_GETGRGID_R
+int getgrgid_r(gid_t gid, struct group *grdst,
+	       char *buf, int buflen, struct group **grdstp)
+# else /* HAVE_SOLARIS_GETGRGID_R */
 int getgrgid_r(gid_t gid, struct group *grdst,
 	       char *buf, size_t buflen, struct group **grdstp)
+# endif /* HAVE_SOLARIS_GETGRGID_R */
 {
 	if (!nwrap_enabled()) {
 		return nwrap_main_global->libc->fns->_libc_getgrgid_r(gid,
