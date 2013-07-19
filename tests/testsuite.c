@@ -12,6 +12,15 @@
 #include <stdbool.h>
 #include <unistd.h>
 
+/*
+ * Defining _POSIX_PTHREAD_SEMANTICS before including pwd.h and grp.h  gives us
+ * the posix getpwnam_r(), getpwuid_r(), getgrnam_r and getgrgid_r calls on
+ * Solaris
+ */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
+
 #include <sys/types.h>
 #include <pwd.h>
 #include <grp.h>
