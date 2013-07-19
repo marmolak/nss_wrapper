@@ -2657,7 +2657,7 @@ struct passwd *getpwent_r(struct passwd *pwdst, char *buf, int buflen)
 	if (!nwrap_enabled()) {
 		return nwrap_main_global->libc->fns->_libc_getpwent_r(pwdst, buf, buflen);
 	}
-	return rc = nwrap_getpwent_r(pwdst, buf, buflen, &pwdstp);
+	rc = nwrap_getpwent_r(pwdst, buf, buflen, &pwdstp);
 	if (rc < 0) {
 		return NULL;
 	}
