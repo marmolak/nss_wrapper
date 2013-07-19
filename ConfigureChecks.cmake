@@ -123,7 +123,7 @@ check_prototype_definition(getgrnam_r
     HAVE_SOLARIS_GETGRNAM_R)
 
 check_prototype_definition(getgrgid_r
-    "int getgrnam_r(gid_t gid, struct group *grp, char *buf, int buflen, struct group **pgrp)"
+    "int getgrgid_r(gid_t gid, struct group *grp, char *buf, int buflen, struct group **pgrp)"
     "-1"
     "unistd.h;grp.h"
     HAVE_SOLARIS_GETGRGID_R)
