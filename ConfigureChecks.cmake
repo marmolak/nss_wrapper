@@ -108,7 +108,7 @@ check_prototype_definition(getpwuid_r
     "int getpwuid_r(uid_t uid, struct passwd *pwd, char *buf, int buflen, struct passwd **ppwd)"
     "-1"
     "unistd.h;pwd.h"
-    HAVE_SOLARIS_GETPWNAM_R)
+    HAVE_SOLARIS_GETPWUID_R)
 
 check_prototype_definition(getgrent_r
     "struct group *getgrent_r(struct group *src, char *buf, int buflen)"
