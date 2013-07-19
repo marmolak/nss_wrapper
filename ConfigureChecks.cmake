@@ -92,28 +92,52 @@ if (UNIX AND HAVE_ASPRINTF)
 endif (UNIX AND HAVE_ASPRINTF)
 
 check_prototype_definition(getpwent_r
- "struct passwd *getpwent_r(struct passwd *src, char *buf, int buflen)"
- "NULL"
- "unistd.h;pwd.h"
- SOLARIS_GETPWENT_R)
+    "struct passwd *getpwent_r(struct passwd *src, char *buf, int buflen)"
+    "NULL"
+    "unistd.h;pwd.h"
+    HAVE_SOLARIS_GETPWENT_R)
 
 check_prototype_definition(getgrent_r
- "struct group *getgrent_r(struct group *src, char *buf, int buflen)"
- "NULL"
- "unistd.h;grp.h"
- SOLARIS_GETGRENT_R)
+    "struct group *getgrent_r(struct group *src, char *buf, int buflen)"
+    "NULL"
+    "unistd.h;grp.h"
+    HAVE_SOLARIS_GETGRENT_R)
+
+check_prototype_definition(getgrnam_r
+    "int getgrnam_r(const char *name, struct group *grp, char *buf, int buflen, struct group **pgrp)"
+    "-1"
+    "unistd.h;grp.h"
+    HAVE_SOLARIS_GETGRNAM_R)
+
+check_prototype_definition(sethostent
+    "int sethostent(void)"
+    "-1"
+    "unistd.h;netdb.h"
+    HAVE_SOLARIS_SETHOSTENT)
+
+check_prototype_definition(endhostent
+    "int endhostent(void)"
+    "-1"
+    "unistd.h;netdb.h"
+    HAVE_SOLARIS_ENDHOSTENT)
+
+check_prototype_definition(gethostname
+    "int gethostname(char *name, int len)"
+    "-1"
+    "unistd.h;netdb.h"
+    HAVE_SOLARIS_GETHOSTNAME)
 
 check_prototype_definition(setgrent
- "int setgrent(void)"
- "-1"
- "unistd.h;grp.h"
- BSD_SETGRENT)
+    "int setgrent(void)"
+    "-1"
+    "unistd.h;grp.h"
+    HAVE_BSD_SETGRENT)
 
 check_prototype_definition(getnameinfo
- "int getnameinfo (const struct sockaddr *sa, socklen_t salen, char *host, socklen_t __hostlen, char *serv, socklen_t servlen, int flags)"
- "-1"
- "unistd.h;netdb.h"
- LINUX_GETNAMEINFO)
+    "int getnameinfo (const struct sockaddr *sa, socklen_t salen, char *host, socklen_t __hostlen, char *serv, socklen_t servlen, int flags)"
+    "-1"
+    "unistd.h;netdb.h"
+    HAVE_LINUX_GETNAMEINFO)
 
 # STRUCT MEMBERS
 check_struct_has_member("struct sockaddr" sa_len "sys/socket.h netinet/in.h" HAVE_STRUCT_SOCKADDR_SA_LEN)

@@ -142,7 +142,7 @@ struct nwrap_libc_fns {
 	int (*_libc_getpwuid_r)(uid_t uid, struct passwd *pwd, char *buf, size_t buflen, struct passwd **result);
 	void (*_libc_setpwent)(void);
 	struct passwd *(*_libc_getpwent)(void);
-#ifdef SOLARIS_GETPWENT_R
+#ifdef HAVE_SOLARIS_GETPWENT_R
 	struct passwd *(*_libc_getpwent_r)(struct passwd *pwbuf, char *buf, size_t buflen);
 #else
 	int (*_libc_getpwent_r)(struct passwd *pwbuf, char *buf, size_t buflen, struct passwd **pwbufp);
@@ -155,7 +155,7 @@ struct nwrap_libc_fns {
 	int (*_libc_getgrgid_r)(gid_t gid, struct group *grp, char *buf, size_t buflen, struct group **result);
 	void (*_libc_setgrent)(void);
 	struct group *(*_libc_getgrent)(void);
-#ifdef SOLARIS_GETGRENT_R
+#ifdef HAVE_SOLARIS_GETGRENT_R
 	struct group *(*_libc_getgrent_r)(struct group *group, char *buf, size_t buflen);
 #else
 	int (*_libc_getgrent_r)(struct group *group, char *buf, size_t buflen, struct group **result);
@@ -2638,30 +2638,33 @@ static int nwrap_getpwent_r(struct passwd *pwdst, char *buf,
 	return ENOENT;
 }
 
+#ifdef HAVE_SOLARIS_GETPWENT_R
+struct passwd *getpwent_r(struct passwd *pwdst, char *buf, int buflen)
+{
+	struct passwd *pwdstp = NULL;
+	int rc;
+
+	if (!nwrap_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_getpwent_r(pwdst, buf, buflen);
+	}
+	return rc = nwrap_getpwent_r(pwdst, buf, buflen, &pwdstp);
+	if (rc < 0) {
+		return NULL;
+	}
+
+	return pwdstp;
+}
+#else /* HAVE_SOLARIS_GETPWENT_R */
 int getpwent_r(struct passwd *pwdst, char *buf,
 	       size_t buflen, struct passwd **pwdstp)
 {
 	if (!nwrap_enabled()) {
-#ifdef SOLARIS_GETPWENT_R
-		struct passwd *pw;
-		pw = nwrap_main_global->libc->fns->_libc_getpwent_r(pwdst, buf, buflen);
-		if (!pw) {
-			if (errno == 0) {
-				return ENOENT;
-			}
-			return errno;
-		}
-		if (pwdstp) {
-			*pwdstp = pw;
-		}
-		return 0;
-#else
 		return nwrap_main_global->libc->fns->_libc_getpwent_r(pwdst, buf, buflen, pwdstp);
-#endif
 	}
 
 	return nwrap_getpwent_r(pwdst, buf, buflen, pwdstp);
 }
+#endif /* HAVE_SOLARIS_GETPWENT_R */
 
 /****************************************************************************
  *   ENDPWENT
@@ -2769,17 +2772,25 @@ static int nwrap_getgrnam_r(const char *name, struct group *grdst,
 }
 
 #ifdef HAVE_GETGRNAM_R
-int getgrnam_r(const char *name, struct group *grdst,
-	       char *buf, size_t buflen, struct group **grdstp)
+# ifdef HAVE_SOLARIS_GETGRNAM_R
+int getgrnam_r(const char *name, struct group *grp,
+		char *buf, int buflen, struct group **pgrp)
+# else /* HAVE_SOLARIS_GETGRNAM_R */
+int getgrnam_r(const char *name, struct group *grp,
+	       char *buf, size_t buflen, struct group **pgrp)
+# endif /* HAVE_SOLARIS_GETGRNAM_R */
 {
 	if (!nwrap_enabled()) {
 		return nwrap_main_global->libc->fns->_libc_getgrnam_r(name,
-				grdst, buf, buflen, grdstp);
+								      grp,
+								      buf,
+								      buflen,
+								      pgrp);
 	}
 
-	return nwrap_getgrnam_r(name, grdst, buf, buflen, grdstp);
+	return nwrap_getgrnam_r(name, grp, buf, buflen, pgrp);
 }
-#endif
+#endif /* HAVE_GETGRNAM_R */
 
 /****************************************************************************
  *   GETGRGID
@@ -2858,7 +2869,7 @@ static void nwrap_setgrent(void)
 	}
 }
 
-#ifdef BSD_SETGRENT
+#ifdef HAVE_BSD_SETGRENT
 int setgrent(void)
 #else
 void setgrent(void)
@@ -2872,7 +2883,7 @@ void setgrent(void)
 	nwrap_setgrent();
 
 out:
-#ifdef BSD_SETGRENT
+#ifdef HAVE_BSD_SETGRENT
 	return 0;
 #else
 	return;
@@ -2929,30 +2940,34 @@ static int nwrap_getgrent_r(struct group *grdst, char *buf,
 	return ENOENT;
 }
 
-int getgrent_r(struct group *grdst, char *buf,
+#ifdef HAVE_SOLARIS_GETGRENT_R
+struct group *getgrent_r(struct group *src, char *buf, int buflen)
+{
+	struct group *grdstp = NULL;
+	int rc;
+
+	if (!nwrap_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_getgrent_r(src, buf, buflen);
+	}
+
+	rc = nwrap_getgrent_r(src, buf, buflen, &grdstp);
+	if (rc < 0) {
+		return NULL;
+	}
+
+	return grdstp;
+}
+#else /* HAVE_SOLARIS_GETGRENT_R */
+int getgrent_r(struct group *src, char *buf,
 	       size_t buflen, struct group **grdstp)
 {
 	if (!nwrap_enabled()) {
-#ifdef SOLARIS_GETGRENT_R
-		struct group *gr;
-		gr = nwrap_main_global->libc->fns->_libc_getgrent_r(grdst, buf, buflen);
-		if (!gr) {
-			if (errno == 0) {
-				return ENOENT;
-			}
-			return errno;
-		}
-		if (grdstp) {
-			*grdstp = gr;
-		}
-		return 0;
-#else
-		return nwrap_main_global->libc->fns->_libc_getgrent_r(grdst, buf, buflen, grdstp);
-#endif
+		return nwrap_main_global->libc->fns->_libc_getgrent_r(src, buf, buflen, grdstp);
 	}
 
-	return nwrap_getgrent_r(grdst, buf, buflen, grdstp);
+	return nwrap_getgrent_r(src, buf, buflen, grdstp);
 }
+#endif /* HAVE_SOLARIS_GETGRENT_R */
 
 /****************************************************************************
  *   ENDGRENT
@@ -3073,7 +3088,20 @@ static void nwrap_sethostent(int stayopen) {
 	nwrap_files_sethostent();
 }
 
-void sethostent(int stayopen) {
+#ifdef HAVE_SOLARIS_SETHOSTENT
+int sethostent(int stayopen)
+{
+	if (!nwrap_hosts_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_sethostent(stayopen);
+	}
+
+	nwrap_sethostent(stayopen);
+
+	return 0;
+}
+#else /* HAVE_SOLARIS_SETHOSTENT */
+void sethostent(int stayopen)
+{
 	if (!nwrap_hosts_enabled()) {
 		nwrap_main_global->libc->fns->_libc_sethostent(stayopen);
 		return;
@@ -3081,6 +3109,7 @@ void sethostent(int stayopen) {
 
 	nwrap_sethostent(stayopen);
 }
+#endif /* HAVE_SOLARIS_SETHOSTENT */
 
 static struct hostent *nwrap_gethostent(void)
 {
@@ -3099,7 +3128,20 @@ static void nwrap_endhostent(void) {
 	nwrap_files_endhostent();
 }
 
-void endhostent(void) {
+#ifdef HAVE_SOLARIS_ENDHOSTENT
+int endhostent(void)
+{
+	if (!nwrap_hosts_enabled()) {
+		return nwrap_main_global->libc->fns->_libc_endhostent();
+	}
+
+	nwrap_endhostent();
+
+	return 0;
+}
+#else /* HAVE_SOLARIS_ENDHOSTENT */
+void endhostent(void)
+{
 	if (!nwrap_hosts_enabled()) {
 		nwrap_main_global->libc->fns->_libc_endhostent();
 		return;
@@ -3107,6 +3149,7 @@ void endhostent(void) {
 
 	nwrap_endhostent();
 }
+#endif /* HAVE_SOLARIS_ENDHOSTENT */
 
 static struct hostent *nwrap_gethostbyname(const char *name)
 {
@@ -3540,7 +3583,7 @@ static int nwrap_getnameinfo(const struct sockaddr *sa, socklen_t salen,
 	return 0;
 }
 
-#ifdef LINUX_GETNAMEINFO
+#ifdef HAVE_LINUX_GETNAMEINFO
 int getnameinfo(const struct sockaddr *sa, socklen_t salen,
 		char *host, socklen_t hostlen,
 		char *serv, socklen_t servlen,
@@ -3575,7 +3618,11 @@ static int nwrap_gethostname(char *name, size_t len)
 	return 0;
 }
 
+#ifdef HAVE_SOLARIS_GETHOSTNAME
+int gethostname(char *name, int len)
+#else /* HAVE_SOLARIS_GETHOSTNAME */
 int gethostname(char *name, size_t len)
+#endif /* HAVE_SOLARIS_GETHOSTNAME */
 {
 	if (!nwrap_hostname_enabled()) {
 		return nwrap_main_global->libc->fns->_libc_gethostname(name, len);
