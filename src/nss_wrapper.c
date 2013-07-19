@@ -3107,7 +3107,8 @@ static void nwrap_sethostent(int stayopen) {
 int sethostent(int stayopen)
 {
 	if (!nwrap_hosts_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_sethostent(stayopen);
+		nwrap_main_global->libc->fns->_libc_sethostent(stayopen);
+		return 0;
 	}
 
 	nwrap_sethostent(stayopen);
@@ -3147,7 +3148,8 @@ static void nwrap_endhostent(void) {
 int endhostent(void)
 {
 	if (!nwrap_hosts_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_endhostent();
+		nwrap_main_global->libc->fns->_libc_endhostent();
+		return 0;
 	}
 
 	nwrap_endhostent();
