@@ -61,6 +61,8 @@
 /**************************** OPTIONS ****************************/
 
 #cmakedefine HAVE_SOLARIS_GETPWENT_R 1
+#cmakedefine HAVE_SOLARIS_GETPWNAM_R 1
+#cmakedefine HAVE_SOLARIS_GETPWUID_R 1
 #cmakedefine HAVE_SOLARIS_GETGRENT_R 1
 #cmakedefine HAVE_SOLARIS_GETGRNAM_R 1
 #cmakedefine HAVE_SOLARIS_SETHOSTENT 1

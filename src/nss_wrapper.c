@@ -2493,8 +2493,13 @@ static int nwrap_getpwnam_r(const char *name, struct passwd *pwdst,
 }
 
 #ifdef HAVE_GETPWNAM_R
+# ifdef HAVE_SOLARIS_GETPWNAM_R
+int getpwnam_r(const char *name, struct passwd *pwdst,
+	       char *buf, int buflen, struct passwd **pwdstp)
+# else /* HAVE_SOLARIS_GETPWNAM_R */
 int getpwnam_r(const char *name, struct passwd *pwdst,
 	       char *buf, size_t buflen, struct passwd **pwdstp)
+# endif /* HAVE_SOLARIS_GETPWNAM_R */
 {
 	if (!nwrap_enabled()) {
 		return nwrap_main_global->libc->fns->_libc_getpwnam_r(name, pwdst, buf, buflen, pwdstp);
@@ -2554,8 +2559,13 @@ static int nwrap_getpwuid_r(uid_t uid, struct passwd *pwdst,
 	return ENOENT;
 }
 
+#ifdef HAVE_SOLARIS_GETPWUID_R
+int getpwuid_r(uid_t uid, struct passwd *pwdst,
+	       char *buf, int buflen, struct passwd **pwdstp)
+#else
 int getpwuid_r(uid_t uid, struct passwd *pwdst,
 	       char *buf, size_t buflen, struct passwd **pwdstp)
+#endif
 {
 	if (!nwrap_enabled()) {
 		return nwrap_main_global->libc->fns->_libc_getpwuid_r(uid, pwdst, buf, buflen, pwdstp);

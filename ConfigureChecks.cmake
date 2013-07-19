@@ -91,12 +91,24 @@ if (UNIX AND HAVE_ASPRINTF)
     add_definitions(-D_GNU_SOURCE)
 endif (UNIX AND HAVE_ASPRINTF)
 
-set(CMAKE_REQUIRED_DEFINITIONS _POSIX_PTHREAD_SEMANTICS)
+set(CMAKE_REQUIRED_DEFINITIONS -D_POSIX_PTHREAD_SEMANTICS)
 check_prototype_definition(getpwent_r
     "struct passwd *getpwent_r(struct passwd *src, char *buf, int buflen)"
     "NULL"
     "unistd.h;pwd.h"
     HAVE_SOLARIS_GETPWENT_R)
+
+check_prototype_definition(getpwnam_r
+    "int getpwnam_r(const char *name, struct passwd *pwd, char *buf, int buflen, struct passwd **ppwd)"
+    "-1"
+    "unistd.h;pwd.h"
+    HAVE_SOLARIS_GETPWNAM_R)
+
+check_prototype_definition(getpwuid_r
+    "int getpwuid_r(uid_t uid, struct passwd *pwd, char *buf, int buflen, struct passwd **ppwd)"
+    "-1"
+    "unistd.h;pwd.h"
+    HAVE_SOLARIS_GETPWNAM_R)
 
 check_prototype_definition(getgrent_r
     "struct group *getgrent_r(struct group *src, char *buf, int buflen)"
