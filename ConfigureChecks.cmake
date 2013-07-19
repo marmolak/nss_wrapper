@@ -91,6 +91,7 @@ if (UNIX AND HAVE_ASPRINTF)
     add_definitions(-D_GNU_SOURCE)
 endif (UNIX AND HAVE_ASPRINTF)
 
+set(CMAKE_REQUIRED_DEFINITIONS _POSIX_PTHREAD_SEMANTICS)
 check_prototype_definition(getpwent_r
     "struct passwd *getpwent_r(struct passwd *src, char *buf, int buflen)"
     "NULL"
@@ -110,7 +111,7 @@ check_prototype_definition(getgrnam_r
     HAVE_SOLARIS_GETGRNAM_R)
 
 check_prototype_definition(sethostent
-    "int sethostent(void)"
+    "int sethostent(int stayopen)"
     "-1"
     "unistd.h;netdb.h"
     HAVE_SOLARIS_SETHOSTENT)
@@ -126,6 +127,7 @@ check_prototype_definition(gethostname
     "-1"
     "unistd.h;netdb.h"
     HAVE_SOLARIS_GETHOSTNAME)
+set(CMAKE_REQUIRED_DEFINITIONS)
 
 check_prototype_definition(setgrent
     "int setgrent(void)"
