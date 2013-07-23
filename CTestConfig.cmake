@@ -1,6 +1,6 @@
 set(UPDATE_TYPE "true")
 
-set(CTEST_PROJECT_NAME "nss_wrapper")
+set(CTEST_PROJECT_NAME "nsswrapper")
 set(CTEST_NIGHTLY_START_TIME "01:00:00 CET")
 
 set(CTEST_DROP_METHOD "http")
