@@ -597,7 +597,7 @@ static void *nwrap_libc_fn(void *handle, const char *fn_name)
 
 static void nwrap_libc_init(struct nwrap_main *r)
 {
-	unsigned int i;
+	int i;
 	int flags = RTLD_LAZY;
 	void *handle;
 
@@ -611,41 +611,42 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		exit(-1);
 	}
 
-	for (r->libc->handle = NULL, i = 10; r->libc->handle == NULL; i--) {
+	for (r->libc->handle = NULL, i = 10; r->libc->handle == NULL && i >= 0; i--) {
 		char soname[256] = {0};
 
-		snprintf(soname, sizeof(soname), "%s.%u", LIBC_NAME, i);
+		snprintf(soname, sizeof(soname), "%s.%d", LIBC_NAME, i);
 		r->libc->handle = dlopen(soname, flags);
 	}
 
 	if (r->libc->handle == NULL) {
-		printf("Failed to dlopen %s.%u: %s\n", LIBC_NAME, i, dlerror());
+		printf("Failed to dlopen %s.%d: %s\n", LIBC_NAME, i, dlerror());
 		exit(-1);
 	}
 
 #ifdef HAVE_LIBNSL
-	for (r->libc->nsl_handle = NULL, i = 10; r->libc->nsl_handle == NULL; i--) {
+	for (r->libc->nsl_handle = NULL, i = 10; r->libc->nsl_handle == NULL && i >= 0; i--) {
 		char soname[256] = {0};
+                i = 1;
 
-		snprintf(soname, sizeof(soname), "libnsl.%u", i);
+		snprintf(soname, sizeof(soname), "libnsl.so.%d", i);
 		r->libc->nsl_handle = dlopen(soname, flags);
 	}
 
 	if (r->libc->nsl_handle == NULL) {
-		printf("Failed to dlopen libnsl.%u: %s\n", i, dlerror());
+		printf("Failed to dlopen libnsl.so: %s\n", dlerror());
 		exit(-1);
 	}
 #endif
 #ifdef HAVE_LIBSOCKET
-	for (r->libc->sock_handle = NULL, i = 10; r->libc->sock_handle == NULL; i--) {
+	for (r->libc->sock_handle = NULL, i = 10; r->libc->sock_handle == NULL && i >= 0; i--) {
 		char soname[256] = {0};
 
-		snprintf(soname, sizeof(soname), "libsocket.%u", i);
+		snprintf(soname, sizeof(soname), "libsocket.so.%d", i);
 		r->libc->sock_handle = dlopen(soname, flags);
 	}
 
 	if (r->libc->sock_handle == NULL) {
-		printf("Failed to dlopen libsocket.%u: %s\n", i, dlerror());
+		printf("Failed to dlopen libsocket.so: %s\n", dlerror());
 		exit(-1);
 	}
 #endif
