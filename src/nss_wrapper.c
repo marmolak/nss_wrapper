@@ -375,6 +375,8 @@ struct nwrap_ops nwrap_module_ops = {
 
 struct nwrap_libc {
 	void *handle;
+	void *nsl_handle;
+	void *sock_handle;
 	struct nwrap_libc_fns *fns;
 };
 
@@ -621,12 +623,40 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		exit(-1);
 	}
 
+#ifdef HAVE_NSL
+	for (r->libc->nsl_handle = NULL, i = 10; r->libc->nsl_handle == NULL; i--) {
+		char soname[256] = {0};
+
+		snprintf(soname, sizeof(soname), "libnsl.%u", i);
+		r->libc->nsl_handle = dlopen(soname, flags);
+	}
+
+	if (r->libc->nsl_handle == NULL) {
+		printf("Failed to dlopen libnsl.%u: %s\n", i, dlerror());
+		exit(-1);
+	}
+#endif
+#ifdef HAVE_SOCKET
+	for (r->libc->sock_handle = NULL, i = 10; r->libc->sock_handle == NULL; i--) {
+		char soname[256] = {0};
+
+		snprintf(soname, sizeof(soname), "libsocket.%u", i);
+		r->libc->sock_handle = dlopen(soname, flags);
+	}
+
+	if (r->libc->sock_handle == NULL) {
+		printf("Failed to dlopen libsocket.%u: %s\n", i, dlerror());
+		exit(-1);
+	}
+#endif
+
 	r->libc->fns = malloc(sizeof(struct nwrap_libc_fns));
 	if (r->libc->fns == NULL) {
 		printf("Failed to allocate memory for libc functions");
 		exit(-1);
 	}
 
+	/* Load symbols of libc */
 	handle = r->libc->handle;
 
 	*(void **) (&r->libc->fns->_libc_getpwnam) =
@@ -696,6 +726,11 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		nwrap_libc_fn(handle, "getgrouplist");
 #endif
 
+#ifdef HAVE_NSL
+	/* Load symbols of libnsl */
+	handle = r->libc->nsl_handle;
+#endif
+
 	*(void **) (&r->libc->fns->_libc_sethostent) =
 		nwrap_libc_fn(handle, "sethostent");
 	*(void **) (&r->libc->fns->_libc_gethostent) =
@@ -705,10 +740,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 
 	*(void **) (&r->libc->fns->_libc_gethostbyaddr) =
 		nwrap_libc_fn(handle, "gethostbyaddr");
-	*(void **) (&r->libc->fns->_libc_getaddrinfo) =
-		nwrap_libc_fn(handle, "getaddrinfo");
-	*(void **) (&r->libc->fns->_libc_getnameinfo) =
-		nwrap_libc_fn(handle, "getnameinfo");
 	*(void **) (&r->libc->fns->_libc_gethostname) =
 		nwrap_libc_fn(handle, "gethostname");
 #ifdef HAVE_GETHOSTBYNAME_R
@@ -719,6 +750,16 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	*(void **) (&r->libc->fns->_libc_gethostbyaddr_r) =
 		nwrap_libc_fn(handle, "gethostbyaddr_r");
 #endif
+
+#ifdef HAVE_SOCKET
+	/* Load symbols of libsocket */
+	handle = r->libc->sock_handle;
+#endif
+
+	*(void **) (&r->libc->fns->_libc_getaddrinfo) =
+		nwrap_libc_fn(handle, "getaddrinfo");
+	*(void **) (&r->libc->fns->_libc_getnameinfo) =
+		nwrap_libc_fn(handle, "getnameinfo");
 }
 
 static void nwrap_backend_init(struct nwrap_main *r)
