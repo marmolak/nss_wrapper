@@ -423,6 +423,12 @@ static bool test_nwrap_enum_r_passwd(struct passwd **pwd_array_p,
 	while (1) {
 		DEBUG("Testing getpwent_r\n");
 
+#ifdef HAVE_SOLARIS_GETPWENT_R
+		pwdp = getpwent_r(&pwd, buffer, sizeof(buffer));
+		if (pwdp == NULL) {
+			break;
+		}
+#else
 		ret = getpwent_r(&pwd, buffer, sizeof(buffer), &pwdp);
 		if (ret != 0) {
 			if (ret != ENOENT) {
@@ -430,6 +436,7 @@ static bool test_nwrap_enum_r_passwd(struct passwd **pwd_array_p,
 			}
 			break;
 		}
+#endif
 		print_passwd(&pwd);
 		if (pwd_array_p && num_pwd_p) {
 			pwd_array = realloc(pwd_array, sizeof(struct passwd) * (num_pwd + 1));
@@ -581,6 +588,12 @@ static bool test_nwrap_enum_r_group(struct group **grp_array_p,
 	while (1) {
 		DEBUG("Testing getgrent_r\n");
 
+#ifdef HAVE_SOLARIS_GETGRENT_R
+		grpp = getgrent_r(&grp, buffer, sizeof(buffer));
+		if (grpp == NULL) {
+			break;
+		}
+#else
 		ret = getgrent_r(&grp, buffer, sizeof(buffer), &grpp);
 		if (ret != 0) {
 			if (ret != ENOENT) {
@@ -588,6 +601,7 @@ static bool test_nwrap_enum_r_group(struct group **grp_array_p,
 			}
 			break;
 		}
+#endif
 		print_group(&grp);
 		if (grp_array_p && num_grp_p) {
 			grp_array = realloc(grp_array, sizeof(struct group) * (num_grp + 1));
