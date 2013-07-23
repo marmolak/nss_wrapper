@@ -575,15 +575,15 @@ static bool nwrap_module_init(const char *name,
 
 #define LIBC_NAME "libc.so"
 
-static void *nwrap_libc_fn(struct nwrap_libc *c, const char *fn_name)
+static void *nwrap_libc_fn(void *handle, const char *fn_name)
 {
 	void *func;
 
-	if (c->handle == NULL) {
+	if (handle == NULL) {
 		return NULL;
 	}
 
-	func = dlsym(c->handle, fn_name);
+	func = dlsym(handle, fn_name);
 	if (func == NULL) {
 		printf("Failed to find %s in %s: %s\n",
 				fn_name, LIBC_NAME, dlerror());
@@ -597,6 +597,7 @@ static void nwrap_libc_init(struct nwrap_main *r)
 {
 	unsigned int i;
 	int flags = RTLD_LAZY;
+	void *handle;
 
 #ifdef RTLD_DEEPBIND
 	flags |= RTLD_DEEPBIND;
@@ -626,82 +627,97 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		exit(-1);
 	}
 
-	*(void **) (&r->libc->fns->_libc_getpwnam) = nwrap_libc_fn(r->libc, "getpwnam");
-	*(void **) (&r->libc->fns->_libc_getpwuid) = nwrap_libc_fn(r->libc, "getpwuid");
-	*(void **) (&r->libc->fns->_libc_setpwent) = nwrap_libc_fn(r->libc, "setpwent");
-	*(void **) (&r->libc->fns->_libc_getpwent) = nwrap_libc_fn(r->libc, "getpwent");
-	*(void **) (&r->libc->fns->_libc_getpwent) = nwrap_libc_fn(r->libc, "endpwent");
-	*(void **) (&r->libc->fns->_libc_initgroups) = nwrap_libc_fn(r->libc, "initgroups");
-	*(void **) (&r->libc->fns->_libc_getgrnam) = nwrap_libc_fn(r->libc, "getgrnam");
-	*(void **) (&r->libc->fns->_libc_getgrgid) = nwrap_libc_fn(r->libc, "getgrgid");
-	*(void **) (&r->libc->fns->_libc_setgrent) = nwrap_libc_fn(r->libc, "setgrent");
-	*(void **) (&r->libc->fns->_libc_getgrent) = nwrap_libc_fn(r->libc, "getgrent");
-	*(void **) (&r->libc->fns->_libc_endgrent) = nwrap_libc_fn(r->libc, "endgrent");
+	handle = r->libc->handle;
+
+	*(void **) (&r->libc->fns->_libc_getpwnam) =
+		nwrap_libc_fn(handle, "getpwnam");
+	*(void **) (&r->libc->fns->_libc_getpwuid) =
+		nwrap_libc_fn(handle, "getpwuid");
+	*(void **) (&r->libc->fns->_libc_setpwent) =
+		nwrap_libc_fn(handle, "setpwent");
+	*(void **) (&r->libc->fns->_libc_getpwent) =
+		nwrap_libc_fn(handle, "getpwent");
+	*(void **) (&r->libc->fns->_libc_getpwent) =
+		nwrap_libc_fn(handle, "endpwent");
+	*(void **) (&r->libc->fns->_libc_initgroups) =
+		nwrap_libc_fn(handle, "initgroups");
+	*(void **) (&r->libc->fns->_libc_getgrnam) =
+		nwrap_libc_fn(handle, "getgrnam");
+	*(void **) (&r->libc->fns->_libc_getgrgid) =
+		nwrap_libc_fn(handle, "getgrgid");
+	*(void **) (&r->libc->fns->_libc_setgrent) =
+		nwrap_libc_fn(handle, "setgrent");
+	*(void **) (&r->libc->fns->_libc_getgrent) =
+		nwrap_libc_fn(handle, "getgrent");
+	*(void **) (&r->libc->fns->_libc_endgrent) =
+		nwrap_libc_fn(handle, "endgrent");
 #ifdef HAVE_GETPWNAM_R
 # ifdef HAVE___POSIX_GETPWNAM_R
 	*(void **) (&r->libc->fns->_libc_getpwnam_r) =
-		nwrap_libc_fn(r->libc, "__posix_getpwnam_r");
+		nwrap_libc_fn(handle, "__posix_getpwnam_r");
 # else
 	*(void **) (&r->libc->fns->_libc_getpwnam_r) =
-		nwrap_libc_fn(r->libc, "getpwnam_r");
+		nwrap_libc_fn(handle, "getpwnam_r");
 # endif
 #endif
 #ifdef HAVE_GETPWUID_R
 # ifdef HAVE___POSIX_GETPWUID_R
 	*(void **) (&r->libc->fns->_libc_getpwuid_r) =
-		nwrap_libc_fn(r->libc, "__posix_getpwuid_r");
+		nwrap_libc_fn(handle, "__posix_getpwuid_r");
 # else
 	*(void **) (&r->libc->fns->_libc_getpwuid_r) =
-		nwrap_libc_fn(r->libc, "getpwuid_r");
+		nwrap_libc_fn(handle, "getpwuid_r");
 # endif
 #endif
 #ifdef HAVE_GETGRNAM_R
 # ifdef HAVE___POSIX_GETGRNAM_R
 	*(void **) (&r->libc->fns->_libc_getgrnam_r) =
-		nwrap_libc_fn(r->libc, "__posix_getgrnam_r");
+		nwrap_libc_fn(handle, "__posix_getgrnam_r");
 # else
 	*(void **) (&r->libc->fns->_libc_getgrnam_r) =
-		nwrap_libc_fn(r->libc, "getgrnam_r");
+		nwrap_libc_fn(handle, "getgrnam_r");
 # endif
 #endif
 #ifdef HAVE_GETGRGID_R
 # ifdef HAVE___POSIX_GETGRGID_R
 	*(void **) (&r->libc->fns->_libc_getgrgid_r) =
-		nwrap_libc_fn(r->libc, "__posix_getgrgid_r");
+		nwrap_libc_fn(handle, "__posix_getgrgid_r");
 # else
 	*(void **) (&r->libc->fns->_libc_getgrgid_r) =
-		nwrap_libc_fn(r->libc, "getgrgid_r");
+		nwrap_libc_fn(handle, "getgrgid_r");
 # endif
 #endif
 #ifdef HAVE_GETGRENT_R
-	*(void **) (&r->libc->fns->_libc_getgrent_r) = nwrap_libc_fn(r->libc, "getgrent_r");
+	*(void **) (&r->libc->fns->_libc_getgrent_r) =
+		nwrap_libc_fn(handle, "getgrent_r");
 #endif
 #ifdef HAVE_GETGROUPLIST
-	*(void **) (&r->libc->fns->_libc_getgrouplist) = nwrap_libc_fn(r->libc, "getgrouplist");
+	*(void **) (&r->libc->fns->_libc_getgrouplist) =
+		nwrap_libc_fn(handle, "getgrouplist");
 #endif
 
 	*(void **) (&r->libc->fns->_libc_sethostent) =
-		nwrap_libc_fn(r->libc, "sethostent");
+		nwrap_libc_fn(handle, "sethostent");
 	*(void **) (&r->libc->fns->_libc_gethostent) =
-		nwrap_libc_fn(r->libc, "gethostent");
+		nwrap_libc_fn(handle, "gethostent");
 	*(void **) (&r->libc->fns->_libc_endhostent) =
-		nwrap_libc_fn(r->libc, "endhostent");
+		nwrap_libc_fn(handle, "endhostent");
 
 	*(void **) (&r->libc->fns->_libc_gethostbyaddr) =
-		nwrap_libc_fn(r->libc, "gethostbyaddr");
+		nwrap_libc_fn(handle, "gethostbyaddr");
 	*(void **) (&r->libc->fns->_libc_getaddrinfo) =
-		nwrap_libc_fn(r->libc, "getaddrinfo");
+		nwrap_libc_fn(handle, "getaddrinfo");
 	*(void **) (&r->libc->fns->_libc_getnameinfo) =
-		nwrap_libc_fn(r->libc, "getnameinfo");
+		nwrap_libc_fn(handle, "getnameinfo");
 	*(void **) (&r->libc->fns->_libc_gethostname) =
-		nwrap_libc_fn(r->libc, "gethostname");
+		nwrap_libc_fn(handle, "gethostname");
 #ifdef HAVE_GETHOSTBYNAME_R
 	*(void **) (&r->libc->fns->_libc_gethostbyname_r) =
-		nwrap_libc_fn(r->libc, "gethostbyname_r");
+		nwrap_libc_fn(handle, "gethostbyname_r");
 #endif
 #ifdef HAVE_GETHOSTBYADDR_R
 	*(void **) (&r->libc->fns->_libc_gethostbyaddr_r) =
-		nwrap_libc_fn(r->libc, "gethostbyaddr_r");
+		nwrap_libc_fn(handle, "gethostbyaddr_r");
 #endif
 }
 
