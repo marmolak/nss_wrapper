@@ -623,7 +623,7 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		exit(-1);
 	}
 
-#ifdef HAVE_NSL
+#ifdef HAVE_LIBNSL
 	for (r->libc->nsl_handle = NULL, i = 10; r->libc->nsl_handle == NULL; i--) {
 		char soname[256] = {0};
 
@@ -636,7 +636,7 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		exit(-1);
 	}
 #endif
-#ifdef HAVE_SOCKET
+#ifdef HAVE_LIBSOCKET
 	for (r->libc->sock_handle = NULL, i = 10; r->libc->sock_handle == NULL; i--) {
 		char soname[256] = {0};
 
@@ -726,7 +726,7 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		nwrap_libc_fn(handle, "getgrouplist");
 #endif
 
-#ifdef HAVE_NSL
+#ifdef HAVE_LIBNSL
 	/* Load symbols of libnsl */
 	handle = r->libc->nsl_handle;
 #endif
@@ -751,7 +751,7 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		nwrap_libc_fn(handle, "gethostbyaddr_r");
 #endif
 
-#ifdef HAVE_SOCKET
+#ifdef HAVE_LIBSOCKET
 	/* Load symbols of libsocket */
 	handle = r->libc->sock_handle;
 #endif

@@ -57,8 +57,8 @@
 
 /*************************** LIBRARIES ***************************/
 
-#cmakedefine HAVE_NSL 1
-#cmakedefine HAVE_SOCKET 1
+#cmakedefine HAVE_LIBNSL 1
+#cmakedefine HAVE_LIBSOCKET 1
 
 /**************************** OPTIONS ****************************/
 
