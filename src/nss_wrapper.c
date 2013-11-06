@@ -104,6 +104,23 @@ typedef nss_status_t NSS_STATUS;
 #define EAI_ADDRFAMILY EAI_FAMILY
 #endif
 
+#ifndef __STRING
+#define __STRING(x)    #x
+#endif
+
+#ifndef __STRINGSTRING
+#define __STRINGSTRING(x) __STRING(x)
+#endif
+
+#ifndef __LINESTR__
+#define __LINESTR__ __STRINGSTRING(__LINE__)
+#endif
+
+#ifndef __location__
+#define __location__ __FILE__ ":" __LINESTR__
+#endif
+
+
 #if 0
 # ifdef DEBUG
 # define NWRAP_ERROR(args)	DEBUG(0, args)
