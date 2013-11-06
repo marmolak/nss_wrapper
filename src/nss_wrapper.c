@@ -120,6 +120,13 @@ typedef nss_status_t NSS_STATUS;
 #define __location__ __FILE__ ":" __LINESTR__
 #endif
 
+/* GCC have printf type attribute check. */
+#ifdef __GNUC__
+#define PRINTF_ATTRIBUTE(a,b) __attribute__ ((__format__ (__printf__, a, b)))
+#else
+#define PRINTF_ATTRIBUTE(a,b)
+#endif /* __GNUC__ */
+
 
 #if 0
 # ifdef DEBUG
