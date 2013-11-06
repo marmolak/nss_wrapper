@@ -40,6 +40,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -127,6 +128,62 @@ typedef nss_status_t NSS_STATUS;
 #define PRINTF_ATTRIBUTE(a,b)
 #endif /* __GNUC__ */
 
+enum nwrap_dbglvl_e {
+	NWRAP_LOG_ERROR = 0,
+	NWRAP_LOG_WARN,
+	NWRAP_LOG_DEBUG,
+	NWRAP_LOG_TRACE
+};
+
+#ifdef NDEBUG
+# define NWRAP_LOG(...)
+#else
+
+static void nwrap_log(enum nwrap_dbglvl_e dbglvl, const char *format, ...) PRINTF_ATTRIBUTE(2, 3);
+# define NWRAP_LOG(dbglvl, ...) nwrap_log((dbglvl), __VA_ARGS__)
+
+static void nwrap_log(enum nwrap_dbglvl_e dbglvl, const char *format, ...)
+{
+	char buffer[1024];
+	va_list va;
+	const char *d;
+	unsigned int lvl = 0;
+
+	d = getenv("NSS_WRAPPER_DEBUGLEVEL");
+	if (d != NULL) {
+		lvl = atoi(d);
+	}
+
+	va_start(va, format);
+	vsnprintf(buffer, sizeof(buffer), format, va);
+	va_end(va);
+
+	if (lvl >= dbglvl) {
+		switch (dbglvl) {
+			case NWRAP_LOG_ERROR:
+				fprintf(stderr,
+					"SWRAP_ERROR(%d): %s\n",
+					getpid(), buffer);
+				break;
+			case NWRAP_LOG_WARN:
+				fprintf(stderr,
+					"SWRAP_WARN(%d): %s\n",
+					getpid(), buffer);
+				break;
+			case NWRAP_LOG_DEBUG:
+				fprintf(stderr,
+					"SWRAP_DEBUG(%d): %s\n",
+					getpid(), buffer);
+				break;
+			case NWRAP_LOG_TRACE:
+				fprintf(stderr,
+					"SWRAP_TRACE(%d): %s\n",
+					getpid(), buffer);
+				break;
+		}
+	}
+}
+#endif /* NDEBUG NWRAP_LOG */
 
 #if 0
 # ifdef DEBUG
