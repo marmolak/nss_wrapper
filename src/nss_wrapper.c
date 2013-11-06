@@ -185,36 +185,6 @@ static void nwrap_log(enum nwrap_dbglvl_e dbglvl, const char *format, ...)
 }
 #endif /* NDEBUG NWRAP_LOG */
 
-#if 0
-# ifdef DEBUG
-# define NWRAP_ERROR(args)	DEBUG(0, args)
-# else
-# define NWRAP_ERROR(args)	printf args
-# endif
-#else
-#define NWRAP_ERROR(args)
-#endif
-
-#if 0
-# ifdef DEBUG
-# define NWRAP_DEBUG(args)	DEBUG(0, args)
-# else
-# define NWRAP_DEBUG(args)	printf args
-# endif
-#else
-#define NWRAP_DEBUG(args)
-#endif
-
-#if 0
-# ifdef DEBUG
-# define NWRAP_VERBOSE(args)	DEBUG(0, args)
-# else
-# define NWRAP_VERBOSE(args)	printf args
-# endif
-#else
-#define NWRAP_VERBOSE(args)
-#endif
-
 struct nwrap_libc_fns {
 	struct passwd *(*_libc_getpwnam)(const char *name);
 	int (*_libc_getpwnam_r)(const char *name, struct passwd *pwd,
