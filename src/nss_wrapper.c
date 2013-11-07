@@ -162,22 +162,22 @@ static void nwrap_log(enum nwrap_dbglvl_e dbglvl, const char *format, ...)
 		switch (dbglvl) {
 			case NWRAP_LOG_ERROR:
 				fprintf(stderr,
-					"SWRAP_ERROR(%d): %s\n",
+					"NWRAP_ERROR(%d): %s\n",
 					getpid(), buffer);
 				break;
 			case NWRAP_LOG_WARN:
 				fprintf(stderr,
-					"SWRAP_WARN(%d): %s\n",
+					"NWRAP_WARN(%d): %s\n",
 					getpid(), buffer);
 				break;
 			case NWRAP_LOG_DEBUG:
 				fprintf(stderr,
-					"SWRAP_DEBUG(%d): %s\n",
+					"NWRAP_DEBUG(%d): %s\n",
 					getpid(), buffer);
 				break;
 			case NWRAP_LOG_TRACE:
 				fprintf(stderr,
-					"SWRAP_TRACE(%d): %s\n",
+					"NWRAP_TRACE(%d): %s\n",
 					getpid(), buffer);
 				break;
 		}
@@ -510,21 +510,20 @@ static void *nwrap_load_module_fn(struct nwrap_backend *b,
 	char *s;
 
 	if (!b->so_handle) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s: no handle\n",
-			     __location__);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "No handle");
 		return NULL;
 	}
 
 	if (asprintf(&s, "_nss_%s_%s", b->name, fn_name) == -1) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s: out of memory\n",
-			     __location__);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "Out of memory");
 		return NULL;
 	}
 
 	res = dlsym(b->so_handle, s);
 	if (!res) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s: cannot find function %s in %s\n",
-			     __location__, s, b->so_path);
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Cannot find function %s in %s",
+			  s, b->so_path);
 	}
 	free(s);
 	s = NULL;
@@ -580,8 +579,9 @@ static void *nwrap_load_module(const char *so_path)
 
 	h = dlopen(so_path, RTLD_LAZY);
 	if (!h) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s: cannot open shared library %s\n",
-			     __location__, so_path);
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Cannot open shared library %s",
+			  so_path);
 		return NULL;
 	}
 
@@ -599,8 +599,7 @@ static bool nwrap_module_init(const char *name,
 	*backends = (struct nwrap_backend *)realloc(*backends,
 		sizeof(struct nwrap_backend) * ((*num_backends) + 1));
 	if (!*backends) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s: out of memory\n",
-			     __location__);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "Out of memory");
 		return false;
 	}
 
@@ -825,8 +824,8 @@ static void nwrap_backend_init(struct nwrap_main *r)
 	if (!nwrap_module_init("files", &nwrap_files_ops, NULL,
 			       &r->num_backends,
 			       &r->backends)) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s: failed to initialize 'files' backend\n",
-			     __location__);
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Failed to initialize 'files' backend");
 		return;
 	}
 
@@ -839,8 +838,9 @@ static void nwrap_backend_init(struct nwrap_main *r)
 				       module_so_path,
 				       &r->num_backends,
 				       &r->backends)) {
-			NWRAP_LOG(NWRAP_LOG_ERROR, "%s: failed to initialize '%s' backend\n",
-				     __location__, module_fn_name);
+			NWRAP_LOG(NWRAP_LOG_ERROR,
+				  "Failed to initialize '%s' backend",
+				  module_fn_name);
 			return;
 		}
 	}
@@ -930,33 +930,34 @@ static bool nwrap_parse_file(struct nwrap_cache *nwrap)
 	char *nline;
 
 	if (nwrap->st.st_size == 0) {
-		NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: size == 0\n",
-			     __location__);
+		NWRAP_LOG(NWRAP_LOG_DEBUG, "size == 0");
 		goto done;
 	}
 
 	if (nwrap->st.st_size > INT32_MAX) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s: size[%u] larger than INT32_MAX\n",
-			     __location__, (unsigned)nwrap->st.st_size);
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Size[%u] larger than INT32_MAX",
+			  (unsigned)nwrap->st.st_size);
 		goto failed;
 	}
 
 	ret = lseek(nwrap->fd, 0, SEEK_SET);
 	if (ret != 0) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s: lseek - %d\n",__location__,ret);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "lseek - rc=%d\n", ret);
 		goto failed;
 	}
 
 	buf = (uint8_t *)malloc(nwrap->st.st_size + 1);
 	if (!buf) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s: malloc failed\n",__location__);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "Out of memory");
 		goto failed;
 	}
 
 	ret = read(nwrap->fd, buf, nwrap->st.st_size);
 	if (ret != nwrap->st.st_size) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s: read(%u) gave %d\n",
-			     __location__, (unsigned)nwrap->st.st_size, ret);
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "read(%u) rc=%d\n",
+			  (unsigned)nwrap->st.st_size, ret);
 		goto failed;
 	}
 
@@ -981,8 +982,6 @@ static bool nwrap_parse_file(struct nwrap_cache *nwrap)
 			}
 			nline = e;
 		}
-
-		NWRAP_LOG(NWRAP_LOG_DEBUG, "%s:'%s'\n",__location__, line);
 
 		if (strlen(line) == 0) {
 			continue;
@@ -1023,28 +1022,30 @@ reopen:
 	if (nwrap->fd < 0) {
 		nwrap->fd = open(nwrap->path, O_RDONLY);
 		if (nwrap->fd < 0) {
-			NWRAP_LOG(NWRAP_LOG_ERROR, "%s: unable to open '%s' readonly %d:%s\n",
-				     __location__,
-				     nwrap->path, nwrap->fd,
-				     strerror(errno));
+			NWRAP_LOG(NWRAP_LOG_ERROR,
+				  "Unable to open '%s' readonly %d:%s",
+				  nwrap->path, nwrap->fd,
+				  strerror(errno));
 			return;
 		}
-		NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: open '%s'\n", __location__, nwrap->path);
+		NWRAP_LOG(NWRAP_LOG_DEBUG, "Open '%s'", nwrap->path);
 	}
 
 	ret = fstat(nwrap->fd, &st);
 	if (ret != 0) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s: fstat(%s) - %d:%s\n",
-			     __location__,
-			     nwrap->path,
-			     ret, strerror(errno));
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "fstat(%s) - %d:%s",
+			  nwrap->path,
+			  ret,
+			  strerror(errno));
 		return;
 	}
 
 	if (retried == false && st.st_nlink == 0) {
 		/* maybe someone has replaced the file... */
-		NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: st_nlink == 0, reopen %s\n",
-			     __location__, nwrap->path);
+		NWRAP_LOG(NWRAP_LOG_TRACE,
+			  "st_nlink == 0, reopen %s",
+			  nwrap->path);
 		retried = true;
 		memset(&nwrap->st, 0, sizeof(nwrap->st));
 		close(nwrap->fd);
@@ -1053,13 +1054,16 @@ reopen:
 	}
 
 	if (st.st_mtime == nwrap->st.st_mtime) {
-		NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: st_mtime[%u] hasn't changed, skip reload\n",
-			       __location__, (unsigned)st.st_mtime);
+		NWRAP_LOG(NWRAP_LOG_TRACE,
+			  "st_mtime[%u] hasn't changed, skip reload",
+			  (unsigned)st.st_mtime);
 		return;
 	}
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: st_mtime has changed [%u] => [%u], start reload\n",
-		     __location__, (unsigned)st.st_mtime,
-		     (unsigned)nwrap->st.st_mtime);
+
+	NWRAP_LOG(NWRAP_LOG_TRACE,
+		  "st_mtime has changed [%u] => [%u], start reload",
+		  (unsigned)st.st_mtime,
+		  (unsigned)nwrap->st.st_mtime);
 
 	nwrap->st = st;
 
@@ -1067,12 +1071,11 @@ reopen:
 
 	ok = nwrap_parse_file(nwrap);
 	if (!ok) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s: failed to reload %s\n",
-			     __location__, nwrap->path);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "Failed to reload %s", nwrap->path);
 		nwrap_files_cache_unload(nwrap);
 	}
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: reloaded %s\n",
-		     __location__, nwrap->path);
+
+	NWRAP_LOG(NWRAP_LOG_TRACE, "Reloaded %s", nwrap->path);
 }
 
 /*
@@ -1092,8 +1095,9 @@ static bool nwrap_pw_parse_line(struct nwrap_cache *nwrap, char *line)
 	list_size = sizeof(*nwrap_pw->list) * (nwrap_pw->num+1);
 	pw = (struct passwd *)realloc(nwrap_pw->list, list_size);
 	if (!pw) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:realloc(%zd) failed\n",
-			     __location__, list_size);
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "realloc(%u) failed",
+			  (unsigned)list_size);
 		return false;
 	}
 	nwrap_pw->list = pw;
@@ -1105,8 +1109,10 @@ static bool nwrap_pw_parse_line(struct nwrap_cache *nwrap, char *line)
 	/* name */
 	p = strchr(c, ':');
 	if (!p) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s'\n",
-			     __location__, line, c);
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Invalid line[%s]: '%s'",
+			  line,
+			  c);
 		return false;
 	}
 	*p = '\0';
@@ -1114,13 +1120,12 @@ static bool nwrap_pw_parse_line(struct nwrap_cache *nwrap, char *line)
 	pw->pw_name = c;
 	c = p;
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "name[%s]\n", pw->pw_name);
+	NWRAP_LOG(NWRAP_LOG_TRACE, "name[%s]\n", pw->pw_name);
 
 	/* password */
 	p = strchr(c, ':');
 	if (!p) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s'\n",
-			     __location__, line, c);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "Invalid line[%s]: '%s'", line, c);
 		return false;
 	}
 	*p = '\0';
@@ -1128,13 +1133,12 @@ static bool nwrap_pw_parse_line(struct nwrap_cache *nwrap, char *line)
 	pw->pw_passwd = c;
 	c = p;
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "password[%s]\n", pw->pw_passwd);
+	NWRAP_LOG(NWRAP_LOG_TRACE, "password[%s]\n", pw->pw_passwd);
 
 	/* uid */
 	p = strchr(c, ':');
 	if (!p) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s'\n",
-			     __location__, line, c);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "Invalid line[%s]: '%s'", line, c);
 		return false;
 	}
 	*p = '\0';
@@ -1142,29 +1146,31 @@ static bool nwrap_pw_parse_line(struct nwrap_cache *nwrap, char *line)
 	e = NULL;
 	pw->pw_uid = (uid_t)strtoul(c, &e, 10);
 	if (c == e) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s' - %s\n",
-			     __location__, line, c, strerror(errno));
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Invalid line[%s]: '%s' - %s",
+			  line, c, strerror(errno));
 		return false;
 	}
 	if (e == NULL) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s' - %s\n",
-			     __location__, line, c, strerror(errno));
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Invalid line[%s]: '%s' - %s",
+			  line, c, strerror(errno));
 		return false;
 	}
 	if (e[0] != '\0') {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s' - %s\n",
-			     __location__, line, c, strerror(errno));
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Invalid line[%s]: '%s' - %s",
+			  line, c, strerror(errno));
 		return false;
 	}
 	c = p;
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "uid[%u]\n", pw->pw_uid);
+	NWRAP_LOG(NWRAP_LOG_TRACE, "uid[%u]", pw->pw_uid);
 
 	/* gid */
 	p = strchr(c, ':');
 	if (!p) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s'\n",
-			     __location__, line, c);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "Invalid line[%s]: '%s'", line, c);
 		return false;
 	}
 	*p = '\0';
@@ -1172,29 +1178,31 @@ static bool nwrap_pw_parse_line(struct nwrap_cache *nwrap, char *line)
 	e = NULL;
 	pw->pw_gid = (gid_t)strtoul(c, &e, 10);
 	if (c == e) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s' - %s\n",
-			     __location__, line, c, strerror(errno));
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Invalid line[%s]: '%s' - %s",
+			  line, c, strerror(errno));
 		return false;
 	}
 	if (e == NULL) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s' - %s\n",
-			     __location__, line, c, strerror(errno));
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Invalid line[%s]: '%s' - %s",
+			  line, c, strerror(errno));
 		return false;
 	}
 	if (e[0] != '\0') {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s' - %s\n",
-			     __location__, line, c, strerror(errno));
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Invalid line[%s]: '%s' - %s",
+			  line, c, strerror(errno));
 		return false;
 	}
 	c = p;
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "gid[%u]\n", pw->pw_gid);
+	NWRAP_LOG(NWRAP_LOG_TRACE, "gid[%u]\n", pw->pw_gid);
 
 	/* gecos */
 	p = strchr(c, ':');
 	if (!p) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s'\n",
-			     __location__, line, c);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "invalid line[%s]: '%s'", line, c);
 		return false;
 	}
 	*p = '\0';
@@ -1202,12 +1210,12 @@ static bool nwrap_pw_parse_line(struct nwrap_cache *nwrap, char *line)
 	pw->pw_gecos = c;
 	c = p;
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "gecos[%s]\n", pw->pw_gecos);
+	NWRAP_LOG(NWRAP_LOG_TRACE, "gecos[%s]", pw->pw_gecos);
 
 	/* dir */
 	p = strchr(c, ':');
 	if (!p) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:'%s'\n",__location__,c);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "'%s'", c);
 		return false;
 	}
 	*p = '\0';
@@ -1215,14 +1223,14 @@ static bool nwrap_pw_parse_line(struct nwrap_cache *nwrap, char *line)
 	pw->pw_dir = c;
 	c = p;
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "dir[%s]\n", pw->pw_dir);
+	NWRAP_LOG(NWRAP_LOG_TRACE, "dir[%s]", pw->pw_dir);
 
 	/* shell */
 	pw->pw_shell = c;
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "shell[%s]\n", pw->pw_shell);
+	NWRAP_LOG(NWRAP_LOG_TRACE, "shell[%s]", pw->pw_shell);
 
 	NWRAP_LOG(NWRAP_LOG_DEBUG,
-		  "add user[%s:%s:%u:%u:%s:%s:%s]\n",
+		  "Added user[%s:%s:%u:%u:%s:%s:%s]",
 		  pw->pw_name, pw->pw_passwd,
 		  pw->pw_uid, pw->pw_gid,
 		  pw->pw_gecos, pw->pw_dir, pw->pw_shell);
@@ -1301,7 +1309,7 @@ static bool nwrap_gr_parse_line(struct nwrap_cache *nwrap, char *line)
 	list_size = sizeof(*nwrap_gr->list) * (nwrap_gr->num+1);
 	gr = (struct group *)realloc(nwrap_gr->list, list_size);
 	if (!gr) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:realloc failed\n",__location__);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "realloc failed");
 		return false;
 	}
 	nwrap_gr->list = gr;
@@ -1313,8 +1321,7 @@ static bool nwrap_gr_parse_line(struct nwrap_cache *nwrap, char *line)
 	/* name */
 	p = strchr(c, ':');
 	if (!p) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s'\n",
-			     __location__, line, c);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "Invalid line[%s]: '%s'", line, c);
 		return false;
 	}
 	*p = '\0';
@@ -1322,13 +1329,12 @@ static bool nwrap_gr_parse_line(struct nwrap_cache *nwrap, char *line)
 	gr->gr_name = c;
 	c = p;
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "name[%s]\n", gr->gr_name);
+	NWRAP_LOG(NWRAP_LOG_TRACE, "name[%s]", gr->gr_name);
 
 	/* password */
 	p = strchr(c, ':');
 	if (!p) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s'\n",
-			     __location__, line, c);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "Invalid line[%s]: '%s'", line, c);
 		return false;
 	}
 	*p = '\0';
@@ -1336,13 +1342,12 @@ static bool nwrap_gr_parse_line(struct nwrap_cache *nwrap, char *line)
 	gr->gr_passwd = c;
 	c = p;
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "password[%s]\n", gr->gr_passwd);
+	NWRAP_LOG(NWRAP_LOG_TRACE, "password[%s]", gr->gr_passwd);
 
 	/* gid */
 	p = strchr(c, ':');
 	if (!p) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s'\n",
-			     __location__, line, c);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "Invalid line[%s]: '%s'", line, c);
 		return false;
 	}
 	*p = '\0';
@@ -1350,28 +1355,31 @@ static bool nwrap_gr_parse_line(struct nwrap_cache *nwrap, char *line)
 	e = NULL;
 	gr->gr_gid = (gid_t)strtoul(c, &e, 10);
 	if (c == e) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s' - %s\n",
-			     __location__, line, c, strerror(errno));
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Invalid line[%s]: '%s' - %s",
+			  line, c, strerror(errno));
 		return false;
 	}
 	if (e == NULL) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s' - %s\n",
-			     __location__, line, c, strerror(errno));
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Invalid line[%s]: '%s' - %s",
+			  line, c, strerror(errno));
 		return false;
 	}
 	if (e[0] != '\0') {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s' - %s\n",
-			     __location__, line, c, strerror(errno));
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Invalid line[%s]: '%s' - %s",
+			  line, c, strerror(errno));
 		return false;
 	}
 	c = p;
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "gid[%u]\n", gr->gr_gid);
+	NWRAP_LOG(NWRAP_LOG_TRACE, "gid[%u]", gr->gr_gid);
 
 	/* members */
 	gr->gr_mem = (char **)malloc(sizeof(char *));
 	if (!gr->gr_mem) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:calloc failed\n",__location__);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "Out of memory");
 		return false;
 	}
 	gr->gr_mem[0] = NULL;
@@ -1393,19 +1401,22 @@ static bool nwrap_gr_parse_line(struct nwrap_cache *nwrap, char *line)
 		m_size = sizeof(char *) * (nummem+2);
 		m = (char **)realloc(gr->gr_mem, m_size);
 		if (!m) {
-			NWRAP_LOG(NWRAP_LOG_ERROR, "%s:realloc(%zd) failed\n",
-				      __location__, m_size);
+			NWRAP_LOG(NWRAP_LOG_ERROR,
+				  "realloc(%zd) failed",
+				  m_size);
 			return false;
 		}
 		gr->gr_mem = m;
 		gr->gr_mem[nummem] = c;
 		gr->gr_mem[nummem+1] = NULL;
 
-		NWRAP_LOG(NWRAP_LOG_DEBUG, "member[%u]: '%s'\n", nummem, gr->gr_mem[nummem]);
+		NWRAP_LOG(NWRAP_LOG_TRACE,
+			  "member[%u]: '%s'",
+			  nummem, gr->gr_mem[nummem]);
 	}
 
 	NWRAP_LOG(NWRAP_LOG_DEBUG,
-		  "add group[%s:%s:%u:] with %u members\n",
+		  "Added group[%s:%s:%u:] with %u members",
 		  gr->gr_name, gr->gr_passwd, gr->gr_gid, nummem);
 
 	nwrap_gr->num++;
@@ -1500,7 +1511,7 @@ static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
 
 	ed = (struct nwrap_entdata *)realloc(nwrap_he->list, list_size);
 	if (ed == NULL) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:realloc failed\n", __location__);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "realloc[%zd] failed", list_size);
 		return false;
 	}
 	nwrap_he->list = ed;
@@ -1510,7 +1521,7 @@ static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
 
 	ed->addr = malloc(sizeof(struct nwrap_addrdata));
 	if (ed->addr == NULL) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:realloc failed\n", __location__);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "realloc[%zd] failed", list_size);
 		return false;
 	}
 
@@ -1523,16 +1534,18 @@ static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
 	/* Walk to first char */
 	for (p = i; *p != '.' && *p != ':' && !isxdigit((int) *p); p++) {
 		if (*p == '\0') {
-			NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s'\n",
-				    __location__, line, i);
+			NWRAP_LOG(NWRAP_LOG_ERROR,
+				  "Invalid line[%s]: '%s'",
+				  line, i);
 			return false;
 		}
 	}
 
 	for (i = p; !isspace((int)*p); p++) {
 		if (*p == '\0') {
-			NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s'\n",
-				    __location__, line, i);
+			NWRAP_LOG(NWRAP_LOG_ERROR,
+				  "Invalid line[%s]: '%s'",
+				  line, i);
 			return false;
 		}
 	}
@@ -1548,8 +1561,10 @@ static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
 		ed->ht.h_length = 16;
 #endif
 	} else {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s'\n",
-			     __location__, line, i);
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Invalid line[%s]: '%s'",
+			  line, i);
+
 		return false;
 	}
 
@@ -1567,8 +1582,10 @@ static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
 	/* Walk to first char */
 	for (n = p; *p != '_' && !isalnum((int) *p); p++) {
 		if (*p == '\0') {
-			NWRAP_LOG(NWRAP_LOG_ERROR, "%s:invalid line[%s]: '%s'\n",
-				    __location__, line, n);
+			NWRAP_LOG(NWRAP_LOG_ERROR,
+				  "Invalid line[%s]: '%s'",
+				  line, n);
+
 			return false;
 		}
 	}
@@ -1664,20 +1681,22 @@ static struct passwd *nwrap_files_getpwnam(struct nwrap_backend *b,
 
 	(void) b; /* unused */
 
+	NWRAP_LOG(NWRAP_LOG_DEBUG, "Lookup user %s in files", name);
+
 	nwrap_files_cache_reload(nwrap_pw_global.cache);
 
 	for (i=0; i<nwrap_pw_global.num; i++) {
 		if (strcmp(nwrap_pw_global.list[i].pw_name, name) == 0) {
-			NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: user[%s] found\n",
-				     __location__, name);
+			NWRAP_LOG(NWRAP_LOG_DEBUG, "user[%s] found", name);
 			return &nwrap_pw_global.list[i];
 		}
-		NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: user[%s] does not match [%s]\n",
-			       __location__, name,
-			       nwrap_pw_global.list[i].pw_name);
+		NWRAP_LOG(NWRAP_LOG_DEBUG,
+			  "user[%s] does not match [%s]",
+			  name,
+			  nwrap_pw_global.list[i].pw_name);
 	}
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: user[%s] not found\n", __location__, name);
+	NWRAP_LOG(NWRAP_LOG_DEBUG, "user[%s] not found\n", name);
 
 	errno = ENOENT;
 	return NULL;
@@ -1711,16 +1730,16 @@ static struct passwd *nwrap_files_getpwuid(struct nwrap_backend *b,
 
 	for (i=0; i<nwrap_pw_global.num; i++) {
 		if (nwrap_pw_global.list[i].pw_uid == uid) {
-			NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: uid[%u] found\n",
-				     __location__, uid);
+			NWRAP_LOG(NWRAP_LOG_DEBUG, "uid[%u] found", uid);
 			return &nwrap_pw_global.list[i];
 		}
-		NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: uid[%u] does not match [%u]\n",
-			       __location__, uid,
-			       nwrap_pw_global.list[i].pw_uid);
+		NWRAP_LOG(NWRAP_LOG_DEBUG,
+			  "uid[%u] does not match [%u]",
+			  uid,
+			  nwrap_pw_global.list[i].pw_uid);
 	}
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: uid[%u] not found\n", __location__, uid);
+	NWRAP_LOG(NWRAP_LOG_DEBUG, "uid[%u] not found\n", uid);
 
 	errno = ENOENT;
 	return NULL;
@@ -1768,8 +1787,9 @@ static struct passwd *nwrap_files_getpwent(struct nwrap_backend *b)
 
 	pw = &nwrap_pw_global.list[nwrap_pw_global.idx++];
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: return user[%s] uid[%u]\n",
-		       __location__, pw->pw_name, pw->pw_uid);
+	NWRAP_LOG(NWRAP_LOG_DEBUG,
+		  "return user[%s] uid[%u]",
+		  pw->pw_name, pw->pw_uid);
 
 	return pw;
 }
@@ -1822,19 +1842,16 @@ static struct group *nwrap_files_getgrnam(struct nwrap_backend *b,
 
 	for (i=0; i<nwrap_gr_global.num; i++) {
 		if (strcmp(nwrap_gr_global.list[i].gr_name, name) == 0) {
-			NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: group[%s] found\n",
-				     __location__, name);
+			NWRAP_LOG(NWRAP_LOG_DEBUG, "group[%s] found", name);
 			return &nwrap_gr_global.list[i];
 		}
-		NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: group[%s] does not match [%s]\n",
-			       __location__, name,
-			       nwrap_gr_global.list[i].gr_name);
+		NWRAP_LOG(NWRAP_LOG_DEBUG,
+			  "group[%s] does not match [%s]",
+			  name,
+			  nwrap_gr_global.list[i].gr_name);
 	}
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG,
-		  "%s: group[%s] not found\n",
-		  __location__,
-		  name);
+	NWRAP_LOG(NWRAP_LOG_DEBUG, "group[%s] not found", name);
 
 	errno = ENOENT;
 	return NULL;
@@ -1868,16 +1885,16 @@ static struct group *nwrap_files_getgrgid(struct nwrap_backend *b,
 
 	for (i=0; i<nwrap_gr_global.num; i++) {
 		if (nwrap_gr_global.list[i].gr_gid == gid) {
-			NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: gid[%u] found\n",
-				     __location__, gid);
+			NWRAP_LOG(NWRAP_LOG_DEBUG, "gid[%u] found", gid);
 			return &nwrap_gr_global.list[i];
 		}
-		NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: gid[%u] does not match [%u]\n",
-			       __location__, gid,
-			       nwrap_gr_global.list[i].gr_gid);
+		NWRAP_LOG(NWRAP_LOG_DEBUG,
+			  "gid[%u] does not match [%u]",
+			  gid,
+			  nwrap_gr_global.list[i].gr_gid);
 	}
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: gid[%u] not found\n", __location__, gid);
+	NWRAP_LOG(NWRAP_LOG_DEBUG, "gid[%u] not found", gid);
 
 	errno = ENOENT;
 	return NULL;
@@ -1925,8 +1942,9 @@ static struct group *nwrap_files_getgrent(struct nwrap_backend *b)
 
 	gr = &nwrap_gr_global.list[nwrap_gr_global.idx++];
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: return group[%s] gid[%u]\n",
-		       __location__, gr->gr_name, gr->gr_gid);
+	NWRAP_LOG(NWRAP_LOG_DEBUG,
+		  "return group[%s] gid[%u]",
+		  gr->gr_name, gr->gr_gid);
 
 	return gr;
 }
@@ -1969,8 +1987,7 @@ static struct hostent *nwrap_files_gethostbyname(const char *name)
 		he = &nwrap_he_global.list[i].ht;
 
 		if (strcasecmp(he->h_name, name) == 0) {
-			NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: name[%s] found\n",
-				     __location__, name);
+			NWRAP_LOG(NWRAP_LOG_DEBUG, "name[%s] found", name);
 			return he;
 		}
 
@@ -1980,8 +1997,9 @@ static struct hostent *nwrap_files_gethostbyname(const char *name)
 
 		for (j = 0; he->h_aliases[j] != NULL; j++) {
 			if (strcasecmp(he->h_aliases[j], name) == 0) {
-				NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: name[%s] found\n",
-					     __location__, name);
+				NWRAP_LOG(NWRAP_LOG_DEBUG,
+					  "name[%s] found",
+					  name);
 				return he;
 			}
 		}
@@ -2110,8 +2128,7 @@ static struct hostent *nwrap_files_gethostent(void)
 
 	he = &nwrap_he_global.list[nwrap_he_global.idx++].ht;
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: return hosts[%s]\n",
-		       __location__, he->h_name);
+	NWRAP_LOG(NWRAP_LOG_DEBUG, "return hosts[%s]", he->h_name);
 
 	return he;
 }
@@ -2147,6 +2164,7 @@ static struct passwd *nwrap_module_getpwnam(struct nwrap_backend *b,
 	if (status != NSS_STATUS_SUCCESS) {
 		return NULL;
 	}
+
 	return &pwd;
 }
 
@@ -3134,13 +3152,11 @@ static int nwrap_getgrouplist(const char *user, gid_t group,
 	int count = 1;
 	const char *name_of_group = "";
 
-	NWRAP_LOG(NWRAP_LOG_DEBUG,
-		  "%s: getgrouplist called for %s\n",
-		  __location__, user);
+	NWRAP_LOG(NWRAP_LOG_DEBUG, "getgrouplist called for %s", user);
 
 	groups_tmp = (gid_t *)malloc(count * sizeof(gid_t));
 	if (!groups_tmp) {
-		NWRAP_LOG(NWRAP_LOG_ERROR, "%s:calloc failed\n",__location__);
+		NWRAP_LOG(NWRAP_LOG_ERROR, "Out of memory");
 		errno = ENOMEM;
 		return -1;
 	}
@@ -3156,22 +3172,24 @@ static int nwrap_getgrouplist(const char *user, gid_t group,
 	while ((grp = nwrap_getgrent()) != NULL) {
 		int i = 0;
 
-		NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: inspecting %s for group membership\n",
-			       __location__, grp->gr_name);
+		NWRAP_LOG(NWRAP_LOG_DEBUG,
+			  "Inspecting %s for group membership",
+			  grp->gr_name);
 
 		for (i=0; grp->gr_mem && grp->gr_mem[i] != NULL; i++) {
 
 			if ((strcmp(user, grp->gr_mem[i]) == 0) &&
 			    (strcmp(name_of_group, grp->gr_name) != 0)) {
 
-				NWRAP_LOG(NWRAP_LOG_DEBUG, "%s: %s is member of %s\n",
-					__location__, user, grp->gr_name);
+				NWRAP_LOG(NWRAP_LOG_DEBUG,
+					  "%s is member of %s",
+					  user,
+					  grp->gr_name);
 
 				groups_tmp = (gid_t *)realloc(groups_tmp, (count + 1) * sizeof(gid_t));
 				if (!groups_tmp) {
 					NWRAP_LOG(NWRAP_LOG_ERROR,
-						  "%s:calloc failed\n",
-						  __location__);
+						  "Out of memory");
 					errno = ENOMEM;
 					return -1;
 				}
@@ -3185,8 +3203,8 @@ static int nwrap_getgrouplist(const char *user, gid_t group,
 	nwrap_endgrent();
 
 	NWRAP_LOG(NWRAP_LOG_DEBUG,
-		  "%s: %s is member of %d groups\n",
-		  __location__, user, *ngroups);
+		  "%s is member of %d groups",
+		  user, *ngroups);
 
 	if (*ngroups < count) {
 		*ngroups = count;
