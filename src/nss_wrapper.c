@@ -139,10 +139,12 @@ enum nwrap_dbglvl_e {
 # define NWRAP_LOG(...)
 #else
 
-static void nwrap_log(enum nwrap_dbglvl_e dbglvl, const char *format, ...) PRINTF_ATTRIBUTE(2, 3);
-# define NWRAP_LOG(dbglvl, ...) nwrap_log((dbglvl), __VA_ARGS__)
+static void nwrap_log(enum nwrap_dbglvl_e dbglvl, const char *func, const char *format, ...) PRINTF_ATTRIBUTE(3, 4);
+# define NWRAP_LOG(dbglvl, ...) nwrap_log((dbglvl), __func__, __VA_ARGS__)
 
-static void nwrap_log(enum nwrap_dbglvl_e dbglvl, const char *format, ...)
+static void nwrap_log(enum nwrap_dbglvl_e dbglvl,
+		      const char *func,
+		      const char *format, ...)
 {
 	char buffer[1024];
 	va_list va;
@@ -162,23 +164,23 @@ static void nwrap_log(enum nwrap_dbglvl_e dbglvl, const char *format, ...)
 		switch (dbglvl) {
 			case NWRAP_LOG_ERROR:
 				fprintf(stderr,
-					"NWRAP_ERROR(%d): %s\n",
-					getpid(), buffer);
+					"NWRAP_ERROR(%d) - %s: %s\n",
+					getpid(), func, buffer);
 				break;
 			case NWRAP_LOG_WARN:
 				fprintf(stderr,
-					"NWRAP_WARN(%d): %s\n",
-					getpid(), buffer);
+					"NWRAP_WARN(%d) - %s: %s\n",
+					getpid(), func, buffer);
 				break;
 			case NWRAP_LOG_DEBUG:
 				fprintf(stderr,
-					"NWRAP_DEBUG(%d): %s\n",
-					getpid(), buffer);
+					"NWRAP_DEBUG(%d) - %s: %s\n",
+					getpid(), func, buffer);
 				break;
 			case NWRAP_LOG_TRACE:
 				fprintf(stderr,
-					"NWRAP_TRACE(%d): %s\n",
-					getpid(), buffer);
+					"NWRAP_TRACE(%d) - %s: %s\n",
+					getpid(), func, buffer);
 				break;
 		}
 	}
