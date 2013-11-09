@@ -150,6 +150,7 @@ static void nwrap_log(enum nwrap_dbglvl_e dbglvl,
 	va_list va;
 	const char *d;
 	unsigned int lvl = 0;
+	int pid = getpid();
 
 	d = getenv("NSS_WRAPPER_DEBUGLEVEL");
 	if (d != NULL) {
@@ -165,22 +166,22 @@ static void nwrap_log(enum nwrap_dbglvl_e dbglvl,
 			case NWRAP_LOG_ERROR:
 				fprintf(stderr,
 					"NWRAP_ERROR(%d) - %s: %s\n",
-					getpid(), func, buffer);
+					pid, func, buffer);
 				break;
 			case NWRAP_LOG_WARN:
 				fprintf(stderr,
 					"NWRAP_WARN(%d) - %s: %s\n",
-					getpid(), func, buffer);
+					pid, func, buffer);
 				break;
 			case NWRAP_LOG_DEBUG:
 				fprintf(stderr,
 					"NWRAP_DEBUG(%d) - %s: %s\n",
-					getpid(), func, buffer);
+					pid, func, buffer);
 				break;
 			case NWRAP_LOG_TRACE:
 				fprintf(stderr,
 					"NWRAP_TRACE(%d) - %s: %s\n",
-					getpid(), func, buffer);
+					pid, func, buffer);
 				break;
 		}
 	}
