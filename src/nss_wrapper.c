@@ -3745,6 +3745,11 @@ int getnameinfo(const struct sockaddr *sa, socklen_t salen,
 		char *host, socklen_t hostlen,
 		char *serv, socklen_t servlen,
 		int flags)
+#elif defined(HAVE_LINUX_GETNAMEINFO_UNSIGNED)
+int getnameinfo(const struct sockaddr *sa, socklen_t salen,
+		char *host, socklen_t hostlen,
+		char *serv, socklen_t servlen,
+		unsigned int flags)
 #else
 int getnameinfo(const struct sockaddr *sa, socklen_t salen,
 		char *host, size_t hostlen,
