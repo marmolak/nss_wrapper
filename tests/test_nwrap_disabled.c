@@ -9,6 +9,7 @@
 #include <netdb.h>
 #include <pwd.h>
 #include <grp.h>
+#include <string.h>
 #include <unistd.h>
 
 static void test_nwrap_passwd_group(void **state)
@@ -46,12 +47,26 @@ static void test_nwrap_hostent(void **state)
 	endhostent();
 }
 
+static void test_nwrap_gethostname(void **state)
+{
+	char host[256] = {0};
+	int rc;
+
+	(void) state; /* unused */
+
+	rc = gethostname(host, sizeof(host));
+	assert_int_equal(rc, 0);
+
+	assert_true(strlen(host) > 1);
+}
+
 int main(void) {
 	int rc;
 
 	const UnitTest tests[] = {
 		unit_test(test_nwrap_passwd_group),
 		unit_test(test_nwrap_hostent),
+		unit_test(test_nwrap_gethostname),
 	};
 
 	rc = run_tests(tests);
