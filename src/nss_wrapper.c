@@ -785,6 +785,13 @@ static int libc_getgrnam_r(const char *name,
 }
 #endif
 
+static struct group *libc_getgrgid(gid_t gid)
+{
+	nwrap_load_lib_function(NWRAP_LIBC, getgrgid);
+
+	return nwrap_main_global->libc->fns->_libc_getgrgid(gid);
+}
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -996,8 +1003,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	/* Load symbols of libc */
 	handle = r->libc->handle;
 
-	*(void **) (&r->libc->fns->_libc_getgrgid) =
-		nwrap_libc_fn(handle, "getgrgid");
 	*(void **) (&r->libc->fns->_libc_setgrent) =
 		nwrap_libc_fn(handle, "setgrent");
 	*(void **) (&r->libc->fns->_libc_getgrent) =
@@ -3202,7 +3207,7 @@ static struct group *nwrap_getgrgid(gid_t gid)
 struct group *getgrgid(gid_t gid)
 {
 	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getgrgid(gid);
+		return libc_getgrgid(gid);
 	}
 
 	return nwrap_getgrgid(gid);
