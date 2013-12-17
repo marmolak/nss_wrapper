@@ -877,6 +877,13 @@ static int libc_getgrouplist(const char *user,
 }
 #endif
 
+static void libc_sethostent(int stayopen)
+{
+	nwrap_load_lib_function(NWRAP_LIBNSL, sethostent);
+
+	nwrap_main_global->libc->fns->_libc_sethostent(stayopen);
+}
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -1093,8 +1100,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	handle = r->libc->nsl_handle;
 #endif
 
-	*(void **) (&r->libc->fns->_libc_sethostent) =
-		nwrap_libc_fn(handle, "sethostent");
 	*(void **) (&r->libc->fns->_libc_gethostent) =
 		nwrap_libc_fn(handle, "gethostent");
 	*(void **) (&r->libc->fns->_libc_endhostent) =
@@ -3554,7 +3559,7 @@ static void nwrap_sethostent(int stayopen) {
 int sethostent(int stayopen)
 {
 	if (!nwrap_hosts_enabled()) {
-		nwrap_main_global->libc->fns->_libc_sethostent(stayopen);
+		libc_sethostent(stayopen);
 		return 0;
 	}
 
@@ -3566,7 +3571,7 @@ int sethostent(int stayopen)
 void sethostent(int stayopen)
 {
 	if (!nwrap_hosts_enabled()) {
-		nwrap_main_global->libc->fns->_libc_sethostent(stayopen);
+		libc_sethostent(stayopen);
 		return;
 	}
 
