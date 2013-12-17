@@ -717,6 +717,32 @@ static struct passwd *libc_getpwent(void)
 	return nwrap_main_global->libc->fns->_libc_getpwent();
 }
 
+#ifdef HAVE_SOLARIS_GETPWENT_R
+static struct passwd *libc_getpwent_r(struct passwd *pwdst,
+				      char *buf,
+				      int buflen)
+{
+	nwrap_load_lib_function(NWRAP_LIBC, getpwent_r);
+
+	return nwrap_main_global->libc->fns->_libc_getpwent_r(pwdst,
+							      buf,
+							      buflen);
+}
+#else /* HAVE_SOLARIS_GETPWENT_R */
+static int libc_getpwent_r(struct passwd *pwdst,
+			   char *buf,
+			   size_t buflen,
+			   struct passwd **pwdstp)
+{
+	nwrap_load_lib_function(NWRAP_LIBC, getpwent_r);
+
+	return nwrap_main_global->libc->fns->_libc_getpwent_r(pwdst,
+							      buf,
+							      buflen,
+							      pwdstp);
+}
+#endif /* HAVE_SOLARIS_GETPWENT_R */
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -2979,7 +3005,7 @@ struct passwd *getpwent_r(struct passwd *pwdst, char *buf, int buflen)
 	int rc;
 
 	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getpwent_r(pwdst, buf, buflen);
+		return libc_getpwent_r(pwdst, buf, buflen);
 	}
 	rc = nwrap_getpwent_r(pwdst, buf, buflen, &pwdstp);
 	if (rc < 0) {
@@ -2993,7 +3019,7 @@ int getpwent_r(struct passwd *pwdst, char *buf,
 	       size_t buflen, struct passwd **pwdstp)
 {
 	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getpwent_r(pwdst, buf, buflen, pwdstp);
+		return libc_getpwent_r(pwdst, buf, buflen, pwdstp);
 	}
 
 	return nwrap_getpwent_r(pwdst, buf, buflen, pwdstp);
