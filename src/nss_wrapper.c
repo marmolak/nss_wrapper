@@ -1123,26 +1123,6 @@ static bool nwrap_module_init(const char *name,
 	return true;
 }
 
-#define LIBC_NAME "libc.so"
-
-static void *nwrap_libc_fn(void *handle, const char *fn_name)
-{
-	void *func;
-
-	if (handle == NULL) {
-		return NULL;
-	}
-
-	func = dlsym(handle, fn_name);
-	if (func == NULL) {
-		printf("Failed to find %s in %s: %s\n",
-				fn_name, LIBC_NAME, dlerror());
-		exit(-1);
-	}
-
-	return func;
-}
-
 static void nwrap_libc_init(struct nwrap_main *r)
 {
 	r->libc = malloc(sizeof(struct nwrap_libc));
