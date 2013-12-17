@@ -965,6 +965,19 @@ static int libc_gethostbyaddr_r(const void *addr,
 }
 #endif
 
+static int libc_getaddrinfo(const char *node,
+			    const char *service,
+			    const struct addrinfo *hints,
+			    struct addrinfo **res)
+{
+	nwrap_load_lib_function(NWRAP_LIBSOCKET, getaddrinfo);
+
+	return nwrap_main_global->libc->fns->_libc_getaddrinfo(node,
+							       service,
+							       hints,
+							       res);
+}
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -1181,8 +1194,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	handle = r->libc->sock_handle;
 #endif
 
-	*(void **) (&r->libc->fns->_libc_getaddrinfo) =
-		nwrap_libc_fn(handle, "getaddrinfo");
 	*(void **) (&r->libc->fns->_libc_getnameinfo) =
 		nwrap_libc_fn(handle, "getnameinfo");
 }
@@ -3834,10 +3845,7 @@ static int nwrap_getaddrinfo(const char *node,
 		return EAI_NONAME;
 	}
 
-	ret = nwrap_main_global->libc->fns->_libc_getaddrinfo(node,
-							      service,
-							      hints,
-							      &p);
+	ret = libc_getaddrinfo(node, service, hints, &p);
 	if (ret == 0) {
 		*res = p;
 
@@ -4028,10 +4036,7 @@ int getaddrinfo(const char *node, const char *service,
 		struct addrinfo **res)
 {
 	if (!nwrap_hosts_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getaddrinfo(node,
-								       service,
-								       hints,
-								       res);
+		return libc_getaddrinfo(node, service, hints, res);
 	}
 
 	return nwrap_getaddrinfo(node, service, hints, res);
