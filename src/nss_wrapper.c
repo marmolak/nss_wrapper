@@ -792,6 +792,27 @@ static struct group *libc_getgrgid(gid_t gid)
 	return nwrap_main_global->libc->fns->_libc_getgrgid(gid);
 }
 
+#ifdef HAVE_GETGRGID_R
+static int libc_getgrgid_r(gid_t gid,
+			   struct group *grp,
+			   char *buf,
+			   size_t buflen,
+			   struct group **result)
+{
+#ifdef HAVE___POSIX_GETGRGID_R
+	nwrap_load_lib_function(NWRAP_LIBC, __posix_getgrgid_r);
+#else
+	nwrap_load_lib_function(NWRAP_LIBC, getgrgid_r);
+#endif
+
+	return nwrap_main_global->libc->fns->_libc_getgrgid_r(gid,
+							      grp,
+							      buf,
+							      buflen,
+							      result);
+}
+#endif
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -1009,15 +1030,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		nwrap_libc_fn(handle, "getgrent");
 	*(void **) (&r->libc->fns->_libc_endgrent) =
 		nwrap_libc_fn(handle, "endgrent");
-#ifdef HAVE_GETGRGID_R
-# ifdef HAVE___POSIX_GETGRGID_R
-	*(void **) (&r->libc->fns->_libc_getgrgid_r) =
-		nwrap_libc_fn(handle, "__posix_getgrgid_r");
-# else
-	*(void **) (&r->libc->fns->_libc_getgrgid_r) =
-		nwrap_libc_fn(handle, "getgrgid_r");
-# endif
-#endif
 #ifdef HAVE_GETGRENT_R
 	*(void **) (&r->libc->fns->_libc_getgrent_r) =
 		nwrap_libc_fn(handle, "getgrent_r");
@@ -3244,8 +3256,7 @@ int getgrgid_r(gid_t gid, struct group *grdst,
 # endif /* HAVE_SOLARIS_GETGRGID_R */
 {
 	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getgrgid_r(gid,
-				grdst, buf, buflen, grdstp);
+		return libc_getgrgid_r(gid, grdst, buf, buflen, grdstp);
 	}
 
 	return nwrap_getgrgid_r(gid, grdst, buf, buflen, grdstp);
