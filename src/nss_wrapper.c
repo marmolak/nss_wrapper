@@ -743,6 +743,13 @@ static int libc_getpwent_r(struct passwd *pwdst,
 }
 #endif /* HAVE_SOLARIS_GETPWENT_R */
 
+static void libc_endpwent(void)
+{
+	nwrap_load_lib_function(NWRAP_LIBC, endpwent);
+
+	nwrap_main_global->libc->fns->_libc_endpwent();
+}
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -954,8 +961,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	/* Load symbols of libc */
 	handle = r->libc->handle;
 
-	*(void **) (&r->libc->fns->_libc_getpwent) =
-		nwrap_libc_fn(handle, "endpwent");
 	*(void **) (&r->libc->fns->_libc_initgroups) =
 		nwrap_libc_fn(handle, "initgroups");
 	*(void **) (&r->libc->fns->_libc_getgrnam) =
@@ -3043,7 +3048,7 @@ static void nwrap_endpwent(void)
 void endpwent(void)
 {
 	if (!nwrap_enabled()) {
-		nwrap_main_global->libc->fns->_libc_endpwent();
+		libc_endpwent();
 		return;
 	}
 
