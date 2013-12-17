@@ -813,6 +813,13 @@ static int libc_getgrgid_r(gid_t gid,
 }
 #endif
 
+static void libc_setgrent(void)
+{
+	nwrap_load_lib_function(NWRAP_LIBC, setgrent);
+
+	nwrap_main_global->libc->fns->_libc_setgrent();
+}
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -1024,8 +1031,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	/* Load symbols of libc */
 	handle = r->libc->handle;
 
-	*(void **) (&r->libc->fns->_libc_setgrent) =
-		nwrap_libc_fn(handle, "setgrent");
 	*(void **) (&r->libc->fns->_libc_getgrent) =
 		nwrap_libc_fn(handle, "getgrent");
 	*(void **) (&r->libc->fns->_libc_endgrent) =
@@ -3284,7 +3289,7 @@ void setgrent(void)
 #endif
 {
 	if (!nwrap_enabled()) {
-		nwrap_main_global->libc->fns->_libc_setgrent();
+		libc_setgrent();
 		goto out;
 	}
 
