@@ -639,6 +639,21 @@ static void *_nwrap_load_lib_function(enum nwrap_lib lib, const char *fn_name)
 			_nwrap_load_lib_function(lib, #fn_name); \
 	}
 
+/*
+ * IMPORTANT
+ *
+ * Functions expeciall from libc need to be loaded individually, you can't load
+ * all at once or gdb will segfault at startup. The same applies to valgrind and
+ * has probably something todo with with the linker.
+ * So we need load each function at the point it is called the first time.
+ */
+static struct passwd *libc_getpwnam(const char *name)
+{
+	nwrap_load_lib_function(NWRAP_LIBC, getpwnam);
+
+	return nwrap_main_global->libc->fns->_libc_getpwnam(name);
+}
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -850,8 +865,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	/* Load symbols of libc */
 	handle = r->libc->handle;
 
-	*(void **) (&r->libc->fns->_libc_getpwnam) =
-		nwrap_libc_fn(handle, "getpwnam");
 	*(void **) (&r->libc->fns->_libc_getpwuid) =
 		nwrap_libc_fn(handle, "getpwuid");
 	*(void **) (&r->libc->fns->_libc_setpwent) =
@@ -2737,7 +2750,7 @@ static struct passwd *nwrap_getpwnam(const char *name)
 struct passwd *getpwnam(const char *name)
 {
 	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getpwnam(name);
+		return libc_getpwnam(name);
 	}
 
 	return nwrap_getpwnam(name);
