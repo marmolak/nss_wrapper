@@ -675,6 +675,13 @@ static int libc_getpwnam_r(const char *name,
 }
 #endif
 
+static struct passwd *libc_getpwuid(uid_t uid)
+{
+	nwrap_load_lib_function(NWRAP_LIBC, getpwuid);
+
+	return nwrap_main_global->libc->fns->_libc_getpwuid(uid);
+}
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -886,8 +893,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	/* Load symbols of libc */
 	handle = r->libc->handle;
 
-	*(void **) (&r->libc->fns->_libc_getpwuid) =
-		nwrap_libc_fn(handle, "getpwuid");
 	*(void **) (&r->libc->fns->_libc_setpwent) =
 		nwrap_libc_fn(handle, "setpwent");
 	*(void **) (&r->libc->fns->_libc_getpwent) =
@@ -2829,7 +2834,7 @@ static struct passwd *nwrap_getpwuid(uid_t uid)
 struct passwd *getpwuid(uid_t uid)
 {
 	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getpwuid(uid);
+		return libc_getpwuid(uid);
 	}
 
 	return nwrap_getpwuid(uid);
