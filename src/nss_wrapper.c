@@ -506,6 +506,96 @@ struct nwrap_he nwrap_he_global;
 static bool nwrap_gr_parse_line(struct nwrap_cache *nwrap, char *line);
 static void nwrap_gr_unload(struct nwrap_cache *nwrap);
 
+/*********************************************************
+ * NWRAP LIBC LOADER FUNCTIONS
+ *********************************************************/
+
+enum nwrap_lib {
+    NWRAP_LIBC,
+    NWRAP_LIBNSL,
+    NWRAP_LIBSOCKET,
+};
+
+static void *nwrap_load_lib_handle(enum nwrap_lib lib)
+{
+	int flags = RTLD_LAZY;
+	void *handle = NULL;
+	int i;
+
+#ifdef HAVE_APPLE
+	return RTLD_NEXT;
+#endif
+
+#ifdef RTLD_DEEPBIND
+	flags |= RTLD_DEEPBIND;
+#endif
+
+	switch (lib) {
+	case NWRAP_LIBNSL:
+#ifdef HAVE_LIBNSL
+		if (handle == NULL) {
+			for (handle = NULL, i = 10; handle == NULL && i >= 0; i--) {
+				char soname[256] = {0};
+
+				snprintf(soname, sizeof(soname), "libnsl.so.%d", i);
+				handle = dlopen(soname, flags);
+			}
+
+			nwrap_main_global->libc->nsl_handle = handle;
+		} else {
+			handle = nwrap_main_global->libc->nsl_handle;
+		}
+		break;
+#endif
+		/* FALL TROUGH */
+	case NWRAP_LIBSOCKET:
+#ifdef HAVE_LIBSOCKET
+		if (handle == NULL) {
+			for (handle = NULL, i = 10; handle == NULL && i >= 0; i--) {
+				char soname[256] = {0};
+
+				snprintf(soname, sizeof(soname), "libsocket.so.%d", i);
+				handle = dlopen(soname, flags);
+			}
+
+			swrap.libsocket_handle = handle;
+			nwrap_main_global->libc->sock_handle = handle;
+		} else {
+			handle = nwrap_main_global->libc->sock_handle;
+		}
+		break;
+#endif
+		/* FALL TROUGH */
+	case NWRAP_LIBC:
+		if (handle == NULL) {
+			for (handle = NULL, i = 10; handle == NULL && i >= 0; i--) {
+				char soname[256] = {0};
+
+				snprintf(soname, sizeof(soname), "libc.so.%d", i);
+				handle = dlopen(soname, flags);
+			}
+
+			nwrap_main_global->libc->handle = handle;
+		} else {
+			handle = nwrap_main_global->libc->handle;
+		}
+		break;
+	}
+
+	if (handle == NULL) {
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+			  "Failed to dlopen library: %s\n",
+			  dlerror());
+		exit(-1);
+	}
+
+	return handle;
+}
+
+/*********************************************************
+ * NWRAP NSS MODULE LOADER FUNCTIONS
+ *********************************************************/
+
 static void *nwrap_load_module_fn(struct nwrap_backend *b,
 				  const char *fn_name)
 {
