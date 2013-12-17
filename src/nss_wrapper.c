@@ -898,6 +898,13 @@ static void libc_endhostent(void)
 	nwrap_main_global->libc->fns->_libc_endhostent();
 }
 
+static struct hostent *libc_gethostbyname(const char *name)
+{
+	nwrap_load_lib_function(NWRAP_LIBNSL, gethostbyname);
+
+	return nwrap_main_global->libc->fns->_libc_gethostbyname(name);
+}
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -3637,7 +3644,7 @@ static struct hostent *nwrap_gethostbyname(const char *name)
 struct hostent *gethostbyname(const char *name)
 {
 	if (!nwrap_hosts_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_gethostbyname(name);
+		return libc_gethostbyname(name);
 	}
 
 	return nwrap_gethostbyname(name);
