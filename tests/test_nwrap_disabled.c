@@ -60,6 +60,36 @@ static void test_nwrap_gethostname(void **state)
 	assert_true(strlen(host) > 1);
 }
 
+static void test_nwrap_getaddrinfo_local(void **state)
+{
+	struct addrinfo hints;
+	struct addrinfo *res;
+	struct sockaddr_in *sinp;
+	int rc;
+
+	(void) state; /* unused */
+
+	/* IPv4 */
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_ADDRCONFIG;
+
+	rc = getaddrinfo("127.0.0.1", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+
+	assert_int_equal(res->ai_family, AF_INET);
+	assert_int_equal(res->ai_socktype, SOCK_STREAM);
+
+	assert_null(res->ai_canonname);
+
+	sinp = (struct sockaddr_in *)res->ai_addr;
+
+	assert_int_equal(ntohl(sinp->sin_addr.s_addr), INADDR_LOOPBACK);
+
+	freeaddrinfo(res);
+}
+
 int main(void) {
 	int rc;
 
@@ -67,6 +97,7 @@ int main(void) {
 		unit_test(test_nwrap_passwd_group),
 		unit_test(test_nwrap_hostent),
 		unit_test(test_nwrap_gethostname),
+		unit_test(test_nwrap_getaddrinfo_local),
 	};
 
 	rc = run_tests(tests);
