@@ -827,6 +827,34 @@ static struct group *libc_getgrent(void)
 	return nwrap_main_global->libc->fns->_libc_getgrent();
 }
 
+#ifdef HAVE_GETGRENT_R
+#ifdef HAVE_SOLARIS_GETGRENT_R
+static struct group *libc_getgrent_r(struct group *group,
+				     char *buf,
+				     size_t buflen)
+{
+	nwrap_load_lib_function(NWRAP_LIBC, getgrent_r);
+
+	return nwrap_main_global->libc->fns->_libc_getgrent_r(group,
+							      buf,
+							      buflen);
+}
+#else /* !HAVE_SOLARIS_GETGRENT_R */
+static int libc_getgrent_r(struct group *group,
+			   char *buf,
+			   size_t buflen,
+			   struct group **result)
+{
+	nwrap_load_lib_function(NWRAP_LIBC, getgrent_r);
+
+	return nwrap_main_global->libc->fns->_libc_getgrent_r(group,
+							      buf,
+							      buflen,
+							      result);
+}
+#endif /* HAVE_SOLARIS_GETGRENT_R */
+#endif /* HAVE_GETGRENT_R */
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -1040,10 +1068,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 
 	*(void **) (&r->libc->fns->_libc_endgrent) =
 		nwrap_libc_fn(handle, "endgrent");
-#ifdef HAVE_GETGRENT_R
-	*(void **) (&r->libc->fns->_libc_getgrent_r) =
-		nwrap_libc_fn(handle, "getgrent_r");
-#endif
 #ifdef HAVE_GETGROUPLIST
 	*(void **) (&r->libc->fns->_libc_getgrouplist) =
 		nwrap_libc_fn(handle, "getgrouplist");
@@ -3365,7 +3389,7 @@ struct group *getgrent_r(struct group *src, char *buf, int buflen)
 	int rc;
 
 	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getgrent_r(src, buf, buflen);
+		return libc_getgrent_r(src, buf, buflen);
 	}
 
 	rc = nwrap_getgrent_r(src, buf, buflen, &grdstp);
@@ -3380,7 +3404,7 @@ int getgrent_r(struct group *src, char *buf,
 	       size_t buflen, struct group **grdstp)
 {
 	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getgrent_r(src, buf, buflen, grdstp);
+		return libc_getgrent_r(src, buf, buflen, grdstp);
 	}
 
 	return nwrap_getgrent_r(src, buf, buflen, grdstp);
