@@ -978,6 +978,25 @@ static int libc_getaddrinfo(const char *node,
 							       res);
 }
 
+static int libc_getnameinfo(const struct sockaddr *sa,
+			    socklen_t salen,
+			    char *host,
+			    size_t hostlen,
+			    char *serv,
+			    size_t servlen,
+			    int flags)
+{
+	nwrap_load_lib_function(NWRAP_LIBSOCKET, getnameinfo);
+
+	return nwrap_main_global->libc->fns->_libc_getnameinfo(sa,
+							       salen,
+							       host,
+							       hostlen,
+							       serv,
+							       servlen,
+							       flags);
+}
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -1126,76 +1145,17 @@ static void *nwrap_libc_fn(void *handle, const char *fn_name)
 
 static void nwrap_libc_init(struct nwrap_main *r)
 {
-	int i;
-	int flags = RTLD_LAZY;
-	void *handle;
-
-#ifdef RTLD_DEEPBIND
-	flags |= RTLD_DEEPBIND;
-#endif
-
 	r->libc = malloc(sizeof(struct nwrap_libc));
 	if (r->libc == NULL) {
 		printf("Failed to allocate memory for libc");
 		exit(-1);
 	}
 
-	for (r->libc->handle = NULL, i = 10; r->libc->handle == NULL && i >= 0; i--) {
-		char soname[256] = {0};
-
-		snprintf(soname, sizeof(soname), "%s.%d", LIBC_NAME, i);
-		r->libc->handle = dlopen(soname, flags);
-	}
-
-	if (r->libc->handle == NULL) {
-		printf("Failed to dlopen %s.%d: %s\n", LIBC_NAME, i, dlerror());
-		exit(-1);
-	}
-
-#ifdef HAVE_LIBNSL
-	for (r->libc->nsl_handle = NULL, i = 10; r->libc->nsl_handle == NULL && i >= 0; i--) {
-		char soname[256] = {0};
-                i = 1;
-
-		snprintf(soname, sizeof(soname), "libnsl.so.%d", i);
-		r->libc->nsl_handle = dlopen(soname, flags);
-	}
-
-	if (r->libc->nsl_handle == NULL) {
-		printf("Failed to dlopen libnsl.so: %s\n", dlerror());
-		exit(-1);
-	}
-#endif
-#ifdef HAVE_LIBSOCKET
-	for (r->libc->sock_handle = NULL, i = 10; r->libc->sock_handle == NULL && i >= 0; i--) {
-		char soname[256] = {0};
-
-		snprintf(soname, sizeof(soname), "libsocket.so.%d", i);
-		r->libc->sock_handle = dlopen(soname, flags);
-	}
-
-	if (r->libc->sock_handle == NULL) {
-		printf("Failed to dlopen libsocket.so: %s\n", dlerror());
-		exit(-1);
-	}
-#endif
-
 	r->libc->fns = malloc(sizeof(struct nwrap_libc_fns));
 	if (r->libc->fns == NULL) {
 		printf("Failed to allocate memory for libc functions");
 		exit(-1);
 	}
-
-	/* Load symbols of libc */
-	handle = r->libc->handle;
-
-#ifdef HAVE_LIBSOCKET
-	/* Load symbols of libsocket */
-	handle = r->libc->sock_handle;
-#endif
-
-	*(void **) (&r->libc->fns->_libc_getnameinfo) =
-		nwrap_libc_fn(handle, "getnameinfo");
 }
 
 static void nwrap_backend_init(struct nwrap_main *r)
@@ -4141,10 +4101,7 @@ int getnameinfo(const struct sockaddr *sa, socklen_t salen,
 #endif
 {
 	if (!nwrap_hosts_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getnameinfo(sa, salen,
-								       host, hostlen,
-								       serv, servlen,
-								       flags);
+		return libc_getnameinfo(sa, salen, host, hostlen, serv, servlen, flags);
 	}
 
 	return nwrap_getnameinfo(sa, salen, host, hostlen, serv, servlen, flags);
