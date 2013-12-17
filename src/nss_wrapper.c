@@ -503,6 +503,7 @@ struct nwrap_he {
 struct nwrap_cache __nwrap_cache_he;
 struct nwrap_he nwrap_he_global;
 
+static void nwrap_init(void);
 static bool nwrap_gr_parse_line(struct nwrap_cache *nwrap, char *line);
 static void nwrap_gr_unload(struct nwrap_cache *nwrap);
 
@@ -515,6 +516,23 @@ enum nwrap_lib {
     NWRAP_LIBNSL,
     NWRAP_LIBSOCKET,
 };
+
+#ifndef NDEBUG
+static const char *nwrap_str_lib(enum nwrap_lib lib)
+{
+	switch (lib) {
+	case NWRAP_LIBC:
+		return "libc";
+	case NWRAP_LIBNSL:
+		return "libnsl";
+	case NWRAP_LIBSOCKET:
+		return "libsocket";
+	}
+
+	/* Compiler would warn us about unhandled enum value if we get here */
+	return "unknown";
+}
+#endif
 
 static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 {
@@ -591,6 +609,35 @@ static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 
 	return handle;
 }
+
+static void *_nwrap_load_lib_function(enum nwrap_lib lib, const char *fn_name)
+{
+	void *handle;
+	void *func;
+
+	nwrap_init();
+
+	handle = nwrap_load_lib_handle(lib);
+
+	func = dlsym(handle, fn_name);
+	if (func == NULL) {
+		NWRAP_LOG(NWRAP_LOG_ERROR,
+				"Failed to find %s: %s\n",
+				fn_name, dlerror());
+		exit(-1);
+	}
+
+	NWRAP_LOG(NWRAP_LOG_TRACE,
+			"Loaded %s from %s",
+			fn_name, nwrap_str_lib(lib));
+	return func;
+}
+
+#define nwrap_load_lib_function(lib, fn_name) \
+	if (nwrap_main_global->libc->fns->_libc_##fn_name == NULL) { \
+		*(void **) (&nwrap_main_global->libc->fns->_libc_##fn_name) = \
+			_nwrap_load_lib_function(lib, #fn_name); \
+	}
 
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
