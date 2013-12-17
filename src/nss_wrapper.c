@@ -923,6 +923,25 @@ static int libc_gethostname(char *name, size_t len)
 	return nwrap_main_global->libc->fns->_libc_gethostname(name, len);
 }
 
+#ifdef HAVE_GETHOSTBYNAME_R
+static int libc_gethostbyname_r(const char *name,
+				struct hostent *ret,
+				char *buf,
+				size_t buflen,
+				struct hostent **result,
+				int *h_errnop)
+{
+	nwrap_load_lib_function(NWRAP_LIBNSL, gethostbyname_r);
+
+	return nwrap_main_global->libc->fns->_libc_gethostbyname_r(name,
+								   ret,
+								   buf,
+								   buflen,
+								   result,
+								   h_errnop);
+}
+#endif
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -1139,10 +1158,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	handle = r->libc->nsl_handle;
 #endif
 
-#ifdef HAVE_GETHOSTBYNAME_R
-	*(void **) (&r->libc->fns->_libc_gethostbyname_r) =
-		nwrap_libc_fn(handle, "gethostbyname_r");
-#endif
 #ifdef HAVE_GETHOSTBYADDR_R
 	*(void **) (&r->libc->fns->_libc_gethostbyaddr_r) =
 		nwrap_libc_fn(handle, "gethostbyaddr_r");
@@ -2378,9 +2393,12 @@ int gethostbyname_r(const char *name,
 		    struct hostent **result, int *h_errnop)
 {
 	if (!nwrap_hosts_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_gethostbyname_r(name, ret,
-									   buf, buflen,
-									   result, h_errnop);
+		return libc_gethostbyname_r(name,
+					    ret,
+					    buf,
+					    buflen,
+					    result,
+					    h_errnop);
 	}
 
 	return nwrap_gethostbyname_r(name, ret, buf, buflen, result, h_errnop);
