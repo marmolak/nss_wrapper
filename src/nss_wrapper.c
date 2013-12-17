@@ -682,6 +682,27 @@ static struct passwd *libc_getpwuid(uid_t uid)
 	return nwrap_main_global->libc->fns->_libc_getpwuid(uid);
 }
 
+#ifdef HAVE_GETPWUID_R
+static int libc_getpwuid_r(uid_t uid,
+			   struct passwd *pwd,
+			   char *buf,
+			   size_t buflen,
+			   struct passwd **result)
+{
+#ifdef HAVE___POSIX_GETPWUID_R
+	nwrap_load_lib_function(NWRAP_LIBC, __posix_getpwuid_r);
+#else
+	nwrap_load_lib_function(NWRAP_LIBC, getpwuid);
+#endif
+
+	return nwrap_main_global->libc->fns->_libc_getpwuid_r(uid,
+							      pwd,
+							      buf,
+							      buflen,
+							      result);
+}
+#endif
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -911,15 +932,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		nwrap_libc_fn(handle, "getgrent");
 	*(void **) (&r->libc->fns->_libc_endgrent) =
 		nwrap_libc_fn(handle, "endgrent");
-#ifdef HAVE_GETPWUID_R
-# ifdef HAVE___POSIX_GETPWUID_R
-	*(void **) (&r->libc->fns->_libc_getpwuid_r) =
-		nwrap_libc_fn(handle, "__posix_getpwuid_r");
-# else
-	*(void **) (&r->libc->fns->_libc_getpwuid_r) =
-		nwrap_libc_fn(handle, "getpwuid_r");
-# endif
-#endif
 #ifdef HAVE_GETGRNAM_R
 # ifdef HAVE___POSIX_GETGRNAM_R
 	*(void **) (&r->libc->fns->_libc_getgrnam_r) =
@@ -2870,7 +2882,7 @@ int getpwuid_r(uid_t uid, struct passwd *pwdst,
 #endif
 {
 	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getpwuid_r(uid, pwdst, buf, buflen, pwdstp);
+		return libc_getpwuid_r(uid, pwdst, buf, buflen, pwdstp);
 	}
 
 	return nwrap_getpwuid_r(uid, pwdst, buf, buflen, pwdstp);
