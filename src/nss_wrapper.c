@@ -820,6 +820,13 @@ static void libc_setgrent(void)
 	nwrap_main_global->libc->fns->_libc_setgrent();
 }
 
+static struct group *libc_getgrent(void)
+{
+	nwrap_load_lib_function(NWRAP_LIBC, getgrent);
+
+	return nwrap_main_global->libc->fns->_libc_getgrent();
+}
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -1031,8 +1038,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	/* Load symbols of libc */
 	handle = r->libc->handle;
 
-	*(void **) (&r->libc->fns->_libc_getgrent) =
-		nwrap_libc_fn(handle, "getgrent");
 	*(void **) (&r->libc->fns->_libc_endgrent) =
 		nwrap_libc_fn(handle, "endgrent");
 #ifdef HAVE_GETGRENT_R
@@ -3326,7 +3331,7 @@ static struct group *nwrap_getgrent(void)
 struct group *getgrent(void)
 {
 	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getgrent();
+		return libc_getgrent();
 	}
 
 	return nwrap_getgrent();
