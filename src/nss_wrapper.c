@@ -862,6 +862,21 @@ static void libc_endgrent(void)
 	nwrap_main_global->libc->fns->_libc_endgrent();
 }
 
+#ifdef HAVE_GETGROUPLIST
+static int libc_getgrouplist(const char *user,
+			     gid_t group,
+			     gid_t *groups,
+			     int *ngroups)
+{
+	nwrap_load_lib_function(NWRAP_LIBC, getgrouplist);
+
+	return nwrap_main_global->libc->fns->_libc_getgrouplist(user,
+								group,
+								groups,
+								ngroups);
+}
+#endif
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -1072,11 +1087,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 
 	/* Load symbols of libc */
 	handle = r->libc->handle;
-
-#ifdef HAVE_GETGROUPLIST
-	*(void **) (&r->libc->fns->_libc_getgrouplist) =
-		nwrap_libc_fn(handle, "getgrouplist");
-#endif
 
 #ifdef HAVE_LIBNSL
 	/* Load symbols of libnsl */
@@ -3523,7 +3533,7 @@ static int nwrap_getgrouplist(const char *user, gid_t group,
 int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
 {
 	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getgrouplist(user, group, groups, ngroups);
+		return libc_getgrouplist(user, group, groups, ngroups);
 	}
 
 	return nwrap_getgrouplist(user, group, groups, ngroups);
