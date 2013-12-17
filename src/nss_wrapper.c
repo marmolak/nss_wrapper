@@ -884,6 +884,20 @@ static void libc_sethostent(int stayopen)
 	nwrap_main_global->libc->fns->_libc_sethostent(stayopen);
 }
 
+static struct hostent *libc_gethostent(void)
+{
+	nwrap_load_lib_function(NWRAP_LIBNSL, gethostent);
+
+	return nwrap_main_global->libc->fns->_libc_gethostent();
+}
+
+static void libc_endhostent(void)
+{
+	nwrap_load_lib_function(NWRAP_LIBNSL, endhostent);
+
+	nwrap_main_global->libc->fns->_libc_endhostent();
+}
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -1099,11 +1113,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	/* Load symbols of libnsl */
 	handle = r->libc->nsl_handle;
 #endif
-
-	*(void **) (&r->libc->fns->_libc_gethostent) =
-		nwrap_libc_fn(handle, "gethostent");
-	*(void **) (&r->libc->fns->_libc_endhostent) =
-		nwrap_libc_fn(handle, "endhostent");
 
 	*(void **) (&r->libc->fns->_libc_gethostbyaddr) =
 		nwrap_libc_fn(handle, "gethostbyaddr");
@@ -3586,7 +3595,7 @@ static struct hostent *nwrap_gethostent(void)
 
 struct hostent *gethostent(void) {
 	if (!nwrap_hosts_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_gethostent();
+		return libc_gethostent();
 	}
 
 	return nwrap_gethostent();
@@ -3600,7 +3609,7 @@ static void nwrap_endhostent(void) {
 int endhostent(void)
 {
 	if (!nwrap_hosts_enabled()) {
-		nwrap_main_global->libc->fns->_libc_endhostent();
+		libc_endhostent();
 		return 0;
 	}
 
@@ -3612,7 +3621,7 @@ int endhostent(void)
 void endhostent(void)
 {
 	if (!nwrap_hosts_enabled()) {
-		nwrap_main_global->libc->fns->_libc_endhostent();
+		libc_endhostent();
 		return;
 	}
 
