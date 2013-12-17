@@ -750,6 +750,13 @@ static void libc_endpwent(void)
 	nwrap_main_global->libc->fns->_libc_endpwent();
 }
 
+static int libc_initgroups(const char *user, gid_t gid)
+{
+	nwrap_load_lib_function(NWRAP_LIBC, initgroups);
+
+	return nwrap_main_global->libc->fns->_libc_initgroups(user, gid);
+}
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -961,8 +968,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	/* Load symbols of libc */
 	handle = r->libc->handle;
 
-	*(void **) (&r->libc->fns->_libc_initgroups) =
-		nwrap_libc_fn(handle, "initgroups");
 	*(void **) (&r->libc->fns->_libc_getgrnam) =
 		nwrap_libc_fn(handle, "getgrnam");
 	*(void **) (&r->libc->fns->_libc_getgrgid) =
@@ -3080,7 +3085,7 @@ static int nwrap_initgroups(const char *user, gid_t group)
 int initgroups(const char *user, gid_t group)
 {
 	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_initgroups(user, group);
+		return libc_initgroups(user, group);
 	}
 
 	return nwrap_initgroups(user, group);
