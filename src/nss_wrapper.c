@@ -710,6 +710,13 @@ static void libc_setpwent(void)
 	nwrap_main_global->libc->fns->_libc_setpwent();
 }
 
+static struct passwd *libc_getpwent(void)
+{
+	nwrap_load_lib_function(NWRAP_LIBC, getpwent);
+
+	return nwrap_main_global->libc->fns->_libc_getpwent();
+}
+
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -921,8 +928,6 @@ static void nwrap_libc_init(struct nwrap_main *r)
 	/* Load symbols of libc */
 	handle = r->libc->handle;
 
-	*(void **) (&r->libc->fns->_libc_getpwent) =
-		nwrap_libc_fn(handle, "getpwent");
 	*(void **) (&r->libc->fns->_libc_getpwent) =
 		nwrap_libc_fn(handle, "endpwent");
 	*(void **) (&r->libc->fns->_libc_initgroups) =
@@ -2940,7 +2945,7 @@ static struct passwd *nwrap_getpwent(void)
 struct passwd *getpwent(void)
 {
 	if (!nwrap_enabled()) {
-		return nwrap_main_global->libc->fns->_libc_getpwent();
+		return libc_getpwent();
 	}
 
 	return nwrap_getpwent();
