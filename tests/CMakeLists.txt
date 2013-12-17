@@ -26,3 +26,6 @@ foreach(_NWRAP_TEST ${NWRAP_TESTS})
         PROPERTY
             ENVIRONMENT ${TEST_ENVIRONMENT})
 endforeach()
+
+# Test nwrap without wrapping so the libc functions are called
+add_cmocka_test(test_nwrap_disabled test_nwrap_disabled.c ${TESTSUITE_LIBRARIES})
