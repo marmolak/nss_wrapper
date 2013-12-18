@@ -576,7 +576,6 @@ static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 				handle = dlopen(soname, flags);
 			}
 
-			swrap.libsocket_handle = handle;
 			nwrap_main_global->libc->sock_handle = handle;
 		} else {
 			handle = nwrap_main_global->libc->sock_handle;
