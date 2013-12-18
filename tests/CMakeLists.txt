@@ -29,3 +29,8 @@ endforeach()
 
 # Test nwrap without wrapping so the libc functions are called
 add_cmocka_test(test_nwrap_disabled test_nwrap_disabled.c ${TESTSUITE_LIBRARIES})
+set_property(
+    TEST
+        test_nwrap_disabled
+    PROPERTY
+        ENVIRONMENT LD_PRELOAD=${CMAKE_BINARY_DIR}/src/libnss_wrapper.so)
