@@ -661,7 +661,10 @@ static int libc_getpwnam_r(const char *name,
 			   struct passwd **result)
 {
 #ifdef HAVE___POSIX_GETPWNAM_R
-	nwrap_load_lib_function(NWRAP_LIBC, __posix_getpwnam_r);
+	if (nwrap_main_global->libc->fns->_libc_getpwnam_r == NULL) {
+		*(void **) (&nwrap_main_global->libc->fns->_libc_getpwnam_r) =
+			_nwrap_load_lib_function(lib, "__posix_getpwnam_r");
+	}
 #else
 	nwrap_load_lib_function(NWRAP_LIBC, getpwnam_r);
 #endif
@@ -689,9 +692,12 @@ static int libc_getpwuid_r(uid_t uid,
 			   struct passwd **result)
 {
 #ifdef HAVE___POSIX_GETPWUID_R
-	nwrap_load_lib_function(NWRAP_LIBC, __posix_getpwuid_r);
+	if (nwrap_main_global->libc->fns->_libc_getpwuid_r == NULL) {
+		*(void **) (&nwrap_main_global->libc->fns->_libc_getpwuid_r) =
+			_nwrap_load_lib_function(lib, "__posix_getpwuid_r");
+	}
 #else
-	nwrap_load_lib_function(NWRAP_LIBC, getpwuid);
+	nwrap_load_lib_function(NWRAP_LIBC, getpwuid_r);
 #endif
 
 	return nwrap_main_global->libc->fns->_libc_getpwuid_r(uid,
