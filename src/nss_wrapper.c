@@ -3481,6 +3481,7 @@ void endgrent(void)
  *   GETGROUPLIST
  ***************************************************************************/
 
+#ifdef HAVE_GETGROUPLIST
 static int nwrap_getgrouplist(const char *user, gid_t group,
 			      gid_t *groups, int *ngroups)
 {
@@ -3556,7 +3557,6 @@ static int nwrap_getgrouplist(const char *user, gid_t group,
 	return count;
 }
 
-#ifdef HAVE_GETGROUPLIST
 int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
 {
 	if (!nwrap_enabled()) {
