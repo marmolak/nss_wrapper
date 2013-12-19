@@ -1156,7 +1156,7 @@ static void nwrap_libc_init(struct nwrap_main *r)
 static void nwrap_backend_init(struct nwrap_main *r)
 {
 	const char *module_so_path = getenv("NSS_WRAPPER_MODULE_SO_PATH");
-	const char *module_fn_name = getenv("NSS_WRAPPER_MODULE_FN_NAME");
+	const char *module_fn_name = getenv("NSS_WRAPPER_MODULE_FN_PREFIX");
 
 	r->num_backends = 0;
 	r->backends = NULL;
