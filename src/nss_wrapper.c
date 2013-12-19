@@ -663,7 +663,7 @@ static int libc_getpwnam_r(const char *name,
 #ifdef HAVE___POSIX_GETPWNAM_R
 	if (nwrap_main_global->libc->fns->_libc_getpwnam_r == NULL) {
 		*(void **) (&nwrap_main_global->libc->fns->_libc_getpwnam_r) =
-			_nwrap_load_lib_function(lib, "__posix_getpwnam_r");
+			_nwrap_load_lib_function(NWRAP_LIBC, "__posix_getpwnam_r");
 	}
 #else
 	nwrap_load_lib_function(NWRAP_LIBC, getpwnam_r);
@@ -694,7 +694,7 @@ static int libc_getpwuid_r(uid_t uid,
 #ifdef HAVE___POSIX_GETPWUID_R
 	if (nwrap_main_global->libc->fns->_libc_getpwuid_r == NULL) {
 		*(void **) (&nwrap_main_global->libc->fns->_libc_getpwuid_r) =
-			_nwrap_load_lib_function(lib, "__posix_getpwuid_r");
+			_nwrap_load_lib_function(NWRAP_LIBC, "__posix_getpwuid_r");
 	}
 #else
 	nwrap_load_lib_function(NWRAP_LIBC, getpwuid_r);
@@ -777,7 +777,10 @@ static int libc_getgrnam_r(const char *name,
 			   struct group **result)
 {
 #ifdef HAVE___POSIX_GETGRNAM_R
-	nwrap_load_lib_function(NWRAP_LIBC, __posix_getgrnam_r);
+	if (nwrap_main_global->libc->fns->_libc_getgrnam_r == NULL) {
+		*(void **) (&nwrap_main_global->libc->fns->_libc_getgrnam_r) =
+			_nwrap_load_lib_function(NWRAP_LIBC, "__posix_getgrnam_r");
+	}
 #else
 	nwrap_load_lib_function(NWRAP_LIBC, getgrnam_r);
 #endif
@@ -805,7 +808,10 @@ static int libc_getgrgid_r(gid_t gid,
 			   struct group **result)
 {
 #ifdef HAVE___POSIX_GETGRGID_R
-	nwrap_load_lib_function(NWRAP_LIBC, __posix_getgrgid_r);
+	if (nwrap_main_global->libc->fns->_libc_getgrgid_r == NULL) {
+		*(void **) (&nwrap_main_global->libc->fns->_libc_getgrgid_r) =
+			_nwrap_load_lib_function(NWRAP_LIBC, "__posix_getgrgid_r");
+	}
 #else
 	nwrap_load_lib_function(NWRAP_LIBC, getgrgid_r);
 #endif
