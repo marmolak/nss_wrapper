@@ -128,6 +128,8 @@ typedef nss_status_t NSS_STATUS;
 #define PRINTF_ATTRIBUTE(a,b)
 #endif /* __GNUC__ */
 
+#define ZERO_STRUCTP(x) do { if ((x) != NULL) memset((char *)(x), 0, sizeof(*(x))); } while(0)
+
 enum nwrap_dbglvl_e {
 	NWRAP_LOG_ERROR = 0,
 	NWRAP_LOG_WARN,
@@ -1141,12 +1143,14 @@ static void nwrap_libc_init(struct nwrap_main *r)
 		printf("Failed to allocate memory for libc");
 		exit(-1);
 	}
+	ZERO_STRUCTP(r->libc);
 
 	r->libc->fns = malloc(sizeof(struct nwrap_libc_fns));
 	if (r->libc->fns == NULL) {
 		printf("Failed to allocate memory for libc functions");
 		exit(-1);
 	}
+	ZERO_STRUCTP(r->libc->fns);
 }
 
 static void nwrap_backend_init(struct nwrap_main *r)
