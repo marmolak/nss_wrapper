@@ -4181,7 +4181,7 @@ void nwrap_destructor(void)
 		struct nwrap_cache *c = nwrap_pw_global.cache;
 
 		nwrap_files_cache_unload(c);
-		if (c->fd > 0) {
+		if (c->fd >= 0) {
 			close(c->fd);
 		}
 
@@ -4193,7 +4193,7 @@ void nwrap_destructor(void)
 		struct nwrap_cache *c = nwrap_gr_global.cache;
 
 		nwrap_files_cache_unload(c);
-		if (c->fd > 0) {
+		if (c->fd >= 0) {
 			close(c->fd);
 		}
 
@@ -4205,7 +4205,7 @@ void nwrap_destructor(void)
 		struct nwrap_cache *c = nwrap_he_global.cache;
 
 		nwrap_files_cache_unload(c);
-		if (c->fd > 0) {
+		if (c->fd >= 0) {
 			close(c->fd);
 		}
 
