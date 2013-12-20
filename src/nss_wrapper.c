@@ -4181,7 +4181,9 @@ void nwrap_destructor(void)
 		struct nwrap_cache *c = nwrap_pw_global.cache;
 
 		nwrap_files_cache_unload(c);
-		close(c->fd);
+		if (c->fd > 0) {
+			close(c->fd);
+		}
 
 		SAFE_FREE(nwrap_pw_global.list);
 		nwrap_pw_global.num = 0;
@@ -4191,7 +4193,9 @@ void nwrap_destructor(void)
 		struct nwrap_cache *c = nwrap_gr_global.cache;
 
 		nwrap_files_cache_unload(c);
-		close(c->fd);
+		if (c->fd > 0) {
+			close(c->fd);
+		}
 
 		SAFE_FREE(nwrap_gr_global.list);
 		nwrap_pw_global.num = 0;
@@ -4201,7 +4205,9 @@ void nwrap_destructor(void)
 		struct nwrap_cache *c = nwrap_he_global.cache;
 
 		nwrap_files_cache_unload(c);
-		close(c->fd);
+		if (c->fd > 0) {
+			close(c->fd);
+		}
 
 		SAFE_FREE(nwrap_he_global.list);
 		nwrap_he_global.num = 0;
