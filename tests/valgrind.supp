@@ -1,0 +1,15 @@
+### GLIBC
+
+{
+   glibc_dlopen_worker_alloc
+   Memcheck:Leak
+   fun:*alloc
+   ...
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.2.5
+}
