@@ -1,8 +1,28 @@
-#include <nss.h>
+#include "config.h"
+
 #include <pwd.h>
 #include <grp.h>
 
+#if defined(HAVE_NSS_H)
+/* Linux and BSD */
+#include <nss.h>
+
 typedef enum nss_status NSS_STATUS;
+#elif defined(HAVE_NSS_COMMON_H)
+/* Solaris */
+#include <nss_common.h>
+#include <nss_dbdefs.h>
+#include <nsswitch.h>
+
+typedef nss_status_t NSS_STATUS;
+
+# define NSS_STATUS_SUCCESS     NSS_SUCCESS
+# define NSS_STATUS_NOTFOUND    NSS_NOTFOUND
+# define NSS_STATUS_UNAVAIL     NSS_UNAVAIL
+# define NSS_STATUS_TRYAGAIN    NSS_TRYAGAIN
+#else
+# error "No nsswitch support detected"
+#endif
 
 NSS_STATUS _nss_nwrap_setpwent(void);
 NSS_STATUS _nss_nwrap_endpwent(void);
