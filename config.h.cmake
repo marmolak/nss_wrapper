@@ -78,6 +78,8 @@
 #cmakedefine HAVE_STRUCT_SOCKADDR_SA_LEN 1
 #cmakedefine HAVE_IPV6 1
 
+#cmakedefine HAVE_ATTRIBUTE_PRINTF_FORMAT 1
+
 /*************************** ENDIAN *****************************/
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most

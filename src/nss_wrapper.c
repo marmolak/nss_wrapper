@@ -122,11 +122,11 @@ typedef nss_status_t NSS_STATUS;
 #endif
 
 /* GCC have printf type attribute check. */
-#ifdef __GNUC__
+#ifdef HAVE_ATTRIBUTE_PRINTF_FORMAT
 #define PRINTF_ATTRIBUTE(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #else
 #define PRINTF_ATTRIBUTE(a,b)
-#endif /* __GNUC__ */
+#endif /* HAVE_ATTRIBUTE_PRINTF_FORMAT */
 
 #define ZERO_STRUCTP(x) do { if ((x) != NULL) memset((char *)(x), 0, sizeof(*(x))); } while(0)
 
