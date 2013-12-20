@@ -128,6 +128,12 @@ typedef nss_status_t NSS_STATUS;
 #define PRINTF_ATTRIBUTE(a,b)
 #endif /* HAVE_ATTRIBUTE_PRINTF_FORMAT */
 
+#ifdef HAVE_DESTRUCTOR_ATTRIBUTE
+#define DESTRUCTOR_ATTRIBUTE __attribute__ ((destructor))
+#else
+#define DESTRUCTOR_ATTRIBUTE
+#endif /* HAVE_DESTRUCTOR_ATTRIBUTE */
+
 #define ZERO_STRUCTP(x) do { if ((x) != NULL) memset((char *)(x), 0, sizeof(*(x))); } while(0)
 
 enum nwrap_dbglvl_e {
@@ -505,9 +511,15 @@ struct nwrap_he {
 struct nwrap_cache __nwrap_cache_he;
 struct nwrap_he nwrap_he_global;
 
+
+/*********************************************************
+ * NWRAP PROTOTYPES
+ *********************************************************/
+
 static void nwrap_init(void);
 static bool nwrap_gr_parse_line(struct nwrap_cache *nwrap, char *line);
 static void nwrap_gr_unload(struct nwrap_cache *nwrap);
+void nwrap_destructor(void) DESTRUCTOR_ATTRIBUTE;
 
 /*********************************************************
  * NWRAP LIBC LOADER FUNCTIONS
@@ -4126,4 +4138,75 @@ int gethostname(char *name, size_t len)
 	}
 
 	return nwrap_gethostname(name, len);
+}
+
+/****************************
+ * DESTRUCTOR
+ ***************************/
+
+/*
+ * This function is called when the library is unloaded and makes sure that
+ * sockets get closed and the unix file for the socket are unlinked.
+ */
+void nwrap_destructor(void)
+{
+	int i;
+
+	if (nwrap_main_global != NULL) {
+		struct nwrap_main *m = nwrap_main_global;
+
+		/* libc */
+		SAFE_FREE(m->libc->fns);
+		if (m->libc->handle != NULL) {
+			dlclose(m->libc->handle);
+		}
+		if (m->libc->nsl_handle != NULL) {
+			dlclose(m->libc->nsl_handle);
+		}
+		if (m->libc->sock_handle != NULL) {
+			dlclose(m->libc->sock_handle);
+		}
+		SAFE_FREE(m->libc);
+
+		/* backends */
+		for (i = 0; i < m->num_backends; i++) {
+			struct nwrap_backend *b = &(m->backends[i]);
+
+			if (b->so_handle != NULL) {
+				dlclose(b->so_handle);
+			}
+			SAFE_FREE(b->fns);
+		}
+		SAFE_FREE(m->backends);
+	}
+
+	if (nwrap_pw_global.cache != NULL) {
+		struct nwrap_cache *c = nwrap_pw_global.cache;
+
+		nwrap_files_cache_unload(c);
+		close(c->fd);
+
+		SAFE_FREE(nwrap_pw_global.list);
+		nwrap_pw_global.num = 0;
+	}
+
+	if (nwrap_gr_global.cache != NULL) {
+		struct nwrap_cache *c = nwrap_gr_global.cache;
+
+		nwrap_files_cache_unload(c);
+		close(c->fd);
+
+		SAFE_FREE(nwrap_gr_global.list);
+		nwrap_pw_global.num = 0;
+	}
+
+	if (nwrap_he_global.cache != NULL) {
+		struct nwrap_cache *c = nwrap_he_global.cache;
+
+		nwrap_files_cache_unload(c);
+		close(c->fd);
+
+		SAFE_FREE(nwrap_he_global.list);
+		nwrap_he_global.num = 0;
+	}
 }

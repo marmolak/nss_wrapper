@@ -79,6 +79,7 @@
 #cmakedefine HAVE_IPV6 1
 
 #cmakedefine HAVE_ATTRIBUTE_PRINTF_FORMAT 1
+#cmakedefine HAVE_DESTRUCTOR_ATTRIBUTE 1
 
 /*************************** ENDIAN *****************************/
 
