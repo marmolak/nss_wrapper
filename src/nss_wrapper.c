@@ -565,6 +565,7 @@ static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 	switch (lib) {
 	case NWRAP_LIBNSL:
 #ifdef HAVE_LIBNSL
+		handle = nwrap_main_global->libc->nsl_handle;
 		if (handle == NULL) {
 			for (handle = NULL, i = 10; handle == NULL && i >= 0; i--) {
 				char soname[256] = {0};
@@ -574,14 +575,13 @@ static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 			}
 
 			nwrap_main_global->libc->nsl_handle = handle;
-		} else {
-			handle = nwrap_main_global->libc->nsl_handle;
 		}
 		break;
 #endif
 		/* FALL TROUGH */
 	case NWRAP_LIBSOCKET:
 #ifdef HAVE_LIBSOCKET
+		handle = nwrap_main_global->libc->sock_handle;
 		if (handle == NULL) {
 			for (handle = NULL, i = 10; handle == NULL && i >= 0; i--) {
 				char soname[256] = {0};
@@ -591,13 +591,12 @@ static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 			}
 
 			nwrap_main_global->libc->sock_handle = handle;
-		} else {
-			handle = nwrap_main_global->libc->sock_handle;
 		}
 		break;
 #endif
 		/* FALL TROUGH */
 	case NWRAP_LIBC:
+		handle = nwrap_main_global->libc->handle;
 		if (handle == NULL) {
 			for (handle = NULL, i = 10; handle == NULL && i >= 0; i--) {
 				char soname[256] = {0};
@@ -607,8 +606,6 @@ static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 			}
 
 			nwrap_main_global->libc->handle = handle;
-		} else {
-			handle = nwrap_main_global->libc->handle;
 		}
 		break;
 	}
