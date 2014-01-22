@@ -1,19 +1,50 @@
 NSS wrapper library
 ====================
 
-This is a wrapper for the user, group and hosts NSS API allowing the use of
-other data sources.
+There are projects which provide daemons needing to be able to create, modify
+and delete unix users. Or just switch user ids to interact with the system e.g.
+a user space file server. To be able to test that you need the privilege to
+modify the passwd and groups file. With nss_wrapper it is possible to define
+your own passwd and groups file which will be used by software to act correctly
+while under test.
 
-To be able to use it you need to set the following environment variables:
+If you have a client and server under test they normally use functions to
+resolve network names to addresses (dns) or vice versa. The nss_wrappers allow
+you to create a hosts file to setup name resolution for the addresses you use
+with socket_wrapper.
+
+The first environment variable you need to set is:
 
 LD_PRELOAD=libnss_wrapper.so
-NSS_WRAPPER_PASSWD=/path/to/your/passwd
-NSS_WRAPPER_GROUP=/path/to/your/group
+
+For user and group accounts you need to create two files: 'passwd' and 'group'.
+The format of the passwd file is described in 'man 5 passwd' and the group file
+in 'man 5 group'. So you can fill these files with made up accounts. You point
+nss_wrapper to them using the two variables:
+
+NSS_WRAPPER_PASSWD=/path/to/your/passwd and
+NSS_WRAPPER_GROUP=/path/to/your/group.
+
+If you also need to emulate network name resolution in your enviornment,
+especially with socket_wrapper, you can write a hosts file. The format is
+described in 'man 5 hosts'. Then you can point nss_wrapper to your hosts
+file using:
 
 NSS_WRAPPER_HOSTS=/path/to/your/hosts
 
+If you need to return a hostname which is different from the one of your
+machine is using you can use:
+
 NSS_WRAPPER_HOSTNAME=test.example.org
 
-You can either enable user and group resolving or only hosts. If you don't know
-how the passwd file should look like, please read 'man 5 passwd', for the
-groups file 'man 5 group' and for hosts 'man 5 hosts'.
+If you have a project which also provides user and group information out of a
+database, you normally write your own nss modules. nss_wrapper is able to load
+nss modules and ask them first before looking into the faked passwd and group
+file. To point nss_wrapper to the module you can do that using
+
+NSS_WRAPPER_MODULE_SO_PATH=/path/to/libnss_yourmodule.so
+
+As each nss module has a special prefix like _nss_winbind_getpwnam() you need
+to set the prefix too so nss_wrapper can load the functions with:
+
+NSS_WRAPPER_MODULE_FN_NAME=<prefix>
