@@ -3812,34 +3812,6 @@ static int nwrap_getaddrinfo(const char *node,
 	ret = libc_getaddrinfo(node, service, hints, &p);
 	if (ret == 0) {
 		*res = p;
-
-		switch (p->ai_family) {
-			case AF_INET:
-			{
-				struct sockaddr_in *sin =
-					(struct sockaddr_in *)p->ai_addr;
-
-				if (sin->sin_addr.s_addr == htonl(INADDR_LOOPBACK) ||
-				    sin->sin_addr.s_addr == htonl(INADDR_ANY) ||
-				    (sin->sin_addr.s_addr & htonl(0xff000000)) == htonl(0xff000000)) { /* some broadcast */
-					return ret;
-				}
-			}
-			break;
-#ifdef HAVE_IPV6
-			case AF_INET6:
-			{
-				struct sockaddr_in6 *sin6 =
-					(struct sockaddr_in6 *)p->ai_addr;
-
-				if (IN6_IS_ADDR_LOOPBACK(&sin6->sin6_addr) ||
-				    IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
-					return ret;
-				}
-			}
-			break;
-#endif
-		}
 	}
 
 	/* If no node has been specified, let glibc deal with it */
