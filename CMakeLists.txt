@@ -56,7 +56,15 @@ install(
     DESTINATION
         ${BIN_INSTALL_DIR})
 
+if (UNIT_TESTING)
+    find_package(CMocka REQUIRED)
+    include(AddCMockaTest)
+    add_subdirectory(tests)
+endif (UNIT_TESTING)
+
 # pkg-config file
+get_filename_component(NSS_WRAPPER_LIB ${NSS_WRAPPER_LOCATION} NAME)
+
 configure_file(nss_wrapper.pc.cmake ${CMAKE_CURRENT_BINARY_DIR}/nss_wrapper.pc @ONLY)
 install(
   FILES
@@ -78,8 +86,3 @@ install(
         devel
 )
 
-if (UNIT_TESTING)
-    find_package(CMocka REQUIRED)
-    include(AddCMockaTest)
-    add_subdirectory(tests)
-endif (UNIT_TESTING)
