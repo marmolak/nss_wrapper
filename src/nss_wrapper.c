@@ -1950,7 +1950,12 @@ static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
 
 	ed->ht.h_name = n;
 
-	ed->ht.h_aliases = NULL;
+	/* glib's getent always dereferences he->h_aliases */
+	ed->ht.h_aliases = malloc(sizeof(char *));
+	if (ed->ht.h_aliases == NULL) {
+		return false;
+	}
+	ed->ht.h_aliases[0] = NULL;
 
 	/*
 	 * Aliases
