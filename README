@@ -47,4 +47,8 @@ NSS_WRAPPER_MODULE_SO_PATH=/path/to/libnss_yourmodule.so
 As each nss module has a special prefix like _nss_winbind_getpwnam() you need
 to set the prefix too so nss_wrapper can load the functions with:
 
-NSS_WRAPPER_MODULE_FN_NAME=<prefix>
+NSS_WRAPPER_MODULE_FN_PREFIX=<prefix>
+
+For _nss_winbind_getpwnam() this would be:
+
+NSS_WRAPPER_MODULE_FN_PREFIX=winbind
