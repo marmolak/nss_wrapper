@@ -23,7 +23,7 @@ list(APPEND TEST_ENVIRONMENT NSS_WRAPPER_HOSTS=${CMAKE_CURRENT_BINARY_DIR}/hosts
 list(APPEND TEST_ENVIRONMENT NSS_WRAPPER_MODULE_SO_PATH=${CMAKE_CURRENT_BINARY_DIR}/libnss_nwrap.so)
 list(APPEND TEST_ENVIRONMENT NSS_WRAPPER_MODULE_FN_PREFIX=nwrap)
 
-set(NWRAP_TESTS testsuite test_getaddrinfo test_getnameinfo test_gethostby_name_addr)
+set(NWRAP_TESTS testsuite test_getaddrinfo test_getnameinfo test_gethostby_name_addr test_gethostent)
 
 foreach(_NWRAP_TEST ${NWRAP_TESTS})
     add_cmocka_test(${_NWRAP_TEST} ${_NWRAP_TEST}.c ${TESTSUITE_LIBRARIES})
