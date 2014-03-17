@@ -69,6 +69,48 @@ static void test_nwrap_gethostbyname(void **state)
 	assert_string_equal(ip, "127.0.0.11");
 }
 
+#ifdef HAVE_GETHOSTBYNAME2
+static void test_nwrap_gethostbyname2(void **state)
+{
+	char ip[INET6_ADDRSTRLEN];
+	struct hostent *he;
+	const char *a;
+
+	(void) state; /* unused */
+
+	he = gethostbyname2("magrathea.galaxy.site", AF_INET6);
+	assert_null(he);
+
+	he = gethostbyname2("magrathea.galaxy.site", AF_INET);
+	assert_non_null(he);
+
+
+	/* Check ipv6 he */
+	he = gethostbyname2("krikkit.galaxy.site", AF_INET6);
+	assert_non_null(he);
+
+	assert_string_equal(he->h_name, "krikkit.galaxy.site");
+	assert_int_equal(he->h_addrtype, AF_INET6);
+
+	a = inet_ntop(AF_INET6, he->h_addr_list[0], ip, sizeof(ip));
+	assert_non_null(a);
+
+	assert_string_equal(ip, "::14");
+
+	/* Check ipv4 he */
+	he = gethostbyname2("krikkit.galaxy.site", AF_INET);
+	assert_non_null(he);
+
+	assert_string_equal(he->h_name, "krikkit.galaxy.site");
+	assert_int_equal(he->h_addrtype, AF_INET);
+
+	a = inet_ntop(AF_INET, he->h_addr_list[0], ip, sizeof(ip));
+	assert_non_null(a);
+
+	assert_string_equal(ip, "127.0.0.14");
+}
+#endif /* HAVE_GETHOSTBYNAME2 */
+
 static void test_nwrap_gethostbyaddr(void **state)
 {
 	struct hostent *he;
@@ -153,6 +195,9 @@ int main(void) {
 	const UnitTest tests[] = {
 		unit_test(test_nwrap_gethostname),
 		unit_test(test_nwrap_gethostbyname),
+#ifdef HAVE_GETHOSTBYNAME2
+		unit_test(test_nwrap_gethostbyname2),
+#endif
 		unit_test(test_nwrap_gethostbyaddr),
 #ifdef HAVE_GETHOSTBYNAME_R
 		unit_test(test_nwrap_gethostbyname_r),
