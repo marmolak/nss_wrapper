@@ -2328,7 +2328,7 @@ static void nwrap_files_endgrent(struct nwrap_backend *b)
 }
 
 /* hosts functions */
-static struct hostent *nwrap_files_gethostbyname(const char *name)
+static struct hostent *nwrap_files_gethostbyname(const char *name, int af)
 {
 	struct hostent *he;
 	int i;
@@ -2339,6 +2339,11 @@ static struct hostent *nwrap_files_gethostbyname(const char *name)
 		int j;
 
 		he = &nwrap_he_global.list[i].ht;
+
+		/* Filter by address familiy if provided */
+		if (af != AF_UNSPEC && he->h_addrtype != af) {
+			continue;
+		}
 
 		if (strcasecmp(he->h_name, name) == 0) {
 			NWRAP_LOG(NWRAP_LOG_DEBUG, "name[%s] found", name);
@@ -2369,7 +2374,7 @@ static int nwrap_gethostbyname_r(const char *name,
 				 char *buf, size_t buflen,
 				 struct hostent **result, int *h_errnop)
 {
-	*result = nwrap_files_gethostbyname(name);
+	*result = nwrap_files_gethostbyname(name, AF_UNSPEC);
 	if (*result != NULL) {
 		memset(buf, '\0', buflen);
 		*ret = **result;
@@ -3668,7 +3673,7 @@ void endhostent(void)
 
 static struct hostent *nwrap_gethostbyname(const char *name)
 {
-	return nwrap_files_gethostbyname(name);
+	return nwrap_files_gethostbyname(name, AF_UNSPEC);
 }
 
 struct hostent *gethostbyname(const char *name)
@@ -3914,7 +3919,7 @@ static int nwrap_getaddrinfo(const char *node,
 		}
 #endif
 	} else {
-		he = nwrap_files_gethostbyname(node);
+		he = nwrap_files_gethostbyname(node, AF_UNSPEC);
 		if (he != NULL) {
 			rc = nwrap_convert_he_ai(he, port, hints, &ai);
 			eai = rc;
