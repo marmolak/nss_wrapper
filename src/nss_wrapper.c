@@ -230,6 +230,9 @@ struct nwrap_libc_fns {
 	void (*_libc_endhostent)(void);
 
 	struct hostent *(*_libc_gethostbyname)(const char *name);
+#ifdef HAVE_GETHOSTBYNAME2 /* GNU extension */
+	struct hostent *(*_libc_gethostbyname2)(const char *name, int af);
+#endif
 	struct hostent *(*_libc_gethostbyaddr)(const void *addr, socklen_t len, int type);
 
 	int (*_libc_getaddrinfo)(const char *node, const char *service,
@@ -926,6 +929,15 @@ static struct hostent *libc_gethostbyname(const char *name)
 
 	return nwrap_main_global->libc->fns->_libc_gethostbyname(name);
 }
+
+#ifdef HAVE_GETHOSTBYNAME2 /* GNU extension */
+static struct hostent *libc_gethostbyname2(const char *name, int af)
+{
+	nwrap_load_lib_function(NWRAP_LIBNSL, gethostbyname2);
+
+	return nwrap_main_global->libc->fns->_libc_gethostbyname2(name, af);
+}
+#endif
 
 static struct hostent *libc_gethostbyaddr(const void *addr,
 					  socklen_t len,
@@ -3684,6 +3696,23 @@ struct hostent *gethostbyname(const char *name)
 
 	return nwrap_gethostbyname(name);
 }
+
+/* This is a GNU extension */
+#ifdef HAVE_GETHOSTBYNAME2
+static struct hostent *nwrap_gethostbyname2(const char *name, int af)
+{
+	return nwrap_files_gethostbyname(name, af);
+}
+
+struct hostent *gethostbyname2(const char *name, int af)
+{
+	if (!nwrap_hosts_enabled()) {
+		return libc_gethostbyname2(name, af);
+	}
+
+	return nwrap_gethostbyname2(name, af);
+}
+#endif
 
 static struct hostent *nwrap_gethostbyaddr(const void *addr,
 					   socklen_t len, int type)

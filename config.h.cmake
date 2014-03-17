@@ -49,6 +49,9 @@
 /* Define to 1 if you have the `gethostbyname_r' function. */
 #cmakedefine HAVE_GETHOSTBYNAME_R 1
 
+/* Define to 1 if you have the `gethostbyname2' function. */
+#cmakedefine HAVE_GETHOSTBYNAME2 1
+
 #cmakedefine HAVE___POSIX_GETPWNAM_R 1
 #cmakedefine HAVE___POSIX_GETPWUID_R 1
 

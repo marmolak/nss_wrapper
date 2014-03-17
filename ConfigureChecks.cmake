@@ -71,6 +71,8 @@ check_function_exists(getgrouplist HAVE_GETGROUPLIST)
 check_function_exists(gethostbyaddr_r HAVE_GETHOSTBYADDR_R)
 check_function_exists(gethostbyname_r HAVE_GETHOSTBYNAME_R)
 
+check_function_exists(gethostbyname2 HAVE_GETHOSTBYNAME2)
+
 if (WIN32)
     check_function_exists(_vsnprintf_s HAVE__VSNPRINTF_S)
     check_function_exists(_vsnprintf HAVE__VSNPRINTF)
