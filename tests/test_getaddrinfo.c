@@ -307,6 +307,37 @@ static void test_nwrap_getaddrinfo_null(void **state)
 	freeaddrinfo(res);
 }
 
+static void test_nwrap_getaddrinfo_ipv6(void **state)
+{
+	struct addrinfo hints;
+	struct addrinfo *res = NULL;
+	struct sockaddr_in6 *sin6p;
+	char ip6[INET6_ADDRSTRLEN];
+	int rc;
+
+	(void) state; /* unused */
+
+	/*
+	 * krikkit.galaxy has an IPv4 and IPv6 address, this should only
+	 * return the IPv6 address.
+	 */
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_INET6;
+
+	rc = getaddrinfo("krikkit.galaxy.site", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+
+	assert_non_null(res->ai_next);
+	assert_int_equal(res->ai_family, AF_INET6);
+
+	sin6p = (struct sockaddr_in6 *)res->ai_addr;
+	inet_ntop(AF_INET6, (void *)&sin6p->sin6_addr, ip6, sizeof(ip6));
+
+	assert_string_equal(ip6, "::14");
+
+	freeaddrinfo(res);
+}
+
 int main(void) {
 	int rc;
 
@@ -317,6 +348,7 @@ int main(void) {
 		unit_test(test_nwrap_getaddrinfo_name),
 		unit_test(test_nwrap_getaddrinfo_service),
 		unit_test(test_nwrap_getaddrinfo_null),
+		unit_test(test_nwrap_getaddrinfo_ipv6),
 	};
 
 	rc = run_tests(tests);
