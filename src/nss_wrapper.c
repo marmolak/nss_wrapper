@@ -3948,7 +3948,7 @@ static int nwrap_getaddrinfo(const char *node,
 		}
 #endif
 	} else {
-		he = nwrap_files_gethostbyname(node, AF_UNSPEC);
+		he = nwrap_files_gethostbyname(node, hints->ai_family);
 		if (he != NULL) {
 			rc = nwrap_convert_he_ai(he, port, hints, &ai);
 			eai = rc;
