@@ -45,6 +45,8 @@ static void test_nwrap_getaddrinfo(void **state)
 	assert_int_equal(res->ai_family, AF_INET);
 
 	sinp = (struct sockaddr_in *)res->ai_addr;
+
+	assert_int_equal(sinp->sin_family, AF_INET);
 	ip = inet_ntoa(sinp->sin_addr);
 
 	assert_string_equal(ip, "127.0.0.11");
@@ -69,6 +71,8 @@ static void test_nwrap_getaddrinfo(void **state)
 	assert_int_equal(res->ai_family, AF_INET6);
 
 	sin6p = (struct sockaddr_in6 *)res->ai_addr;
+
+	assert_int_equal(sin6p->sin6_family, AF_INET6);
 	inet_ntop(AF_INET6, (void *)&sin6p->sin6_addr, ip6, sizeof(ip6));
 
 	assert_string_equal(ip6, "::13");
@@ -331,6 +335,7 @@ static void test_nwrap_getaddrinfo_ipv6(void **state)
 	assert_int_equal(res->ai_family, AF_INET6);
 
 	sin6p = (struct sockaddr_in6 *)res->ai_addr;
+	assert_int_equal(sin6p->sin6_family, AF_INET6);
 	inet_ntop(AF_INET6, (void *)&sin6p->sin6_addr, ip6, sizeof(ip6));
 
 	assert_string_equal(ip6, "::14");
