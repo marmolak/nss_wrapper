@@ -3806,6 +3806,7 @@ static int nwrap_convert_he_ai(const struct hostent *he,
 			memset(sin6p, 0, sizeof(struct sockaddr_in6));
 
 			sin6p->sin6_port = htons(port);
+			sin6p->sin6_family = AF_INET6;
 
 			memcpy(&sin6p->sin6_addr, he->h_addr_list[0], he->h_length);
 		}
