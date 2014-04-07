@@ -22,5 +22,6 @@ install(
 )
 
 # This needs to be at the end
+cmake_policy(SET CMP0026 OLD)
 get_target_property(NWRAP_LOCATION nss_wrapper LOCATION)
 set(NSS_WRAPPER_LOCATION ${NWRAP_LOCATION} PARENT_SCOPE)
