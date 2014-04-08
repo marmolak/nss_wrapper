@@ -22,6 +22,8 @@ install(
 )
 
 # This needs to be at the end
-cmake_policy(SET CMP0026 OLD)
+if (CMAKE_VERSION VERSION_GREATER 2.8.12)
+    cmake_policy(SET CMP0026 OLD)
+endif()
 get_target_property(NWRAP_LOCATION nss_wrapper LOCATION)
 set(NSS_WRAPPER_LOCATION ${NWRAP_LOCATION} PARENT_SCOPE)
