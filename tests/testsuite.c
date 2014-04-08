@@ -123,20 +123,20 @@ static void print_passwd(struct passwd *pwd)
 
 static bool test_nwrap_getpwnam(const char *name, struct passwd *pwd_p)
 {
-	struct passwd *pwd;
+	struct passwd *pwd = NULL;
 
 	DEBUG("Testing getpwnam: %s\n", name);
 
 	pwd = getpwnam(name);
-	if (pwd) {
+	if (pwd != NULL) {
 		print_passwd(pwd);
 	}
 
-	if (pwd_p) {
+	if (pwd_p != NULL) {
 		copy_passwd(pwd, pwd_p);
 	}
 
-	return pwd ? true : false;
+	return pwd != NULL ? true : false;
 }
 
 static void test_nwrap_getpwnam_r(const char *name,
@@ -166,20 +166,20 @@ static void test_nwrap_getpwnam_r(const char *name,
 static bool test_nwrap_getpwuid(uid_t uid,
 				struct passwd *pwd_p)
 {
-	struct passwd *pwd;
+	struct passwd *pwd = NULL;
 
 	DEBUG("Testing getpwuid: %lu\n", (unsigned long)uid);
 
 	pwd = getpwuid(uid);
-	if (pwd) {
+	if (pwd != NULL) {
 		print_passwd(pwd);
 	}
 
-	if (pwd_p) {
+	if (pwd_p != NULL) {
 		copy_passwd(pwd, pwd_p);
 	}
 
-	return pwd ? true : false;
+	return pwd != NULL ? true : false;
 }
 
 static bool test_nwrap_getpwuid_r(uid_t uid,
@@ -285,20 +285,20 @@ static void print_group(struct group *grp)
 static bool test_nwrap_getgrnam(const char *name,
 				struct group *grp_p)
 {
-	struct group *grp;
+	struct group *grp = NULL;
 
 	DEBUG("Testing getgrnam: %s\n", name);
 
 	grp = getgrnam(name);
-	if (grp) {
+	if (grp != NULL) {
 		print_group(grp);
 	}
 
-	if (grp_p) {
+	if (grp_p != NULL) {
 		copy_group(grp, grp_p);
 	}
 
-	return grp ? true : false;
+	return grp != NULL ? true : false;
 }
 
 static bool test_nwrap_getgrnam_r(const char *name,
@@ -330,20 +330,20 @@ static bool test_nwrap_getgrnam_r(const char *name,
 static bool test_nwrap_getgrgid(gid_t gid,
 				struct group *grp_p)
 {
-	struct group *grp;
+	struct group *grp = NULL;
 
 	DEBUG("Testing getgrgid: %lu\n", (unsigned long)gid);
 
 	grp = getgrgid(gid);
-	if (grp) {
+	if (grp != NULL) {
 		print_group(grp);
 	}
 
-	if (grp_p) {
+	if (grp_p != NULL) {
 		copy_group(grp, grp_p);
 	}
 
-	return grp ? true : false;
+	return grp != NULL ? true : false;
 }
 
 static bool test_nwrap_getgrgid_r(gid_t gid,
