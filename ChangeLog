@@ -1,6 +1,12 @@
 ChangeLog
 ==========
 
+version 1.0.2 (released 2014-04-08)
+  * Added public nss_wrapper_enabled().
+  * Added public nss_wrapper_hosts_enabled().
+  * Fixed segfault in 'getent hosts' without aliases.
+  * Fixed IPv4 and IPv6 resolving with 'getent ahosts'.
+
 version 1.0.1 (released 2014-02-04)
   * Added --libs to pkg-config.
   * Added nss_wrapper-config.cmake
