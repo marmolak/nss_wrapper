@@ -326,6 +326,7 @@ struct nwrap_ops {
 /* Public prototypes */
 
 bool nss_wrapper_enabled(void);
+bool nss_wrapper_hosts_enabled(void);
 
 /* prototypes for files backend */
 
@@ -1265,7 +1266,7 @@ bool nss_wrapper_enabled(void)
 	return true;
 }
 
-static bool nwrap_hosts_enabled(void)
+bool nss_wrapper_hosts_enabled(void)
 {
 	nwrap_init();
 
@@ -2406,7 +2407,7 @@ int gethostbyname_r(const char *name,
 		    char *buf, size_t buflen,
 		    struct hostent **result, int *h_errnop)
 {
-	if (!nwrap_hosts_enabled()) {
+	if (!nss_wrapper_hosts_enabled()) {
 		return libc_gethostbyname_r(name,
 					    ret,
 					    buf,
@@ -2475,7 +2476,7 @@ int gethostbyaddr_r(const void *addr, socklen_t len, int type,
 		    char *buf, size_t buflen,
 		    struct hostent **result, int *h_errnop)
 {
-	if (!nwrap_hosts_enabled()) {
+	if (!nss_wrapper_hosts_enabled()) {
 		return libc_gethostbyaddr_r(addr,
 					    len,
 					    type,
@@ -3625,7 +3626,7 @@ static void nwrap_sethostent(int stayopen) {
 #ifdef HAVE_SOLARIS_SETHOSTENT
 int sethostent(int stayopen)
 {
-	if (!nwrap_hosts_enabled()) {
+	if (!nss_wrapper_hosts_enabled()) {
 		libc_sethostent(stayopen);
 		return 0;
 	}
@@ -3637,7 +3638,7 @@ int sethostent(int stayopen)
 #else /* HAVE_SOLARIS_SETHOSTENT */
 void sethostent(int stayopen)
 {
-	if (!nwrap_hosts_enabled()) {
+	if (!nss_wrapper_hosts_enabled()) {
 		libc_sethostent(stayopen);
 		return;
 	}
@@ -3652,7 +3653,7 @@ static struct hostent *nwrap_gethostent(void)
 }
 
 struct hostent *gethostent(void) {
-	if (!nwrap_hosts_enabled()) {
+	if (!nss_wrapper_hosts_enabled()) {
 		return libc_gethostent();
 	}
 
@@ -3666,7 +3667,7 @@ static void nwrap_endhostent(void) {
 #ifdef HAVE_SOLARIS_ENDHOSTENT
 int endhostent(void)
 {
-	if (!nwrap_hosts_enabled()) {
+	if (!nss_wrapper_hosts_enabled()) {
 		libc_endhostent();
 		return 0;
 	}
@@ -3678,7 +3679,7 @@ int endhostent(void)
 #else /* HAVE_SOLARIS_ENDHOSTENT */
 void endhostent(void)
 {
-	if (!nwrap_hosts_enabled()) {
+	if (!nss_wrapper_hosts_enabled()) {
 		libc_endhostent();
 		return;
 	}
@@ -3694,7 +3695,7 @@ static struct hostent *nwrap_gethostbyname(const char *name)
 
 struct hostent *gethostbyname(const char *name)
 {
-	if (!nwrap_hosts_enabled()) {
+	if (!nss_wrapper_hosts_enabled()) {
 		return libc_gethostbyname(name);
 	}
 
@@ -3710,7 +3711,7 @@ static struct hostent *nwrap_gethostbyname2(const char *name, int af)
 
 struct hostent *gethostbyname2(const char *name, int af)
 {
-	if (!nwrap_hosts_enabled()) {
+	if (!nss_wrapper_hosts_enabled()) {
 		return libc_gethostbyname2(name, af);
 	}
 
@@ -3727,7 +3728,7 @@ static struct hostent *nwrap_gethostbyaddr(const void *addr,
 struct hostent *gethostbyaddr(const void *addr,
 			      socklen_t len, int type)
 {
-	if (!nwrap_hosts_enabled()) {
+	if (!nss_wrapper_hosts_enabled()) {
 		return libc_gethostbyaddr(addr, len, type);
 	}
 
@@ -4015,7 +4016,7 @@ int getaddrinfo(const char *node, const char *service,
 		const struct addrinfo *hints,
 		struct addrinfo **res)
 {
-	if (!nwrap_hosts_enabled()) {
+	if (!nss_wrapper_hosts_enabled()) {
 		return libc_getaddrinfo(node, service, hints, res);
 	}
 
@@ -4120,7 +4121,7 @@ int getnameinfo(const struct sockaddr *sa, socklen_t salen,
 		int flags)
 #endif
 {
-	if (!nwrap_hosts_enabled()) {
+	if (!nss_wrapper_hosts_enabled()) {
 		return libc_getnameinfo(sa, salen, host, hostlen, serv, servlen, flags);
 	}
 
