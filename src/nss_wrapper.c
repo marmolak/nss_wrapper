@@ -323,6 +323,10 @@ struct nwrap_ops {
 	void		(*nw_endgrent)(struct nwrap_backend *b);
 };
 
+/* Public prototypes */
+
+bool nss_wrapper_enabled(void);
+
 /* prototypes for files backend */
 
 
@@ -1245,7 +1249,7 @@ static void nwrap_init(void)
 	nwrap_he_global.cache->unload = nwrap_he_unload;
 }
 
-static bool nwrap_enabled(void)
+bool nss_wrapper_enabled(void)
 {
 	nwrap_init();
 
@@ -2975,7 +2979,7 @@ static struct passwd *nwrap_getpwnam(const char *name)
 
 struct passwd *getpwnam(const char *name)
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getpwnam(name);
 	}
 
@@ -3012,7 +3016,7 @@ int getpwnam_r(const char *name, struct passwd *pwdst,
 	       char *buf, size_t buflen, struct passwd **pwdstp)
 # endif /* HAVE_SOLARIS_GETPWNAM_R */
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getpwnam_r(name, pwdst, buf, buflen, pwdstp);
 	}
 
@@ -3042,7 +3046,7 @@ static struct passwd *nwrap_getpwuid(uid_t uid)
 
 struct passwd *getpwuid(uid_t uid)
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getpwuid(uid);
 	}
 
@@ -3078,7 +3082,7 @@ int getpwuid_r(uid_t uid, struct passwd *pwdst,
 	       char *buf, size_t buflen, struct passwd **pwdstp)
 #endif
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getpwuid_r(uid, pwdst, buf, buflen, pwdstp);
 	}
 
@@ -3101,7 +3105,7 @@ static void nwrap_setpwent(void)
 
 void setpwent(void)
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		libc_setpwent();
 		return;
 	}
@@ -3131,7 +3135,7 @@ static struct passwd *nwrap_getpwent(void)
 
 struct passwd *getpwent(void)
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getpwent();
 	}
 
@@ -3165,7 +3169,7 @@ struct passwd *getpwent_r(struct passwd *pwdst, char *buf, int buflen)
 	struct passwd *pwdstp = NULL;
 	int rc;
 
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getpwent_r(pwdst, buf, buflen);
 	}
 	rc = nwrap_getpwent_r(pwdst, buf, buflen, &pwdstp);
@@ -3179,7 +3183,7 @@ struct passwd *getpwent_r(struct passwd *pwdst, char *buf, int buflen)
 int getpwent_r(struct passwd *pwdst, char *buf,
 	       size_t buflen, struct passwd **pwdstp)
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getpwent_r(pwdst, buf, buflen, pwdstp);
 	}
 
@@ -3203,7 +3207,7 @@ static void nwrap_endpwent(void)
 
 void endpwent(void)
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		libc_endpwent();
 		return;
 	}
@@ -3235,7 +3239,7 @@ static int nwrap_initgroups(const char *user, gid_t group)
 
 int initgroups(const char *user, gid_t group)
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_initgroups(user, group);
 	}
 
@@ -3264,7 +3268,7 @@ static struct group *nwrap_getgrnam(const char *name)
 
 struct group *getgrnam(const char *name)
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getgrnam(name);
 	}
 
@@ -3301,7 +3305,7 @@ int getgrnam_r(const char *name, struct group *grp,
 	       char *buf, size_t buflen, struct group **pgrp)
 # endif /* HAVE_SOLARIS_GETGRNAM_R */
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getgrnam_r(name,
 				       grp,
 				       buf,
@@ -3335,7 +3339,7 @@ static struct group *nwrap_getgrgid(gid_t gid)
 
 struct group *getgrgid(gid_t gid)
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getgrgid(gid);
 	}
 
@@ -3372,7 +3376,7 @@ int getgrgid_r(gid_t gid, struct group *grdst,
 	       char *buf, size_t buflen, struct group **grdstp)
 # endif /* HAVE_SOLARIS_GETGRGID_R */
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getgrgid_r(gid, grdst, buf, buflen, grdstp);
 	}
 
@@ -3400,7 +3404,7 @@ int setgrent(void)
 void setgrent(void)
 #endif
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		libc_setgrent();
 		goto out;
 	}
@@ -3437,7 +3441,7 @@ static struct group *nwrap_getgrent(void)
 
 struct group *getgrent(void)
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getgrent();
 	}
 
@@ -3471,7 +3475,7 @@ struct group *getgrent_r(struct group *src, char *buf, int buflen)
 	struct group *grdstp = NULL;
 	int rc;
 
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getgrent_r(src, buf, buflen);
 	}
 
@@ -3486,7 +3490,7 @@ struct group *getgrent_r(struct group *src, char *buf, int buflen)
 int getgrent_r(struct group *src, char *buf,
 	       size_t buflen, struct group **grdstp)
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getgrent_r(src, buf, buflen, grdstp);
 	}
 
@@ -3510,7 +3514,7 @@ static void nwrap_endgrent(void)
 
 void endgrent(void)
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		libc_endgrent();
 		return;
 	}
@@ -3600,7 +3604,7 @@ static int nwrap_getgrouplist(const char *user, gid_t group,
 
 int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
 {
-	if (!nwrap_enabled()) {
+	if (!nss_wrapper_enabled()) {
 		return libc_getgrouplist(user, group, groups, ngroups);
 	}
 
