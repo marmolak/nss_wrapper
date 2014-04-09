@@ -22,7 +22,7 @@ install(
 )
 
 # This needs to be at the end
-if (CMAKE_VERSION VERSION_GREATER 2.8.12)
+if (CMAKE_VERSION VERSION_GREATER 2.8.13)
     cmake_policy(SET CMP0026 OLD)
 endif()
 get_target_property(NWRAP_LOCATION nss_wrapper LOCATION)
