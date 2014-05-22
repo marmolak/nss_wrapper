@@ -155,7 +155,7 @@ static void test_nwrap_getaddrinfo_local(void **state)
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_ADDRCONFIG;
+	hints.ai_flags = 0;
 
 	rc = getaddrinfo("127.0.0.1", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
@@ -187,7 +187,7 @@ static void test_nwrap_getaddrinfo_name(void **state)
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_ADDRCONFIG;
+	hints.ai_flags = 0;
 
 	rc = getaddrinfo("maximegalon.galaxy.site", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
@@ -209,7 +209,7 @@ static void test_nwrap_getaddrinfo_name(void **state)
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_ADDRCONFIG;
+	hints.ai_flags = 0;
 
 	rc = getaddrinfo("MAGRATHEA", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
@@ -242,7 +242,7 @@ static void test_nwrap_getaddrinfo_service(void **state)
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_ADDRCONFIG;
+	hints.ai_flags = 0;
 
 	rc = getaddrinfo("magrathea", "wurst", &hints, &res);
 	assert_int_equal(rc, EAI_SERVICE);
@@ -281,7 +281,7 @@ static void test_nwrap_getaddrinfo_null(void **state)
 	hints.ai_family = AF_INET6;
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_protocol = 17;
-	hints.ai_flags = AI_ADDRCONFIG;
+	hints.ai_flags = 0;
 
 	rc = getaddrinfo(NULL, NULL, &hints, &res);
 	assert_int_equal(rc, EAI_NONAME);
