@@ -88,3 +88,4 @@ install(
         devel
 )
 
+add_subdirectory(doc)

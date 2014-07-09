@@ -1,0 +1,180 @@
+'\" t
+.\"     Title: nss_wrapper
+.\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 07/09/2014
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "NSS_WRAPPER" "1" "07/09/2014" "\ \&" "\ \&"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nss_wrapper \- A wrapper for the user, group and hosts NSS API
+.SH "SYNOPSIS"
+.sp
+LD_PRELOAD=libnss_wrapper\&.so NSS_WRAPPER_PASSWD=/path/to/passwd NSS_WRAPPER_GROUP=/path/to/group NSS_WRAPPER_HOSTS=/path/to/host \fB\&./myapplication\fR
+.SH "DESCRIPTION"
+.sp
+There are projects which provide daemons needing to be able to create, modify and delete Unix users\&. Or just switch user ids to interact with the system e\&.g\&. a user space file server\&. To be able to test that you need the privilege to modify the passwd and groups file\&. With nss_wrapper it is possible to define your own passwd and groups file which will be used by software to act correctly while under test\&.
+.sp
+If you have a client and server under test they normally use functions to resolve network names to addresses (dns) or vice versa\&. The nss_wrappers allow you to create a hosts file to setup name resolution for the addresses you use with socket_wrapper\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Provides information for user and group accounts\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Network name resolution using a hosts file\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Loading and testing of NSS modules\&.
+.RE
+.SH "ENVIRONMENT VARIABLES"
+.PP
+\fBNSS_WRAPPER_PASSWD\fR, \fBNSS_WRAPPER_GROUP\fR
+.RS 4
+For user and group accounts you need to create two files:
+\fIpasswd\fR
+and
+\fIgroup\fR\&. The format of the passwd file is described in
+\fIman 5 passwd\fR
+and the group file in
+\fIman 5 group\fR\&. So you can fill these files with made up accounts\&. You point nss_wrapper to them using the two variables NSS_WRAPPER_PASSWD=/path/to/your/passwd and NSS_WRAPPER_GROUP=/path/to/your/group\&.
+.RE
+.PP
+\fBNSS_WRAPPER_HOSTS\fR
+.RS 4
+If you also need to emulate network name resolution in your enviornment, especially with socket_wrapper, you can write a hosts file\&. The format is described in
+\fIman 5 hosts\fR\&. Then you can point nss_wrapper to your hosts file using: NSS_WRAPPER_HOSTS=/path/to/your/hosts
+.RE
+.PP
+\fBNSS_WRAPPER_HOSTNAME\fR
+.RS 4
+If you need to return a hostname which is different from the one of your machine is using you can use: NSS_WRAPPER_HOSTNAME=test\&.example\&.org
+.RE
+.PP
+\fBNSS_WRAPPER_MODULE_SO_PATH\fR, \fBNSS_WRAPPER_MODULE_FN_PREFIX\fR
+.RS 4
+If you have a project which also provides user and group information out of a database, you normally write your own nss modules\&. nss_wrapper is able to load nss modules and ask them first before looking into the faked passwd and group file\&. To point nss_wrapper to the module you can do that using NSS_WRAPPER_MODULE_SO_PATH=/path/to/libnss_yourmodule\&.so\&. As each nss module has a special prefix like _nss_winbind_getpwnam() you need to set the prefix too so nss_wrapper can load the functions with NSS_WRAPPER_MODULE_FN_PREFIX=<prefix>\&.
+.RE
+.sp
+For _nss_winbind_getpwnam() this would be:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+NSS_WRAPPER_MODULE_FN_PREFIX=winbind
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fBNSS_WRAPPER_DEBUGLEVEL\fR
+.RS 4
+If you need to see what is going on in nss_wrapper itself or try to find a bug, you can enable logging support in nss_wrapper if you built it with debug symbols\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+0 = ERROR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+1 = WARNING
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+2 = DEBUG
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+3 = TRACE
+.RE
+.RE
+.SH "EXAMPLE"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ echo "bob:x:1000:1000:bob gecos:/home/test/bob:/bin/false" > passwd
+$ echo "root:x:65534:65532:root gecos:/home/test/root:/bin/false" >> passwd
+$ echo "users:x:1000:" > group
+$ echo "root:x:65532:" >> group
+$ LD_PRELOAD=libnss_wrapper\&.so NSS_WRAPPER_PASSWD=passwd \e
+  NSS_WRAPPER_GROUP=group getent passwd bob
+bob:x:1000:1000:bob gecos:/home/test/bob:/bin/false
+$ LD_PRELOAD=libnss_wrapper\&.so NSS_WRAPPER_HOSTNAME=test\&.example\&.org hostname
+test\&.example\&.org
+.fi
+.if n \{\
+.RE
+.\}
