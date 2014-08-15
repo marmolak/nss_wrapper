@@ -130,10 +130,10 @@ static bool test_nwrap_getpwnam(const char *name, struct passwd *pwd_p)
 	pwd = getpwnam(name);
 	if (pwd != NULL) {
 		print_passwd(pwd);
-	}
 
-	if (pwd_p != NULL) {
-		copy_passwd(pwd, pwd_p);
+		if (pwd_p != NULL) {
+			copy_passwd(pwd, pwd_p);
+		}
 	}
 
 	return pwd != NULL ? true : false;
@@ -173,10 +173,10 @@ static bool test_nwrap_getpwuid(uid_t uid,
 	pwd = getpwuid(uid);
 	if (pwd != NULL) {
 		print_passwd(pwd);
-	}
 
-	if (pwd_p != NULL) {
-		copy_passwd(pwd, pwd_p);
+		if (pwd_p != NULL) {
+			copy_passwd(pwd, pwd_p);
+		}
 	}
 
 	return pwd != NULL ? true : false;
@@ -292,10 +292,10 @@ static bool test_nwrap_getgrnam(const char *name,
 	grp = getgrnam(name);
 	if (grp != NULL) {
 		print_group(grp);
-	}
 
-	if (grp_p != NULL) {
-		copy_group(grp, grp_p);
+		if (grp_p != NULL) {
+			copy_group(grp, grp_p);
+		}
 	}
 
 	return grp != NULL ? true : false;
@@ -337,10 +337,10 @@ static bool test_nwrap_getgrgid(gid_t gid,
 	grp = getgrgid(gid);
 	if (grp != NULL) {
 		print_group(grp);
-	}
 
-	if (grp_p != NULL) {
-		copy_group(grp, grp_p);
+		if (grp_p != NULL) {
+			copy_group(grp, grp_p);
+		}
 	}
 
 	return grp != NULL ? true : false;
