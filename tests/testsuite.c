@@ -172,6 +172,7 @@ static bool test_nwrap_getpwuid(uid_t uid,
 				struct passwd *pwd_p)
 {
 	struct passwd *pwd = NULL;
+	bool ok;
 
 	DEBUG("Testing getpwuid: %lu\n", (unsigned long)uid);
 
@@ -182,11 +183,13 @@ static bool test_nwrap_getpwuid(uid_t uid,
 
 	print_passwd(pwd);
 
-	if (pwd_p != NULL) {
-		copy_passwd(pwd, pwd_p);
+	if (pwd_p == NULL) {
+		return true;
 	}
 
-	return true;
+	ok = copy_passwd(pwd, pwd_p);
+
+	return ok;
 }
 
 static bool test_nwrap_getpwuid_r(uid_t uid,
