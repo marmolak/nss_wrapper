@@ -300,15 +300,17 @@ static bool test_nwrap_getgrnam(const char *name,
 	DEBUG("Testing getgrnam: %s\n", name);
 
 	grp = getgrnam(name);
-	if (grp != NULL) {
-		print_group(grp);
-
-		if (grp_p != NULL) {
-			copy_group(grp, grp_p);
-		}
+	if (grp == NULL) {
+		return false;
 	}
 
-	return grp != NULL ? true : false;
+	print_group(grp);
+
+	if (grp_p != NULL) {
+		copy_group(grp, grp_p);
+	}
+
+	return true;
 }
 
 static bool test_nwrap_getgrnam_r(const char *name,
