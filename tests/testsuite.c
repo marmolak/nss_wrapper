@@ -176,15 +176,17 @@ static bool test_nwrap_getpwuid(uid_t uid,
 	DEBUG("Testing getpwuid: %lu\n", (unsigned long)uid);
 
 	pwd = getpwuid(uid);
-	if (pwd != NULL) {
-		print_passwd(pwd);
-
-		if (pwd_p != NULL) {
-			copy_passwd(pwd, pwd_p);
-		}
+	if (pwd == NULL) {
+		return false;
 	}
 
-	return pwd != NULL ? true : false;
+	print_passwd(pwd);
+
+	if (pwd_p != NULL) {
+		copy_passwd(pwd, pwd_p);
+	}
+
+	return true;
 }
 
 static bool test_nwrap_getpwuid_r(uid_t uid,
