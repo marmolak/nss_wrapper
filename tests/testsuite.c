@@ -350,15 +350,17 @@ static bool test_nwrap_getgrgid(gid_t gid,
 	DEBUG("Testing getgrgid: %lu\n", (unsigned long)gid);
 
 	grp = getgrgid(gid);
-	if (grp != NULL) {
-		print_group(grp);
-
-		if (grp_p != NULL) {
-			copy_group(grp, grp_p);
-		}
+	if (grp == NULL) {
+		return false;
 	}
 
-	return grp != NULL ? true : false;
+	print_group(grp);
+
+	if (grp_p != NULL) {
+		copy_group(grp, grp_p);
+	}
+
+	return true;
 }
 
 static bool test_nwrap_getgrgid_r(gid_t gid,
