@@ -346,6 +346,7 @@ static bool test_nwrap_getgrgid(gid_t gid,
 				struct group *grp_p)
 {
 	struct group *grp = NULL;
+	bool ok;
 
 	DEBUG("Testing getgrgid: %lu\n", (unsigned long)gid);
 
@@ -356,11 +357,13 @@ static bool test_nwrap_getgrgid(gid_t gid,
 
 	print_group(grp);
 
-	if (grp_p != NULL) {
-		copy_group(grp, grp_p);
+	if (grp_p == NULL) {
+		return true;
 	}
 
-	return true;
+	ok = copy_group(grp, grp_p);
+
+	return ok;
 }
 
 static bool test_nwrap_getgrgid_r(gid_t gid,
