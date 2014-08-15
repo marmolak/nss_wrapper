@@ -296,6 +296,7 @@ static bool test_nwrap_getgrnam(const char *name,
 				struct group *grp_p)
 {
 	struct group *grp = NULL;
+	bool ok;
 
 	DEBUG("Testing getgrnam: %s\n", name);
 
@@ -306,11 +307,13 @@ static bool test_nwrap_getgrnam(const char *name,
 
 	print_group(grp);
 
-	if (grp_p != NULL) {
-		copy_group(grp, grp_p);
+	if (grp_p == NULL) {
+		return true;
 	}
 
-	return true;
+	ok = copy_group(grp, grp_p);
+
+	return ok;
 }
 
 static bool test_nwrap_getgrnam_r(const char *name,
