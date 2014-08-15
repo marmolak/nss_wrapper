@@ -128,15 +128,17 @@ static bool test_nwrap_getpwnam(const char *name, struct passwd *pwd_p)
 	DEBUG("Testing getpwnam: %s\n", name);
 
 	pwd = getpwnam(name);
-	if (pwd != NULL) {
-		print_passwd(pwd);
-
-		if (pwd_p != NULL) {
-			copy_passwd(pwd, pwd_p);
-		}
+	if (pwd == NULL) {
+		return false;
 	}
 
-	return pwd != NULL ? true : false;
+	print_passwd(pwd);
+
+	if (pwd_p != NULL) {
+		copy_passwd(pwd, pwd_p);
+	}
+
+	return true;
 }
 
 static void test_nwrap_getpwnam_r(const char *name,
