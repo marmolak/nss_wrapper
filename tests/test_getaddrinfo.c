@@ -311,6 +311,34 @@ static void test_nwrap_getaddrinfo_null(void **state)
 	freeaddrinfo(res);
 }
 
+static void test_nwrap_getaddrinfo_dot(void **state)
+{
+	struct addrinfo hints = {
+		.ai_family = AF_INET,
+	};
+	struct addrinfo *res = NULL;
+	struct sockaddr_in *sinp;
+	char ip[INET_ADDRSTRLEN];
+	int rc;
+
+	(void) state; /* unused */
+
+	/* Check with a dot at the end */
+	rc = getaddrinfo("magrathea.galaxy.site.", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+
+	assert_non_null(res->ai_next);
+	assert_int_equal(res->ai_family, AF_INET);
+
+	sinp = (struct sockaddr_in *)res->ai_addr;
+	assert_int_equal(sinp->sin_family, AF_INET);
+	inet_ntop(AF_INET, (void *)&sinp->sin_addr, ip, sizeof(ip));
+
+	assert_string_equal(ip, "127.0.0.11");
+
+	freeaddrinfo(res);
+}
+
 static void test_nwrap_getaddrinfo_ipv6(void **state)
 {
 	struct addrinfo hints;
@@ -353,6 +381,7 @@ int main(void) {
 		unit_test(test_nwrap_getaddrinfo_name),
 		unit_test(test_nwrap_getaddrinfo_service),
 		unit_test(test_nwrap_getaddrinfo_null),
+		unit_test(test_nwrap_getaddrinfo_dot),
 		unit_test(test_nwrap_getaddrinfo_ipv6),
 	};
 
