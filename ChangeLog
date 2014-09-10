@@ -1,6 +1,13 @@
 ChangeLog
 ==========
 
+version 1.0.3 (released 2014-09-11)
+  * Added a nss_wrapper manpage.
+  * Fixed cmake find_package configs.
+  * Fixed resolving hostnames with a trailing dot.
+  * Fixed an overflow when checking if a IPv6 address is IPv4.
+  * Fall back to RTLD_NEXT for symbol binding if we can't find libc.
+
 version 1.0.2 (released 2014-04-08)
   * Added public nss_wrapper_enabled().
   * Added public nss_wrapper_hosts_enabled().
