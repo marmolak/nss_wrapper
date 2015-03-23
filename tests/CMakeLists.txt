@@ -27,6 +27,7 @@ list(APPEND TEST_ENVIRONMENT NSS_WRAPPER_MODULE_FN_PREFIX=nwrap)
 
 set(NWRAP_TESTS
     testsuite
+    test_nwrap_vector
     test_getaddrinfo
     test_getnameinfo
     test_gethostby_name_addr
@@ -49,6 +50,8 @@ if (HAVE_SHADOW_H)
     # This is needed to check the hash in tests/shadow.in
     target_link_libraries(test_shadow crypt)
 endif (HAVE_SHADOW_H)
+
+target_link_libraries(test_nwrap_vector ${CMAKE_THREAD_LIBS_INIT})
 
 # Test nwrap without wrapping so the libc functions are called
 add_cmocka_test(test_nwrap_disabled test_nwrap_disabled.c ${TESTSUITE_LIBRARIES})
