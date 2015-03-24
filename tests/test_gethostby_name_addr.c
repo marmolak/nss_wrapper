@@ -71,6 +71,39 @@ static void test_nwrap_gethostbyname(void **state)
 	assert_string_equal(ip, "127.0.0.11");
 }
 
+static void test_nwrap_gethostbyname_multiple(void **state)
+{
+	struct hostent *he;
+	char **list;
+
+	/* For inet_ntop call */
+	char buf[4096];
+	const char *result;
+	char *p = buf;
+
+	/* List of ips in hosts file - order matters */
+	const char *const result_ips[] = { "127.0.0.11", "127.0.0.12", NULL };
+	const char *actual_ip = result_ips[0];
+	unsigned int ac;
+
+	(void) state; /* unused */
+
+	he = gethostbyname("magrathea.galaxy.site");
+	assert_non_null(he);
+	assert_non_null(he->h_name);
+	assert_non_null(he->h_addr_list);
+
+	list = he->h_addr_list;
+	for (ac = 0; *list != NULL; ++ac, ++list) {
+		actual_ip = result_ips[ac];
+		/* When test fails here more records are returned */
+		assert_non_null(actual_ip);
+		result = inet_ntop(AF_INET, *list, p, 4096);
+		assert_non_null(p);
+		assert_string_equal(actual_ip, result);
+	}
+}
+
 #ifdef HAVE_GETHOSTBYNAME2
 static void test_nwrap_gethostbyname2(void **state)
 {
@@ -216,6 +249,7 @@ int main(void) {
 #ifdef HAVE_GETHOSTBYADDR_R
 		cmocka_unit_test(test_nwrap_gethostbyaddr_r),
 #endif
+		cmocka_unit_test(test_nwrap_gethostbyname_multiple),
 	};
 
 	rc = cmocka_run_group_tests(tests, NULL, NULL);
