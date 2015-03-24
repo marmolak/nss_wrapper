@@ -35,6 +35,10 @@
 #define DEBUG(...) printf(__VA_ARGS__)
 #endif
 
+#ifndef SAFE_FREE
+#define SAFE_FREE(x) do { if ((x) != NULL) {free((x)); (x)=NULL;} } while(0)
+#endif
+
 static void assert_passwd_equal(const struct passwd *p1,
 				const struct passwd *p2)
 {
@@ -78,23 +82,13 @@ static bool copy_passwd(const struct passwd *pwd, struct passwd *p)
 	return true;
 }
 
-static void free_passwd(const struct passwd *p)
+static void free_passwd(struct passwd *p)
 {
-	if (p->pw_name != NULL) {
-		free(p->pw_name);
-	}
-	if (p->pw_passwd != NULL) {
-		free(p->pw_passwd);
-	}
-	if (p->pw_gecos != NULL) {
-		free(p->pw_gecos);
-	}
-	if (p->pw_dir != NULL) {
-		free(p->pw_dir);
-	}
-	if (p->pw_shell != NULL) {
-		free(p->pw_shell);
-	}
+	SAFE_FREE(p->pw_name);
+	SAFE_FREE(p->pw_passwd);
+	SAFE_FREE(p->pw_gecos);
+	SAFE_FREE(p->pw_dir);
+	SAFE_FREE(p->pw_shell);
 }
 
 static void free_passwds(struct passwd *pwds, size_t num_pwds)
@@ -244,22 +238,18 @@ static bool copy_group(const struct group *grp,
 	return true;
 }
 
-static void free_group(const struct group *g)
+static void free_group(struct group *g)
 {
-	if (g->gr_name != NULL) {
-		free(g->gr_name);
-	}
-	if (g->gr_passwd != NULL) {
-		free(g->gr_passwd);
-	}
+	SAFE_FREE(g->gr_name);
+	SAFE_FREE(g->gr_passwd);
 	if (g->gr_mem != NULL) {
 		int i;
 
 		for (i = 0; g->gr_mem[i] != NULL; i++) {
-			free(g->gr_mem[i]);
+			SAFE_FREE(g->gr_mem[i]);
 		}
 
-		free(g->gr_mem);
+		SAFE_FREE(g->gr_mem);
 	}
 }
 
