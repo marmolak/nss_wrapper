@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include <pthread.h>
+
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
@@ -47,6 +49,51 @@ static void test_nwrap_gethostname(void **state)
 	rc = gethostname(sys_host, sizeof(sys_host));
 	assert_int_equal(rc, 0);
 
+}
+
+static void *thread_test_gethostbyname(void *u)
+{
+	struct hostent *he;
+
+	(void) u; /* unused */
+
+	he = gethostbyname("magrathea");
+	assert_non_null(he);
+	assert_non_null(he->h_name);
+	assert_string_equal(he->h_name, "magrathea.galaxy.site");
+	pthread_exit(NULL);
+}
+
+static void test_nwrap_gethostbyname_thread(void **state)
+{
+	struct hostent *he;
+	pthread_t th;
+
+	(void) state; /* unused */
+
+	he = gethostbyname("maximegalon.galaxy.site");
+	assert_non_null(he);
+	assert_non_null(he->h_name);
+	assert_string_equal(he->h_name, "maximegalon.galaxy.site");
+
+	pthread_create(&th, NULL, &thread_test_gethostbyname, NULL);
+	pthread_join(th, NULL);
+
+	assert_non_null(he);
+	assert_non_null(he->h_name);
+#ifdef BSD
+	/*
+	 * On *BSD (and Mac OS X) systems,
+	 * data is stored in thread local storage.
+	 */
+	assert_string_equal(he->h_name, "maximegalon.galaxy.site");
+#else
+	/*
+	 * Glibc doesn't store data in thread local storage, so calling
+	 * gethostbyname from a thread overwrites the parent thread's data.
+	 */
+	assert_string_equal(he->h_name, "magrathea.galaxy.site");
+#endif
 }
 
 static void test_nwrap_gethostbyname(void **state)
@@ -239,6 +286,7 @@ int main(void) {
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test(test_nwrap_gethostname),
 		cmocka_unit_test(test_nwrap_gethostbyname),
+		cmocka_unit_test(test_nwrap_gethostbyname_thread),
 #ifdef HAVE_GETHOSTBYNAME2
 		cmocka_unit_test(test_nwrap_gethostbyname2),
 #endif

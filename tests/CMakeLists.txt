@@ -52,6 +52,11 @@ if (HAVE_SHADOW_H)
 endif (HAVE_SHADOW_H)
 
 target_link_libraries(test_nwrap_vector ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_gethostby_name_addr ${CMAKE_THREAD_LIBS_INIT})
+
+if (BSD)
+    add_definitions(-DBSD)
+endif (BSD)
 
 # Test nwrap without wrapping so the libc functions are called
 add_cmocka_test(test_nwrap_disabled test_nwrap_disabled.c ${TESTSUITE_LIBRARIES})
