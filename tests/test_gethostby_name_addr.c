@@ -59,6 +59,8 @@ static void test_nwrap_gethostbyname(void **state)
 
 	he = gethostbyname("magrathea.galaxy.site");
 	assert_non_null(he);
+	assert_non_null(he->h_name);
+	assert_non_null(he->h_addr_list);
 
 	assert_string_equal(he->h_name, "magrathea.galaxy.site");
 	assert_int_equal(he->h_addrtype, AF_INET);
@@ -84,10 +86,11 @@ static void test_nwrap_gethostbyname2(void **state)
 	he = gethostbyname2("magrathea.galaxy.site", AF_INET);
 	assert_non_null(he);
 
-
 	/* Check ipv6 he */
 	he = gethostbyname2("krikkit.galaxy.site", AF_INET6);
 	assert_non_null(he);
+	assert_non_null(he->h_name);
+	assert_non_null(he->h_addr_list);
 
 	assert_string_equal(he->h_name, "krikkit.galaxy.site");
 	assert_int_equal(he->h_addrtype, AF_INET6);
@@ -100,6 +103,8 @@ static void test_nwrap_gethostbyname2(void **state)
 	/* Check ipv4 he */
 	he = gethostbyname2("krikkit.galaxy.site", AF_INET);
 	assert_non_null(he);
+	assert_non_null(he->h_name);
+	assert_non_null(he->h_addr_list);
 
 	assert_string_equal(he->h_name, "krikkit.galaxy.site");
 	assert_int_equal(he->h_addrtype, AF_INET);
@@ -124,6 +129,8 @@ static void test_nwrap_gethostbyaddr(void **state)
 
 	he = gethostbyaddr(&in, sizeof(struct in_addr), AF_INET);
 	assert_non_null(he);
+	assert_non_null(he->h_name);
+	assert_non_null(he->h_addr_list);
 
 	assert_string_equal(he->h_name, "magrathea.galaxy.site");
 	assert_int_equal(he->h_addrtype, AF_INET);
@@ -149,6 +156,8 @@ static void test_nwrap_gethostbyname_r(void **state)
 			     &herr);
 	assert_int_equal(rc, 0);
 	assert_non_null(he);
+	assert_non_null(he->h_name);
+	assert_non_null(he->h_addr_list);
 
 	assert_string_equal(he->h_name, "magrathea.galaxy.site");
 	assert_int_equal(he->h_addrtype, AF_INET);
@@ -182,6 +191,8 @@ static void test_nwrap_gethostbyaddr_r(void **state)
 			     &herr);
 	assert_int_equal(rc, 0);
 	assert_non_null(he);
+	assert_non_null(he->h_name);
+	assert_non_null(he->h_addr_list);
 
 	assert_string_equal(he->h_name, "magrathea.galaxy.site");
 	assert_int_equal(he->h_addrtype, AF_INET);

@@ -17,7 +17,7 @@
 static void test_nwrap_getaddrinfo(void **state)
 {
 	struct addrinfo hints;
-	struct addrinfo *res;
+	struct addrinfo *res = NULL;
 	struct sockaddr_in *sinp;
 	struct sockaddr_in6 *sin6p;
 	char ip6[INET6_ADDRSTRLEN];
@@ -38,6 +38,7 @@ static void test_nwrap_getaddrinfo(void **state)
 
 	rc = getaddrinfo("127.0.0.11", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
+	assert_non_null(res);
 
 	assert_non_null(res->ai_canonname);
 	assert_string_equal(res->ai_canonname, "magrathea.galaxy.site");
@@ -52,6 +53,7 @@ static void test_nwrap_getaddrinfo(void **state)
 	assert_string_equal(ip, "127.0.0.11");
 
 	freeaddrinfo(res);
+	res = NULL;
 
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
@@ -63,6 +65,7 @@ static void test_nwrap_getaddrinfo(void **state)
 	hints.ai_next = NULL;
 
 	rc = getaddrinfo("::13", NULL, &hints, &res);
+	assert_non_null(res);
 	assert_int_equal(rc, 0);
 
 	assert_non_null(res->ai_canonname);
@@ -83,7 +86,7 @@ static void test_nwrap_getaddrinfo(void **state)
 static void test_nwrap_getaddrinfo_any(void **state)
 {
 	struct addrinfo hints;
-	struct addrinfo *res;
+	struct addrinfo *res = NULL;
 	struct sockaddr_in *sinp;
 	struct sockaddr_in6 *sin6p;
 	char ip6[INET6_ADDRSTRLEN];
@@ -100,6 +103,7 @@ static void test_nwrap_getaddrinfo_any(void **state)
 
 	rc = getaddrinfo("0.0.0.0", "389", &hints, &res);
 	assert_int_equal(rc, 0);
+	assert_non_null(res);
 
 	assert_int_equal(res->ai_family, AF_INET);
 	assert_int_equal(res->ai_socktype, SOCK_STREAM);
@@ -115,6 +119,7 @@ static void test_nwrap_getaddrinfo_any(void **state)
 	assert_string_equal(ip, "0.0.0.0");
 
 	freeaddrinfo(res);
+	res = NULL;
 
 	/* IPv4 */
 	memset(&hints, 0, sizeof(struct addrinfo));
@@ -124,6 +129,7 @@ static void test_nwrap_getaddrinfo_any(void **state)
 
 	rc = getaddrinfo("::", "389", &hints, &res);
 	assert_int_equal(rc, 0);
+	assert_non_null(res);
 
 	assert_int_equal(res->ai_family, AF_INET6);
 	assert_int_equal(res->ai_socktype, SOCK_STREAM);
@@ -191,7 +197,9 @@ static void test_nwrap_getaddrinfo_name(void **state)
 
 	rc = getaddrinfo("maximegalon.galaxy.site", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
+	assert_non_null(res);
 
+	assert_non_null(res);
 	assert_int_equal(res->ai_family, AF_INET);
 	assert_int_equal(res->ai_socktype, SOCK_STREAM);
 
@@ -204,6 +212,7 @@ static void test_nwrap_getaddrinfo_name(void **state)
 	assert_string_equal(ip, "127.0.0.12");
 
 	freeaddrinfo(res);
+	res = NULL;
 
 	/* IPv4 */
 	memset(&hints, 0, sizeof(struct addrinfo));
@@ -214,6 +223,7 @@ static void test_nwrap_getaddrinfo_name(void **state)
 	rc = getaddrinfo("MAGRATHEA", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
 
+	assert_non_null(res);
 	assert_int_equal(res->ai_family, AF_INET);
 	assert_int_equal(res->ai_socktype, SOCK_STREAM);
 
@@ -250,6 +260,7 @@ static void test_nwrap_getaddrinfo_service(void **state)
 	/* Check ldap port */
 	rc = getaddrinfo("magrathea", "ldap", &hints, &res);
 	assert_int_equal(rc, 0);
+	assert_non_null(res);
 
 	assert_int_equal(res->ai_family, AF_INET);
 	assert_int_equal(res->ai_socktype, SOCK_STREAM);
@@ -257,6 +268,7 @@ static void test_nwrap_getaddrinfo_service(void **state)
 	assert_non_null(res->ai_canonname);
 	assert_string_equal(res->ai_canonname, "magrathea.galaxy.site");
 
+	assert_non_null(res->ai_addr);
 	sinp = (struct sockaddr_in *)res->ai_addr;
 	ip = inet_ntoa(sinp->sin_addr);
 
@@ -290,20 +302,24 @@ static void test_nwrap_getaddrinfo_null(void **state)
 	rc = getaddrinfo(NULL, "domain", &hints, &res);
 	assert_int_equal(rc, 0);
 
+	assert_non_null(res);
 	assert_null(res->ai_canonname);
 
 	assert_int_equal(res->ai_family, AF_INET6);
 	assert_int_equal(res->ai_socktype, SOCK_DGRAM);
 
+	assert_non_null(res->ai_addr);
 	sin6p = (struct sockaddr_in6 *)res->ai_addr;
 	inet_ntop(AF_INET6, (void *)&sin6p->sin6_addr, ip6, sizeof(ip6));
 
 	assert_string_equal(ip6, "::1");
 
 	freeaddrinfo(res);
+	res = NULL;
 
 	/* Check dns service */
 	rc = getaddrinfo("magrathea", "domain", NULL, &res);
+	assert_non_null(res);
 	assert_int_equal(rc, 0);
 
 	assert_non_null(res->ai_canonname);
@@ -326,6 +342,7 @@ static void test_nwrap_getaddrinfo_dot(void **state)
 	/* Check with a dot at the end */
 	rc = getaddrinfo("magrathea.galaxy.site.", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
+	assert_non_null(res);
 
 	assert_non_null(res->ai_next);
 	assert_int_equal(res->ai_family, AF_INET);
@@ -358,6 +375,7 @@ static void test_nwrap_getaddrinfo_ipv6(void **state)
 
 	rc = getaddrinfo("krikkit.galaxy.site", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
+	assert_non_null(res);
 
 	assert_non_null(res->ai_next);
 	assert_int_equal(res->ai_family, AF_INET6);
