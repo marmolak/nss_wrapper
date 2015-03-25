@@ -13,7 +13,13 @@ if (UNIX AND NOT WIN32)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -pedantic -pedantic-errors")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wshadow -Wmissing-prototypes -Wdeclaration-after-statement")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wunused -Wfloat-equal -Wpointer-arith -Wwrite-strings -Wformat-security")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wmissing-format-attribute")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wmissing-format-attribute -fstrict-aliasing -Wbad-function-cast")
+
+	# check -Wstrict-aliasing support
+	check_c_compiler_flag("-Wstrict-aliasing=3" WITH_WSTRICT_ALIASING)
+	if (WITH_WSTRICT_ALIASING)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wstrict-aliasing=3")
+	endif (WITH_WSTRICT_ALIASING)
 
         # with -fPIC
         check_c_compiler_flag("-fPIC" WITH_FPIC)
