@@ -96,14 +96,14 @@ static void test_nwrap_getaddrinfo_local(void **state)
 int main(void) {
 	int rc;
 
-	const UnitTest tests[] = {
-		unit_test(test_nwrap_passwd_group),
-		unit_test(test_nwrap_hostent),
-		unit_test(test_nwrap_gethostname),
-		unit_test(test_nwrap_getaddrinfo_local),
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(test_nwrap_passwd_group),
+		cmocka_unit_test(test_nwrap_hostent),
+		cmocka_unit_test(test_nwrap_gethostname),
+		cmocka_unit_test(test_nwrap_getaddrinfo_local),
 	};
 
-	rc = run_tests(tests);
+	rc = cmocka_run_group_tests(tests, NULL, NULL);
 
 	return rc;
 }

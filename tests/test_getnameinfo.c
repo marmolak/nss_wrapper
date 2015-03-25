@@ -328,16 +328,16 @@ static void test_nwrap_getnameinfo_flags(void **state)
 int main(void) {
 	int rc;
 
-	const UnitTest tests[] = {
-		unit_test(test_nwrap_getnameinfo),
-		unit_test(test_nwrap_getnameinfo_numeric),
-		unit_test(test_nwrap_getnameinfo_any),
-		unit_test(test_nwrap_getnameinfo_local),
-		unit_test(test_nwrap_getnameinfo_null),
-		unit_test(test_nwrap_getnameinfo_flags),
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(test_nwrap_getnameinfo),
+		cmocka_unit_test(test_nwrap_getnameinfo_numeric),
+		cmocka_unit_test(test_nwrap_getnameinfo_any),
+		cmocka_unit_test(test_nwrap_getnameinfo_local),
+		cmocka_unit_test(test_nwrap_getnameinfo_null),
+		cmocka_unit_test(test_nwrap_getnameinfo_flags),
 	};
 
-	rc = run_tests(tests);
+	rc = cmocka_run_group_tests(tests, NULL, NULL);
 
 	return rc;
 }

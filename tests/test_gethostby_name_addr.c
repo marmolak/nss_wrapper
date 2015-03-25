@@ -192,22 +192,22 @@ static void test_nwrap_gethostbyaddr_r(void **state)
 int main(void) {
 	int rc;
 
-	const UnitTest tests[] = {
-		unit_test(test_nwrap_gethostname),
-		unit_test(test_nwrap_gethostbyname),
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(test_nwrap_gethostname),
+		cmocka_unit_test(test_nwrap_gethostbyname),
 #ifdef HAVE_GETHOSTBYNAME2
-		unit_test(test_nwrap_gethostbyname2),
+		cmocka_unit_test(test_nwrap_gethostbyname2),
 #endif
-		unit_test(test_nwrap_gethostbyaddr),
+		cmocka_unit_test(test_nwrap_gethostbyaddr),
 #ifdef HAVE_GETHOSTBYNAME_R
-		unit_test(test_nwrap_gethostbyname_r),
+		cmocka_unit_test(test_nwrap_gethostbyname_r),
 #endif
 #ifdef HAVE_GETHOSTBYADDR_R
-		unit_test(test_nwrap_gethostbyaddr_r),
+		cmocka_unit_test(test_nwrap_gethostbyaddr_r),
 #endif
 	};
 
-	rc = run_tests(tests);
+	rc = cmocka_run_group_tests(tests, NULL, NULL);
 
 	return rc;
 }

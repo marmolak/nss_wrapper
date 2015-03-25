@@ -374,18 +374,18 @@ static void test_nwrap_getaddrinfo_ipv6(void **state)
 int main(void) {
 	int rc;
 
-	const UnitTest tests[] = {
-		unit_test(test_nwrap_getaddrinfo),
-		unit_test(test_nwrap_getaddrinfo_any),
-		unit_test(test_nwrap_getaddrinfo_local),
-		unit_test(test_nwrap_getaddrinfo_name),
-		unit_test(test_nwrap_getaddrinfo_service),
-		unit_test(test_nwrap_getaddrinfo_null),
-		unit_test(test_nwrap_getaddrinfo_dot),
-		unit_test(test_nwrap_getaddrinfo_ipv6),
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(test_nwrap_getaddrinfo),
+		cmocka_unit_test(test_nwrap_getaddrinfo_any),
+		cmocka_unit_test(test_nwrap_getaddrinfo_local),
+		cmocka_unit_test(test_nwrap_getaddrinfo_name),
+		cmocka_unit_test(test_nwrap_getaddrinfo_service),
+		cmocka_unit_test(test_nwrap_getaddrinfo_null),
+		cmocka_unit_test(test_nwrap_getaddrinfo_dot),
+		cmocka_unit_test(test_nwrap_getaddrinfo_ipv6),
 	};
 
-	rc = run_tests(tests);
+	rc = cmocka_run_group_tests(tests, NULL, NULL);
 
 	return rc;
 }

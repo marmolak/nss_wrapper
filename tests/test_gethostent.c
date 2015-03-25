@@ -51,11 +51,11 @@ static void test_nwrap_gethostent(void **state)
 int main(void) {
 	int rc;
 
-	const UnitTest tests[] = {
-		unit_test(test_nwrap_gethostent),
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(test_nwrap_gethostent),
 	};
 
-	rc = run_tests(tests);
+	rc = cmocka_run_group_tests(tests, NULL, NULL);
 
 	return rc;
 }
