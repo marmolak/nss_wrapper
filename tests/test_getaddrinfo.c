@@ -389,6 +389,78 @@ static void test_nwrap_getaddrinfo_ipv6(void **state)
 	freeaddrinfo(res);
 }
 
+static void test_nwrap_getaddrinfo_multiple_mixed(void **state)
+{
+	struct addrinfo *res, *res_head;
+	struct addrinfo hints;
+	unsigned int ipv6_count = 0;
+	unsigned int ipv4_count = 0;
+	int rc;
+	int p;
+
+	struct sockaddr_in *r_addr;
+	struct sockaddr_in6 *r_addr6;
+
+	const char *result;
+	const char *value;
+
+	/* For inet_ntop call */
+	char buf[4096];
+
+	/* 2 - ipv4 and 3 ipv6 addresses */
+	const char *ipvX_results[] = {"127.1.1.1", "127.0.0.66", "2666::22", "B00B:5::4", "DEAD:BEEF:1:2:3::4", NULL};
+
+	(void) state; /* unused */
+
+	 memset(&hints, '\0', sizeof(struct addrinfo));
+        hints.ai_protocol = IPPROTO_TCP;
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+
+	rc = getaddrinfo("pumpkin.bunny.net", NULL, &hints, &res_head);
+	assert_return_code(rc, 0);
+	assert_non_null(res_head);
+
+	for (res = res_head; res != NULL; res = res->ai_next) {
+		if (res->ai_family == AF_INET) {
+			r_addr = (struct sockaddr_in *) res->ai_addr;
+			assert_non_null(r_addr);
+			++ipv4_count;
+			result = inet_ntop(AF_INET,
+					   &r_addr->sin_addr,
+					   buf,
+					   4096);
+		} else if (res->ai_family == AF_INET6) {
+			r_addr6 = (struct sockaddr_in6 *) res->ai_addr;
+			assert_non_null(r_addr6);
+			++ipv6_count;
+			result = inet_ntop(AF_INET6,
+					   &r_addr6->sin6_addr,
+					   buf,
+					   4096);
+		} else {
+			/* Unknown family type */
+			assert_int_equal(1,0);
+		}
+
+		/* Important part */
+		assert_non_null(result);
+
+		/* This could be part of cmocka library */
+		for (value = ipvX_results[0], p = 0; value != NULL; value = ipvX_results[++p]) {
+			if (strcasecmp(value, result) == 0) {
+				break;
+			}
+		}
+		assert_non_null(value);
+	}
+
+	assert_int_equal(ipv6_count, 3);
+	assert_int_equal(ipv4_count, 2);
+
+	freeaddrinfo(res_head);
+}
+
 int main(void) {
 	int rc;
 
@@ -401,6 +473,7 @@ int main(void) {
 		cmocka_unit_test(test_nwrap_getaddrinfo_null),
 		cmocka_unit_test(test_nwrap_getaddrinfo_dot),
 		cmocka_unit_test(test_nwrap_getaddrinfo_ipv6),
+		cmocka_unit_test(test_nwrap_getaddrinfo_multiple_mixed),
 	};
 
 	rc = cmocka_run_group_tests(tests, NULL, NULL);

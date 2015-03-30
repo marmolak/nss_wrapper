@@ -5,3 +5,8 @@
 ::13            beteigeuze.galaxy.site beteigeuze mail   
 127.0.0.14 krikkit.galaxy.site
 ::14 krikkit.galaxy.site
+127.1.1.1 		pumpkin.bunny.net
+127.0.0.66 		pumpkin.bunny.net
+2666::22 		pumpkin.bunny.net
+DEAD:BEEF:1:2:3::4 	pumpkin.bunny.net
+B00B:5::4 		pumpkin.bunny.net
