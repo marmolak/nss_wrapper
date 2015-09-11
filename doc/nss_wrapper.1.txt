@@ -1,5 +1,6 @@
 nss_wrapper(1)
 ==============
+:revdate: 2015-09-12
 
 NAME
 ----
@@ -29,6 +30,13 @@ with socket_wrapper.
 - Provides information for user and group accounts.
 - Network name resolution using a hosts file.
 - Loading and testing of NSS modules.
+
+LIMITATIONS
+-----------
+
+Some calls in nss_wrapper will only work if uid_wrapper is loaded and active.
+One of this functions is initgroups() which needs to run setgroups() to set
+the groups for the user. setgroups() is wrapped by uid_wrapper.
 
 ENVIRONMENT VARIABLES
 ---------------------
