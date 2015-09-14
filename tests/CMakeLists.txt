@@ -15,15 +15,23 @@ set(HOMEDIR ${CMAKE_CURRENT_BINARY_DIR})
 configure_file(passwd.in ${CMAKE_CURRENT_BINARY_DIR}/passwd @ONLY)
 configure_file(group.in ${CMAKE_CURRENT_BINARY_DIR}/group @ONLY)
 configure_file(hosts.in ${CMAKE_CURRENT_BINARY_DIR}/hosts @ONLY)
+configure_file(shadow.in ${CMAKE_CURRENT_BINARY_DIR}/shadow @ONLY)
 
 set(TEST_ENVIRONMENT LD_PRELOAD=${NSS_WRAPPER_LOCATION})
 list(APPEND TEST_ENVIRONMENT NSS_WRAPPER_PASSWD=${CMAKE_CURRENT_BINARY_DIR}/passwd)
 list(APPEND TEST_ENVIRONMENT NSS_WRAPPER_GROUP=${CMAKE_CURRENT_BINARY_DIR}/group)
+list(APPEND TEST_ENVIRONMENT NSS_WRAPPER_SHADOW=${CMAKE_CURRENT_BINARY_DIR}/shadow)
 list(APPEND TEST_ENVIRONMENT NSS_WRAPPER_HOSTS=${CMAKE_CURRENT_BINARY_DIR}/hosts)
 list(APPEND TEST_ENVIRONMENT NSS_WRAPPER_MODULE_SO_PATH=${CMAKE_CURRENT_BINARY_DIR}/libnss_nwrap.so)
 list(APPEND TEST_ENVIRONMENT NSS_WRAPPER_MODULE_FN_PREFIX=nwrap)
 
-set(NWRAP_TESTS testsuite test_getaddrinfo test_getnameinfo test_gethostby_name_addr test_gethostent)
+set(NWRAP_TESTS
+    testsuite
+    test_getaddrinfo
+    test_getnameinfo
+    test_gethostby_name_addr
+    test_gethostent
+    test_shadow)
 
 foreach(_NWRAP_TEST ${NWRAP_TESTS})
     add_cmocka_test(${_NWRAP_TEST} ${_NWRAP_TEST}.c ${TESTSUITE_LIBRARIES})
@@ -33,6 +41,9 @@ foreach(_NWRAP_TEST ${NWRAP_TESTS})
         PROPERTY
             ENVIRONMENT ${TEST_ENVIRONMENT})
 endforeach()
+
+# This is needed to check the hash in tests/shadow.in
+target_link_libraries(test_shadow crypt)
 
 # Test nwrap without wrapping so the libc functions are called
 add_cmocka_test(test_nwrap_disabled test_nwrap_disabled.c ${TESTSUITE_LIBRARIES})

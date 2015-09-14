@@ -29,11 +29,40 @@ static void test_nwrap_getspent(void **state)
 	endspent();
 }
 
+static void test_nwrap_getspnam(void **state)
+{
+	char *encrypted_password;
+	struct spwd *sp;
+
+	(void)state; /* unused */
+
+	sp = getspnam("alice");
+	assert_non_null(sp);
+
+	assert_string_equal(sp->sp_namp, "alice");
+
+	encrypted_password = crypt("secret", sp->sp_pwdp);
+	assert_non_null(encrypted_password);
+
+	assert_string_equal(encrypted_password, sp->sp_pwdp);
+
+	sp = getspnam("bob");
+	assert_non_null(sp);
+
+	assert_string_equal(sp->sp_namp, "bob");
+
+	encrypted_password = crypt("secret", sp->sp_pwdp);
+	assert_non_null(encrypted_password);
+
+	assert_string_equal(encrypted_password, sp->sp_pwdp);
+}
+
 int main(void) {
 	int rc;
 
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test(test_nwrap_getspent),
+		cmocka_unit_test(test_nwrap_getspnam),
 	};
 
 	rc = cmocka_run_group_tests(tests, NULL, NULL);
