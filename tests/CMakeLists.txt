@@ -30,8 +30,11 @@ set(NWRAP_TESTS
     test_getaddrinfo
     test_getnameinfo
     test_gethostby_name_addr
-    test_gethostent
-    test_shadow)
+    test_gethostent)
+
+if (HAVE_SHADOW_H)
+    list(APPEND NWRAP_TESTS test_shadow)
+endif (HAVE_SHADOW_H)
 
 foreach(_NWRAP_TEST ${NWRAP_TESTS})
     add_cmocka_test(${_NWRAP_TEST} ${_NWRAP_TEST}.c ${TESTSUITE_LIBRARIES})
@@ -42,8 +45,10 @@ foreach(_NWRAP_TEST ${NWRAP_TESTS})
             ENVIRONMENT ${TEST_ENVIRONMENT})
 endforeach()
 
-# This is needed to check the hash in tests/shadow.in
-target_link_libraries(test_shadow crypt)
+if (HAVE_SHADOW_H)
+    # This is needed to check the hash in tests/shadow.in
+    target_link_libraries(test_shadow crypt)
+endif (HAVE_SHADOW_H)
 
 # Test nwrap without wrapping so the libc functions are called
 add_cmocka_test(test_nwrap_disabled test_nwrap_disabled.c ${TESTSUITE_LIBRARIES})
