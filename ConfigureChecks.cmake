@@ -63,6 +63,9 @@ check_function_exists(getpwnam_r HAVE_GETPWNAM_R)
 check_function_exists(getpwuid_r HAVE_GETPWUID_R)
 check_function_exists(getpwent_r HAVE_GETPWENT_R)
 
+check_function_exists(setspent HAVE_SETSPENT)
+check_function_exists(getspnam HAVE_GETSPNAM)
+
 check_function_exists(getgrnam_r HAVE_GETGRNAM_R)
 check_function_exists(getgrgid_r HAVE_GETGRGID_R)
 check_function_exists(getgrent_r HAVE_GETGRENT_R)

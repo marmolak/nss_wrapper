@@ -32,6 +32,12 @@
 /* Define to 1 if you have the `getpwent_r' function. */
 #cmakedefine HAVE_GETPWENT_R 1
 
+/* Define to 1 if you have the `setspent' function. */
+#cmakedefine HAVE_SETSPENT 1
+
+/* Define to 1 if you have the `getspnam' function. */
+#cmakedefine HAVE_GETSPNAM 1
+
 /* Define to 1 if you have the `getgrnam_r' function. */
 #cmakedefine HAVE_GETGRNAM_R 1
 
