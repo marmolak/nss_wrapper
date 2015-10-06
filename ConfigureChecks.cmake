@@ -49,6 +49,7 @@ endif(CMAKE_COMPILER_IS_GNUCC AND NOT MINGW AND NOT OS2)
 # HEADERS
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
 check_include_file(pwd.h HAVE_PWD_H)
+check_include_file(shadow.h HAVE_SHADOW_H)
 check_include_file(grp.h HAVE_GRP_H)
 check_include_file(nss.h HAVE_NSS_H)
 check_include_file(nss_common.h HAVE_NSS_COMMON_H)

@@ -16,6 +16,7 @@
 
 #cmakedefine HAVE_SYS_TYPES_H 1
 #cmakedefine HAVE_PWD_H 1
+#cmakedefine HAVE_SHADOW_H 1
 #cmakedefine HAVE_GRP_H 1
 #cmakedefine HAVE_NSS_H 1
 #cmakedefine HAVE_NSS_COMMON_H 1
