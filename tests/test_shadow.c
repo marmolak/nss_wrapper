@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#include <crypt.h>
+
 static void test_nwrap_getspent(void **state)
 {
 	struct spwd *sp;
