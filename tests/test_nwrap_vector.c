@@ -35,6 +35,47 @@ static void test_nwrap_vector_basic_add(void **state)
 	free(v.items);
 }
 
+static void test_nwrap_vector_merge_empty(void **state)
+{
+	struct nwrap_vector v1;
+	struct nwrap_vector v2;
+	char string[] = "string!";
+	char string2[] = "2string!";
+
+	(void) state; /* unused */
+
+	nwrap_vector_init(&v1);
+	assert_non_null(v1.items);
+	assert_int_equal(v1.count, 0);
+
+	nwrap_vector_init(&v2);
+	assert_non_null(v2.items);
+	assert_int_equal(v2.count, 0);
+
+	nwrap_vector_merge(&v1, &v2);
+	assert_int_equal(v1.count, 0);
+	assert_null(v1.items[0]);
+
+	nwrap_vector_add_item(&v1, string);
+	nwrap_vector_add_item(&v1, string2);
+	assert_int_equal(v1.count, 2);
+
+	nwrap_vector_merge(&v1, &v2);
+	assert_int_equal(v1.count, 2);
+	assert_string_equal(v1.items[0], string);
+	assert_string_equal(v1.items[1], string2);
+	assert_null(v1.items[2]);
+
+	nwrap_vector_merge(&v2, &v1);
+	assert_int_equal(v2.count, 2);
+	assert_string_equal(v2.items[0], string);
+	assert_string_equal(v2.items[1], string2);
+	assert_null(v2.items[2]);
+
+	free(v1.items);
+	free(v2.items);
+}
+
 static void test_nwrap_vector_merge(void **state)
 {
 	struct nwrap_vector v1;
@@ -109,6 +150,7 @@ int main(void) {
 
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test(test_nwrap_vector_basic_add),
+		cmocka_unit_test(test_nwrap_vector_merge_empty),
 		cmocka_unit_test(test_nwrap_vector_merge),
 		cmocka_unit_test(test_nwrap_vector_merge_max),
 	};
