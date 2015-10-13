@@ -461,6 +461,32 @@ static void test_nwrap_getaddrinfo_multiple_mixed(void **state)
 	freeaddrinfo(res_head);
 }
 
+static void test_nwrap_getaddrinfo_flags_ai_numericserv(void **state)
+{
+	struct addrinfo hints;
+	struct addrinfo *res;
+	int rc;
+
+	(void) state; /* unused */
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
+	hints.ai_flags = AI_PASSIVE | AI_NUMERICSERV;    /* For wildcard IP address */
+	hints.ai_protocol = 0;          /* Any protocol */
+	hints.ai_canonname = NULL;
+
+	rc = getaddrinfo(NULL, "echo", &hints, &res);
+	assert_int_equal(rc, EAI_NONAME);
+
+	rc = getaddrinfo(NULL, "80", &hints, &res);
+	assert_int_equal(rc, 0);
+
+	/* Crippled input */
+	rc = getaddrinfo(NULL, "80a1", &hints, &res);
+	assert_int_equal(rc, EAI_NONAME);
+}
+
 int main(void) {
 	int rc;
 
@@ -474,6 +500,7 @@ int main(void) {
 		cmocka_unit_test(test_nwrap_getaddrinfo_dot),
 		cmocka_unit_test(test_nwrap_getaddrinfo_ipv6),
 		cmocka_unit_test(test_nwrap_getaddrinfo_multiple_mixed),
+		cmocka_unit_test(test_nwrap_getaddrinfo_flags_ai_numericserv),
 	};
 
 	rc = cmocka_run_group_tests(tests, NULL, NULL);
