@@ -83,6 +83,47 @@ static void test_nwrap_getaddrinfo(void **state)
 	freeaddrinfo(res);
 }
 
+static void test_nwrap_getaddrinfo_samba(void **state)
+{
+	struct addrinfo hints;
+	struct addrinfo *res = NULL;
+	int rc;
+
+	(void) state; /* unused */
+
+	/* IPv4 */
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+	hints.ai_socktype = SOCK_STREAM; /* Stream socket */
+	hints.ai_flags = 0;    /* For wildcard IP address */
+	hints.ai_protocol = IPPROTO_TCP;          /* Any protocol */
+	hints.ai_canonname = NULL;
+	hints.ai_addr = NULL;
+	hints.ai_next = NULL;
+
+	rc = getaddrinfo("127.0.0.21", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+	assert_non_null(res);
+
+	rc = getaddrinfo("samba.example.com", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+	assert_non_null(res);
+
+	rc = getaddrinfo("localdc", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+	assert_non_null(res);
+
+	rc = getaddrinfo("localdc.samba.example.com", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+	assert_non_null(res);
+
+	rc = getaddrinfo("fd00:0000:0000:0000:0000:0000:5357:5f15", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+	assert_non_null(res);
+
+	freeaddrinfo(res);
+}
+
 static void test_nwrap_getaddrinfo_any(void **state)
 {
 	struct addrinfo hints;
@@ -610,6 +651,7 @@ int main(void) {
 		cmocka_unit_test(test_nwrap_getaddrinfo_multiple_mixed),
 		cmocka_unit_test(test_nwrap_getaddrinfo_flags_ai_numericserv),
 		cmocka_unit_test(test_nwrap_getaddrinfo_flags_ai_numerichost),
+		cmocka_unit_test(test_nwrap_getaddrinfo_samba),
 	};
 
 	rc = cmocka_run_group_tests(tests, NULL, NULL);
