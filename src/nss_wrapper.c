@@ -2495,52 +2495,55 @@ static void nwrap_gr_unload(struct nwrap_cache *nwrap)
 	nwrap_gr->idx = 0;
 }
 
+#define align_address_charptr(d) \
+	((char *)(((uintptr_t)(d) + 15) & ~(uintptr_t)0x0F));
+
+/* Function silently expect alignment of buf address */
 static int nwrap_gr_copy_r(const struct group *src, struct group *dst,
 			   char *buf, size_t buflen, struct group **dstp)
 {
-	char *first;
-	char **lastm;
-	char *last = NULL;
-	off_t ofsb;
-	off_t ofsm;
-	off_t ofs;
 	unsigned i;
+	char *new_addr;
 
-	first = src->gr_name;
+	/* Count size of bytes needed. We lost track of counts and we need alignment. */
+	new_addr = (char *)((uintptr_t)buf + (uintptr_t)(strlen(src->gr_name) + strlen(src->gr_passwd) + 2));
 
-	lastm = src->gr_mem;
-	while (*lastm) {
-		last = *lastm;
-		lastm++;
+	for (i=0; src->gr_mem[i]; ++i);
+	new_addr = align_address_charptr(new_addr + ((i + 1) * sizeof(char *)));
+	for (i=0; src->gr_mem[i]; ++i) {
+		new_addr = (char *)((uintptr_t)new_addr + (uintptr_t)(strlen(src->gr_mem[i]) + 1));
 	}
 
-	if (last == NULL) {
-		last = src->gr_passwd;
-	}
-	while (*last) last++;
-
-	ofsb = PTR_DIFF(last + 1, first);
-	ofsm = PTR_DIFF(lastm + 1, src->gr_mem);
-
-	if ((ofsb + ofsm) > (off_t) buflen) {
+	if ((uintptr_t)PTR_DIFF(new_addr, buf) > (uintptr_t)buflen) {
+		*dstp = NULL;
 		return ERANGE;
 	}
 
-	memcpy(buf, first, ofsb);
-	memcpy(buf + ofsb, src->gr_mem, ofsm);
 
-	ofs = PTR_DIFF(src->gr_name, first);
-	dst->gr_name = buf + ofs;
-	ofs = PTR_DIFF(src->gr_passwd, first);
-	dst->gr_passwd = buf + ofs;
+	/* Point new_addr to buf again */
+	new_addr = buf;
+
 	dst->gr_gid = src->gr_gid;
 
-	dst->gr_mem = (char **)(buf + ofsb);
-	for (i=0; src->gr_mem[i]; i++) {
-		ofs = PTR_DIFF(src->gr_mem[i], first);
-		dst->gr_mem[i] = buf + ofs;
-	}
+	memcpy((void *)new_addr, src->gr_name, strlen(src->gr_name) + 1);
+	dst->gr_name = new_addr;
+	new_addr = (char *)((uintptr_t)new_addr + (uintptr_t)(strlen(src->gr_name) + 1));
 
+	memcpy((void *)new_addr, src->gr_passwd, strlen(src->gr_passwd) + 1);
+	dst->gr_passwd = new_addr;
+
+	/* Allocate alignmed space for field of pointers */
+	new_addr = align_address_charptr(new_addr + strlen(src->gr_passwd) + 1);
+	dst->gr_mem = (char **) new_addr;
+
+	new_addr = (char *)((uintptr_t)new_addr + (uintptr_t)((i + 1) * sizeof(char *))); 
+
+	for (i=0; src->gr_mem[i]; ++i) {
+		memcpy((void *)new_addr, src->gr_mem[i], strlen(src->gr_mem[i]) + 1);
+		dst->gr_mem[i] = new_addr;
+		new_addr = (char *)((uintptr_t)new_addr + (uintptr_t)(strlen(src->gr_mem[i]) + 1));
+	}
+	dst->gr_mem[i] = NULL;
 	if (dstp) {
 		*dstp = dst;
 	}
