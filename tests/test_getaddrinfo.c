@@ -476,6 +476,11 @@ static void test_nwrap_getaddrinfo_flags_ai_numericserv(void **state)
 	hints.ai_protocol = 0;          /* Any protocol */
 	hints.ai_canonname = NULL;
 
+	/*
+	 * Calls with NULL name are handled by libc,
+	 * even if nss_wrapper is enabled
+	 */
+
 	rc = getaddrinfo(NULL, "echo", &hints, &res);
 	assert_int_equal(rc, EAI_NONAME);
 
@@ -484,6 +489,20 @@ static void test_nwrap_getaddrinfo_flags_ai_numericserv(void **state)
 
 	/* Crippled input */
 	rc = getaddrinfo(NULL, "80a1", &hints, &res);
+	assert_int_equal(rc, EAI_NONAME);
+
+	/*
+	 * Calls with non-NULL name are handled by nwrap
+	 */
+
+	rc = getaddrinfo("magrathea.galaxy.site", "echo", &hints, &res);
+	assert_int_equal(rc, EAI_NONAME);
+
+	rc = getaddrinfo("magrathea.galaxy.site", "80", &hints, &res);
+	assert_int_equal(rc, 0);
+
+	/* Crippled input */
+	rc = getaddrinfo("magrathea.galaxy.site", "80a1", &hints, &res);
 	assert_int_equal(rc, EAI_NONAME);
 }
 
