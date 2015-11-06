@@ -255,7 +255,7 @@ static void test_nwrap_getaddrinfo_service(void **state)
 	hints.ai_flags = 0;
 
 	rc = getaddrinfo("magrathea", "wurst", &hints, &res);
-	assert_int_equal(rc, EAI_SERVICE);
+	assert_int_equal(rc, EAI_NONAME);
 
 	/* Check ldap port */
 	rc = getaddrinfo("magrathea", "ldap", &hints, &res);
