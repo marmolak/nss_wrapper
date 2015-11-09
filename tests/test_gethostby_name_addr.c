@@ -161,7 +161,7 @@ static void test_nwrap_gethostbyname2(void **state)
 	(void) state; /* unused */
 
 	he = gethostbyname2("magrathea.galaxy.site", AF_INET6);
-	assert_null(he);
+	assert_non_null(he);
 
 	he = gethostbyname2("magrathea.galaxy.site", AF_INET);
 	assert_non_null(he);
