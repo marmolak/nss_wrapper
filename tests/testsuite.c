@@ -979,6 +979,20 @@ static void test_nwrap_duplicates(void **state)
 	test_nwrap_group_duplicates();
 }
 
+static void test_nwrap_small_buffer(void **state)
+{
+	struct group grp, *grpp;
+	char buffer[2];
+	int ret;
+
+	(void) state; /* unused */
+
+	DEBUG("Testing getgrnam_r: %s\n", "users");
+
+	ret = getgrnam_r("users", &grp, buffer, sizeof(buffer), &grpp);
+	assert_int_equal(ret, ERANGE);
+}
+
 int main(void) {
 	int rc;
 
@@ -990,6 +1004,7 @@ int main(void) {
 		cmocka_unit_test(test_nwrap_membership),
 #endif
 		cmocka_unit_test(test_nwrap_duplicates),
+		cmocka_unit_test(test_nwrap_small_buffer),
 	};
 
 	rc = cmocka_run_group_tests(tests, NULL, NULL);
