@@ -506,6 +506,95 @@ static void test_nwrap_getaddrinfo_flags_ai_numericserv(void **state)
 	assert_int_equal(rc, EAI_NONAME);
 }
 
+static void test_nwrap_getaddrinfo_flags_ai_numerichost(void **state)
+{
+	struct addrinfo hints;
+	struct addrinfo *res;
+	int rc;
+
+	(void) state; /* unused */
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
+	hints.ai_flags = AI_PASSIVE | AI_NUMERICHOST;  /* For wildcard IP address */
+	hints.ai_protocol = 0;          /* Any protocol */
+	hints.ai_canonname = NULL;
+
+	/* IPv4 or IPv6 */
+
+	hints.ai_family = AF_UNSPEC;
+
+	rc = getaddrinfo("127.0.0.11", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+	freeaddrinfo(res);
+
+	rc = getaddrinfo("::1", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+	freeaddrinfo(res);
+
+	rc = getaddrinfo(NULL, "echo", &hints, &res);
+	assert_int_equal(rc, 0);
+	freeaddrinfo(res);
+
+	rc = getaddrinfo("magrathea.galaxy.site", NULL, &hints, &res);
+	assert_int_equal(rc, EAI_NONAME);
+
+	rc = getaddrinfo("", NULL, &hints, &res);
+	assert_int_equal(rc, EAI_NONAME);
+
+	rc = getaddrinfo("fail.me", "echo", &hints, &res);
+	assert_int_equal(rc, EAI_NONAME);
+
+	/* IPv4 */
+
+	hints.ai_family = AF_INET;
+
+	rc = getaddrinfo("127.0.0.11", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+	freeaddrinfo(res);
+
+	rc = getaddrinfo("::1", NULL, &hints, &res);
+	assert_int_equal(rc, EAI_ADDRFAMILY);
+
+	rc = getaddrinfo(NULL, "echo", &hints, &res);
+	assert_int_equal(rc, 0);
+	freeaddrinfo(res);
+
+	rc = getaddrinfo("magrathea.galaxy.site", NULL, &hints, &res);
+	assert_int_equal(rc, EAI_NONAME);
+
+	rc = getaddrinfo("", NULL, &hints, &res);
+	assert_int_equal(rc, EAI_NONAME);
+
+	rc = getaddrinfo("fail.me", "echo", &hints, &res);
+	assert_int_equal(rc, EAI_NONAME);
+
+
+	/* IPv6 */
+
+	hints.ai_family = AF_INET6;
+
+	rc = getaddrinfo("127.0.0.11", NULL, &hints, &res);
+	assert_int_equal(rc, EAI_ADDRFAMILY);
+
+	rc = getaddrinfo("::1", NULL, &hints, &res);
+	assert_int_equal(rc, 0);
+	freeaddrinfo(res);
+
+	rc = getaddrinfo(NULL, "echo", &hints, &res);
+	assert_int_equal(rc, 0);
+	freeaddrinfo(res);
+
+	rc = getaddrinfo("magrathea.galaxy.site", NULL, &hints, &res);
+	assert_int_equal(rc, EAI_NONAME);
+
+	rc = getaddrinfo("", NULL, &hints, &res);
+	assert_int_equal(rc, EAI_NONAME);
+
+	rc = getaddrinfo("fail.me", "echo", &hints, &res);
+	assert_int_equal(rc, EAI_NONAME);
+}
+
 int main(void) {
 	int rc;
 
@@ -520,6 +609,7 @@ int main(void) {
 		cmocka_unit_test(test_nwrap_getaddrinfo_ipv6),
 		cmocka_unit_test(test_nwrap_getaddrinfo_multiple_mixed),
 		cmocka_unit_test(test_nwrap_getaddrinfo_flags_ai_numericserv),
+		cmocka_unit_test(test_nwrap_getaddrinfo_flags_ai_numerichost),
 	};
 
 	rc = cmocka_run_group_tests(tests, NULL, NULL);
