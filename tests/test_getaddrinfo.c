@@ -442,8 +442,8 @@ static void test_nwrap_getaddrinfo_multiple_mixed(void **state)
 	struct sockaddr_in *r_addr;
 	struct sockaddr_in6 *r_addr6;
 
-	const char *result;
-	const char *value;
+	const char *result = NULL;
+	const char *value = NULL;
 
 	/* For inet_ntop call */
 	char buf[4096];
