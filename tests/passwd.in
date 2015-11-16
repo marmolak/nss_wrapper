@@ -2,3 +2,10 @@ bob:x:1000:1000:bob gecos:@HOMEDIR@:/bin/false
 alice:1001:1000:alice gecos:@HOMEDIR@:/bin/false
 nobody:x:65533:65534:bob gecos:@HOMEDIR@:/bin/false
 root:x:65534:65532:root gecos:@HOMEDIR@:/bin/false
+member1:x:2001:2000:member of big group:@HOMEDIR@:/bin/false
+member2:x:2002:2000:member of big group:@HOMEDIR@:/bin/false
+member3:x:2003:2000:member of big group:@HOMEDIR@:/bin/false
+member4:x:2004:2000:member of big group:@HOMEDIR@:/bin/false
+member6:x:2005:2000:member of big group:@HOMEDIR@:/bin/false
+member7:x:2006:2000:member of big group:@HOMEDIR@:/bin/false
+member8:x:2007:2000:member of big group:@HOMEDIR@:/bin/false

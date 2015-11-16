@@ -993,6 +993,38 @@ static void test_nwrap_small_buffer(void **state)
 	assert_int_equal(ret, ERANGE);
 }
 
+static void test_nwrap_group_many_members_r(void **state)
+{
+	struct group grp, *grpp;
+	char buffer[4096];
+	int ret;
+	unsigned count;
+	const char *members[] = { "root", "bob", "nobody", "member1",
+				  "member2", "member3", "member4",
+				  "member5", "member6", "member7",
+				  "member8", NULL
+				};
+
+	(void) state; /* unused */
+	count = 0;
+
+	ret = getgrnam_r("biggroup", &grp, buffer, sizeof(buffer), &grpp);
+	assert_int_equal(ret, 0);
+	assert_non_null(grpp);
+
+	for(int i=0; grp.gr_mem[i]; ++i) {
+		const char *val = members[0];
+                for (; val != NULL; ++val) {
+                        if (strcasecmp(val, grp.gr_mem[i]) == 0) {
+				++count;
+                                break;
+                        }
+                }
+		assert_non_null(val);
+	}
+	assert_int_equal(count, 11);
+}
+
 int main(void) {
 	int rc;
 
@@ -1005,6 +1037,7 @@ int main(void) {
 #endif
 		cmocka_unit_test(test_nwrap_duplicates),
 		cmocka_unit_test(test_nwrap_small_buffer),
+		cmocka_unit_test(test_nwrap_group_many_members_r),
 	};
 
 	rc = cmocka_run_group_tests(tests, NULL, NULL);

@@ -2,3 +2,4 @@ users:x:1000:
 nobody:x:65533:
 nogroup:x:65534:nobody
 root:x:65532:
+biggroup:x:2000:root,nobody,bob,member1,member2,member3,member4,member5,member6,member7,member8
