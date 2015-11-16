@@ -104,18 +104,26 @@ static void test_nwrap_getaddrinfo_samba(void **state)
 	rc = getaddrinfo("127.0.0.21", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
 	assert_non_null(res);
+	freeaddrinfo(res);
+	res = NULL;
 
 	rc = getaddrinfo("samba.example.com", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
 	assert_non_null(res);
+	freeaddrinfo(res);
+	res = NULL;
 
 	rc = getaddrinfo("localdc", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
 	assert_non_null(res);
+	freeaddrinfo(res);
+	res = NULL;
 
 	rc = getaddrinfo("localdc.samba.example.com", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
 	assert_non_null(res);
+	freeaddrinfo(res);
+	res = NULL;
 
 	rc = getaddrinfo("fd00:0000:0000:0000:0000:0000:5357:5f15", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
@@ -527,6 +535,8 @@ static void test_nwrap_getaddrinfo_flags_ai_numericserv(void **state)
 
 	rc = getaddrinfo(NULL, "80", &hints, &res);
 	assert_int_equal(rc, 0);
+	freeaddrinfo(res);
+	res = NULL;
 
 	/* Crippled input */
 	rc = getaddrinfo(NULL, "80a1", &hints, &res);
@@ -541,6 +551,8 @@ static void test_nwrap_getaddrinfo_flags_ai_numericserv(void **state)
 
 	rc = getaddrinfo("magrathea.galaxy.site", "80", &hints, &res);
 	assert_int_equal(rc, 0);
+	freeaddrinfo(res);
+	res = NULL;
 
 	/* Crippled input */
 	rc = getaddrinfo("magrathea.galaxy.site", "80a1", &hints, &res);
