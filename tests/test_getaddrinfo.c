@@ -595,7 +595,11 @@ static void test_nwrap_getaddrinfo_flags_ai_numerichost(void **state)
 	freeaddrinfo(res);
 
 	rc = getaddrinfo("::1", NULL, &hints, &res);
+#ifdef EAI_ADDRFAMILY
 	assert_int_equal(rc, EAI_ADDRFAMILY);
+#else
+	assert_int_equal(rc, EAI_FAMILY);
+#endif
 
 	rc = getaddrinfo(NULL, "echo", &hints, &res);
 	assert_int_equal(rc, 0);
@@ -616,7 +620,11 @@ static void test_nwrap_getaddrinfo_flags_ai_numerichost(void **state)
 	hints.ai_family = AF_INET6;
 
 	rc = getaddrinfo("127.0.0.11", NULL, &hints, &res);
+#ifdef EAI_ADDRFAMILY
 	assert_int_equal(rc, EAI_ADDRFAMILY);
+#else
+	assert_int_equal(rc, EAI_FAMILY);
+#endif
 
 	rc = getaddrinfo("::1", NULL, &hints, &res);
 	assert_int_equal(rc, 0);
