@@ -276,64 +276,124 @@ static void nwrap_log(enum nwrap_dbglvl_e dbglvl,
 }
 #endif /* NDEBUG NWRAP_LOG */
 
-struct nwrap_libc_fns {
-	struct passwd *(*_libc_getpwnam)(const char *name);
-	int (*_libc_getpwnam_r)(const char *name, struct passwd *pwd,
-		       char *buf, size_t buflen, struct passwd **result);
-	struct passwd *(*_libc_getpwuid)(uid_t uid);
-	int (*_libc_getpwuid_r)(uid_t uid, struct passwd *pwd, char *buf, size_t buflen, struct passwd **result);
-	void (*_libc_setpwent)(void);
-	struct passwd *(*_libc_getpwent)(void);
+/* LIBC */
+typedef struct passwd *(*__libc_getpwnam)(const char *name);
+typedef int (*__libc_getpwnam_r)(const char *name, struct passwd *pwd,
+				 char *buf, size_t buflen, struct passwd **result);
+typedef int (*__libc____posix_getpwnam_r)(const char *name, struct passwd *pwd,
+				 char *buf, size_t buflen, struct passwd **result);
+typedef struct passwd *(*__libc_getpwuid)(uid_t uid);
+typedef int (*__libc_getpwuid_r)(uid_t uid, struct passwd *pwd, char *buf, size_t buflen, struct passwd **result);
+typedef void (*__libc_setpwent)(void);
+typedef struct passwd *(*__libc_getpwent)(void);
+
 #ifdef HAVE_SOLARIS_GETPWENT_R
-	struct passwd *(*_libc_getpwent_r)(struct passwd *pwbuf, char *buf, size_t buflen);
+typedef struct passwd *(*__libc_getpwent_r)(struct passwd *pwbuf, char *buf, size_t buflen);
 #else
-	int (*_libc_getpwent_r)(struct passwd *pwbuf, char *buf, size_t buflen, struct passwd **pwbufp);
+typedef int (*__libc_getpwent_r)(struct passwd *pwbuf, char *buf, size_t buflen, struct passwd **pwbufp);
 #endif
-	void (*_libc_endpwent)(void);
-	int (*_libc_initgroups)(const char *user, gid_t gid);
-	struct group *(*_libc_getgrnam)(const char *name);
-	int (*_libc_getgrnam_r)(const char *name, struct group *grp, char *buf, size_t buflen, struct group **result);
-	struct group *(*_libc_getgrgid)(gid_t gid);
-	int (*_libc_getgrgid_r)(gid_t gid, struct group *grp, char *buf, size_t buflen, struct group **result);
-	void (*_libc_setgrent)(void);
-	struct group *(*_libc_getgrent)(void);
+
+typedef void (*__libc_endpwent)(void);
+typedef int (*__libc_initgroups)(const char *user, gid_t gid);
+typedef struct group *(*__libc_getgrnam)(const char *name);
+typedef int (*__libc_getgrnam_r)(const char *name, struct group *grp, char *buf, size_t buflen, struct group **result);
+typedef struct group *(*__libc_getgrgid)(gid_t gid);
+typedef int (*__libc_getgrgid_r)(gid_t gid, struct group *grp, char *buf, size_t buflen, struct group **result);
+typedef void (*__libc_setgrent)(void);
+typedef struct group *(*__libc_getgrent)(void);
+
 #ifdef HAVE_SOLARIS_GETGRENT_R
-	struct group *(*_libc_getgrent_r)(struct group *group, char *buf, size_t buflen);
+typedef struct group *(*__libc_getgrent_r)(struct group *group, char *buf, size_t buflen);
 #else
-	int (*_libc_getgrent_r)(struct group *group, char *buf, size_t buflen, struct group **result);
+typedef int (*__libc_getgrent_r)(struct group *group, char *buf, size_t buflen, struct group **result);
 #endif
-	void (*_libc_endgrent)(void);
-	int (*_libc_getgrouplist)(const char *user, gid_t group, gid_t *groups, int *ngroups);
 
-	void (*_libc_sethostent)(int stayopen);
-	struct hostent *(*_libc_gethostent)(void);
-	void (*_libc_endhostent)(void);
+typedef void (*__libc_endgrent)(void);
+typedef int (*__libc_getgrouplist)(const char *user, gid_t group, gid_t *groups, int *ngroups);
 
-	struct hostent *(*_libc_gethostbyname)(const char *name);
+typedef void (*__libc_sethostent)(int stayopen);
+typedef struct hostent *(*__libc_gethostent)(void);
+typedef void (*__libc_endhostent)(void);
+
+typedef struct hostent *(*__libc_gethostbyname)(const char *name);
 #ifdef HAVE_GETHOSTBYNAME2 /* GNU extension */
-	struct hostent *(*_libc_gethostbyname2)(const char *name, int af);
+typedef struct hostent *(*__libc_gethostbyname2)(const char *name, int af);
 #endif
-	struct hostent *(*_libc_gethostbyaddr)(const void *addr, socklen_t len, int type);
+typedef struct hostent *(*__libc_gethostbyaddr)(const void *addr, socklen_t len, int type);
 
-	int (*_libc_getaddrinfo)(const char *node, const char *service,
-				 const struct addrinfo *hints,
-				 struct addrinfo **res);
-	int (*_libc_getnameinfo)(const struct sockaddr *sa, socklen_t salen,
-				 char *host, size_t hostlen,
-				 char *serv, size_t servlen,
-				 int flags);
-	int (*_libc_gethostname)(char *name, size_t len);
+typedef int (*__libc_getaddrinfo)(const char *node, const char *service,
+				  const struct addrinfo *hints,
+				  struct addrinfo **res);
+typedef int (*__libc_getnameinfo)(const struct sockaddr *sa, socklen_t salen,
+				  char *host, size_t hostlen,
+				  char *serv, size_t servlen,
+				  int flags);
+typedef int (*__libc_gethostname)(char *name, size_t len);
 #ifdef HAVE_GETHOSTBYNAME_R
-	int (*_libc_gethostbyname_r)(const char *name,
-				     struct hostent *ret,
-				     char *buf, size_t buflen,
-				     struct hostent **result, int *h_errnop);
+typedef int (*__libc_gethostbyname_r)(const char *name,
+			      struct hostent *ret,
+			      char *buf, size_t buflen,
+			      struct hostent **result, int *h_errnop);
 #endif
 #ifdef HAVE_GETHOSTBYADDR_R
-	int (*_libc_gethostbyaddr_r)(const void *addr, socklen_t len, int type,
-				     struct hostent *ret,
-				     char *buf, size_t buflen,
-				     struct hostent **result, int *h_errnop);
+typedef	int (*__libc_gethostbyaddr_r)(const void *addr, socklen_t len, int type,
+				      struct hostent *ret,
+				      char *buf, size_t buflen,
+				      struct hostent **result, int *h_errnop);
+#endif
+
+#define NWRAP_SYMBOL_ENTRY(i) \
+        union { \
+                __libc_##i f; \
+                void *obj; \
+        } _libc_##i
+
+struct nwrap_libc_symbols {
+	NWRAP_SYMBOL_ENTRY(getpwnam);
+	NWRAP_SYMBOL_ENTRY(getpwnam_r);
+	NWRAP_SYMBOL_ENTRY(getpwuid);
+	NWRAP_SYMBOL_ENTRY(getpwuid_r);
+	NWRAP_SYMBOL_ENTRY(setpwent);
+	NWRAP_SYMBOL_ENTRY(getpwent);
+#ifdef HAVE_SOLARIS_GETPWENT_R
+	NWRAP_SYMBOL_ENTRY(getpwent_r);
+#else
+	NWRAP_SYMBOL_ENTRY(getpwent_r);
+#endif
+	NWRAP_SYMBOL_ENTRY(endpwent);
+	NWRAP_SYMBOL_ENTRY(initgroups);
+	NWRAP_SYMBOL_ENTRY(getgrnam);
+	NWRAP_SYMBOL_ENTRY(getgrnam_r);
+	NWRAP_SYMBOL_ENTRY(getgrgid);
+	NWRAP_SYMBOL_ENTRY(getgrgid_r);
+	NWRAP_SYMBOL_ENTRY(setgrent);
+	NWRAP_SYMBOL_ENTRY(getgrent);
+#ifdef HAVE_SOLARIS_GETGRENT_R
+	NWRAP_SYMBOL_ENTRY(getgrent_r);
+#else
+	NWRAP_SYMBOL_ENTRY(getgrent_r);
+#endif
+	NWRAP_SYMBOL_ENTRY(endgrent);
+	NWRAP_SYMBOL_ENTRY(getgrouplist);
+
+	NWRAP_SYMBOL_ENTRY(sethostent);
+	NWRAP_SYMBOL_ENTRY(gethostent);
+	NWRAP_SYMBOL_ENTRY(endhostent);
+
+	NWRAP_SYMBOL_ENTRY(gethostbyname);
+#ifdef HAVE_GETHOSTBYNAME2 /* GNU extension */
+	NWRAP_SYMBOL_ENTRY(gethostbyname2);
+#endif
+	NWRAP_SYMBOL_ENTRY(gethostbyaddr);
+
+	NWRAP_SYMBOL_ENTRY(getaddrinfo);
+	NWRAP_SYMBOL_ENTRY(getnameinfo);
+	NWRAP_SYMBOL_ENTRY(gethostname);
+#ifdef HAVE_GETHOSTBYNAME_R
+	NWRAP_SYMBOL_ENTRY(gethostbyname_r);
+#endif
+#ifdef HAVE_GETHOSTBYADDR_R
+	NWRAP_SYMBOL_ENTRY(gethostbyaddr_r);
 #endif
 };
 
@@ -528,13 +588,13 @@ struct nwrap_libc {
 	void *handle;
 	void *nsl_handle;
 	void *sock_handle;
-	struct nwrap_libc_fns *fns;
+	struct nwrap_libc_symbols symbols;
 };
 
 struct nwrap_main {
 	int num_backends;
 	struct nwrap_backend *backends;
-	struct nwrap_libc *libc;
+	struct nwrap_libc libc;
 };
 
 static struct nwrap_main *nwrap_main_global;
@@ -830,7 +890,7 @@ static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 	switch (lib) {
 	case NWRAP_LIBNSL:
 #ifdef HAVE_LIBNSL
-		handle = nwrap_main_global->libc->nsl_handle;
+		handle = nwrap_main_global->libc.nsl_handle;
 		if (handle == NULL) {
 			for (i = 10; i >= 0; i--) {
 				char soname[256] = {0};
@@ -842,14 +902,14 @@ static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 				}
 			}
 
-			nwrap_main_global->libc->nsl_handle = handle;
+			nwrap_main_global->libc.nsl_handle = handle;
 		}
 		break;
 #endif
 		/* FALL TROUGH */
 	case NWRAP_LIBSOCKET:
 #ifdef HAVE_LIBSOCKET
-		handle = nwrap_main_global->libc->sock_handle;
+		handle = nwrap_main_global->libc.sock_handle;
 		if (handle == NULL) {
 			for (i = 10; i >= 0; i--) {
 				char soname[256] = {0};
@@ -861,13 +921,13 @@ static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 				}
 			}
 
-			nwrap_main_global->libc->sock_handle = handle;
+			nwrap_main_global->libc.sock_handle = handle;
 		}
 		break;
 #endif
 		/* FALL TROUGH */
 	case NWRAP_LIBC:
-		handle = nwrap_main_global->libc->handle;
+		handle = nwrap_main_global->libc.handle;
 		if (handle == NULL) {
 			for (i = 10; i >= 0; i--) {
 				char soname[256] = {0};
@@ -879,16 +939,16 @@ static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 				}
 			}
 
-			nwrap_main_global->libc->handle = handle;
+			nwrap_main_global->libc.handle = handle;
 		}
 		break;
 	}
 
 	if (handle == NULL) {
 #ifdef RTLD_NEXT
-		handle = nwrap_main_global->libc->handle
-		       = nwrap_main_global->libc->sock_handle
-		       = nwrap_main_global->libc->nsl_handle
+		handle = nwrap_main_global->libc.handle
+		       = nwrap_main_global->libc.sock_handle
+		       = nwrap_main_global->libc.nsl_handle
 		       = RTLD_NEXT;
 #else
 		NWRAP_LOG(NWRAP_LOG_ERROR,
@@ -924,11 +984,17 @@ static void *_nwrap_bind_symbol(enum nwrap_lib lib, const char *fn_name)
 	return func;
 }
 
-#define nwrap_bind_symbol(lib, fn_name) \
-	if (nwrap_main_global->libc->fns->_libc_##fn_name == NULL) { \
-		*(void **) (&nwrap_main_global->libc->fns->_libc_##fn_name) = \
-			_nwrap_bind_symbol(lib, #fn_name); \
+#define nwrap_symbol_libc(sym_name) \
+	nwrap_main_global->libc.symbols._libc_##sym_name
+
+#define nwrap_bind_symbol(lib, sym_name) \
+	if (nwrap_symbol_libc(sym_name).obj == NULL) { \
+		nwrap_symbol_libc(sym_name).obj = \
+			_nwrap_bind_symbol(lib, #sym_name); \
 	}
+
+#define nwrap_bind_symbol_libc(sym_name) \
+		nwrap_bind_symbol(NWRAP_LIBC, sym_name);
 
 /* INTERNAL HELPER FUNCTIONS */
 static void nwrap_lines_unload(struct nwrap_cache *const nwrap)
@@ -953,9 +1019,9 @@ static void nwrap_lines_unload(struct nwrap_cache *const nwrap)
  */
 static struct passwd *libc_getpwnam(const char *name)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, getpwnam);
+	nwrap_bind_symbol_libc(getpwnam);
 
-	return nwrap_main_global->libc->fns->_libc_getpwnam(name);
+	return nwrap_symbol_libc(getpwnam).f(name);
 }
 
 #ifdef HAVE_GETPWNAM_R
@@ -966,27 +1032,22 @@ static int libc_getpwnam_r(const char *name,
 			   struct passwd **result)
 {
 #ifdef HAVE___POSIX_GETPWNAM_R
-	if (nwrap_main_global->libc->fns->_libc_getpwnam_r == NULL) {
-		*(void **) (&nwrap_main_global->libc->fns->_libc_getpwnam_r) =
+	if (nwrap_symbol_libc(getpwnam_r).obj == NULL) {
+		nwrap_symbol_libc(getpwnam_r).obj = \
 			_nwrap_bind_symbol(NWRAP_LIBC, "__posix_getpwnam_r");
 	}
 #else
-	nwrap_bind_symbol(NWRAP_LIBC, getpwnam_r);
+	nwrap_bind_symbol_libc(getpwnam_r);
 #endif
-
-	return nwrap_main_global->libc->fns->_libc_getpwnam_r(name,
-							      pwd,
-							      buf,
-							      buflen,
-							      result);
+	return nwrap_symbol_libc(getpwnam_r).f(name, pwd, buf, buflen, result);
 }
 #endif
 
 static struct passwd *libc_getpwuid(uid_t uid)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, getpwuid);
+	nwrap_bind_symbol_libc(getpwuid);
 
-	return nwrap_main_global->libc->fns->_libc_getpwuid(uid);
+	return nwrap_symbol_libc(getpwuid).f(uid);
 }
 
 #ifdef HAVE_GETPWUID_R
@@ -997,19 +1058,15 @@ static int libc_getpwuid_r(uid_t uid,
 			   struct passwd **result)
 {
 #ifdef HAVE___POSIX_GETPWUID_R
-	if (nwrap_main_global->libc->fns->_libc_getpwuid_r == NULL) {
-		*(void **) (&nwrap_main_global->libc->fns->_libc_getpwuid_r) =
+	if (nwrap_symbol_libc(getpwuid_r).obj == NULL) {
+		nwrap_symbol_libc(getpwuid_r).obj =
 			_nwrap_bind_symbol(NWRAP_LIBC, "__posix_getpwuid_r");
 	}
 #else
-	nwrap_bind_symbol(NWRAP_LIBC, getpwuid_r);
+	nwrap_bind_symbol_libc(getpwuid_r);
 #endif
 
-	return nwrap_main_global->libc->fns->_libc_getpwuid_r(uid,
-							      pwd,
-							      buf,
-							      buflen,
-							      result);
+	return nwrap_symbol_libc(getpwuid_r).f(uid, pwd, buf, buflen, result);
 }
 #endif
 
@@ -1046,16 +1103,16 @@ static bool str_tolower_copy(char **dst_name, const char *const src_name)
 
 static void libc_setpwent(void)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, setpwent);
+	nwrap_bind_symbol_libc(setpwent);
 
-	nwrap_main_global->libc->fns->_libc_setpwent();
+	nwrap_symbol_libc(setpwent).f();
 }
 
 static struct passwd *libc_getpwent(void)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, getpwent);
+	nwrap_bind_symbol_libc(getpwent);
 
-	return nwrap_main_global->libc->fns->_libc_getpwent();
+	return nwrap_symbol_libc(getpwent).f();
 }
 
 #ifdef HAVE_SOLARIS_GETPWENT_R
@@ -1063,11 +1120,9 @@ static struct passwd *libc_getpwent_r(struct passwd *pwdst,
 				      char *buf,
 				      int buflen)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, getpwent_r);
+	nwrap_bind_symbol_libc(getpwent_r);
 
-	return nwrap_main_global->libc->fns->_libc_getpwent_r(pwdst,
-							      buf,
-							      buflen);
+	return nwrap_symbol_libc(getpwent_r).f(pwdst, buf, buflen);
 }
 #else /* HAVE_SOLARIS_GETPWENT_R */
 static int libc_getpwent_r(struct passwd *pwdst,
@@ -1075,34 +1130,31 @@ static int libc_getpwent_r(struct passwd *pwdst,
 			   size_t buflen,
 			   struct passwd **pwdstp)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, getpwent_r);
+	nwrap_bind_symbol_libc(getpwent_r);
 
-	return nwrap_main_global->libc->fns->_libc_getpwent_r(pwdst,
-							      buf,
-							      buflen,
-							      pwdstp);
+	return nwrap_symbol_libc(getpwent_r).f(pwdst, buf, buflen, pwdstp);
 }
 #endif /* HAVE_SOLARIS_GETPWENT_R */
 
 static void libc_endpwent(void)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, endpwent);
+	nwrap_bind_symbol_libc(endpwent);
 
-	nwrap_main_global->libc->fns->_libc_endpwent();
+	nwrap_symbol_libc(endpwent).f();
 }
 
 static int libc_initgroups(const char *user, gid_t gid)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, initgroups);
+	nwrap_bind_symbol_libc(initgroups);
 
-	return nwrap_main_global->libc->fns->_libc_initgroups(user, gid);
+	return nwrap_symbol_libc(initgroups).f(user, gid);
 }
 
 static struct group *libc_getgrnam(const char *name)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, getgrnam);
+	nwrap_bind_symbol_libc(getgrnam);
 
-	return nwrap_main_global->libc->fns->_libc_getgrnam(name);
+	return nwrap_symbol_libc(getgrnam).f(name);
 }
 
 #ifdef HAVE_GETGRNAM_R
@@ -1113,27 +1165,23 @@ static int libc_getgrnam_r(const char *name,
 			   struct group **result)
 {
 #ifdef HAVE___POSIX_GETGRNAM_R
-	if (nwrap_main_global->libc->fns->_libc_getgrnam_r == NULL) {
-		*(void **) (&nwrap_main_global->libc->fns->_libc_getgrnam_r) =
+	if (nwrap_symbol_libc(getgrnam_r).obj == NULL) {
+		nwrap_symbol_libc(getgrnam_r).obj =
 			_nwrap_bind_symbol(NWRAP_LIBC, "__posix_getgrnam_r");
 	}
 #else
-	nwrap_bind_symbol(NWRAP_LIBC, getgrnam_r);
+	nwrap_bind_symbol_libc(getgrnam_r);
 #endif
 
-	return nwrap_main_global->libc->fns->_libc_getgrnam_r(name,
-							      grp,
-							      buf,
-							      buflen,
-							      result);
+	return nwrap_symbol_libc(getgrnam_r).f(name, grp, buf, buflen, result);
 }
 #endif
 
 static struct group *libc_getgrgid(gid_t gid)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, getgrgid);
+	nwrap_bind_symbol_libc(getgrgid);
 
-	return nwrap_main_global->libc->fns->_libc_getgrgid(gid);
+	return nwrap_symbol_libc(getgrgid).f(gid);
 }
 
 #ifdef HAVE_GETGRGID_R
@@ -1144,34 +1192,30 @@ static int libc_getgrgid_r(gid_t gid,
 			   struct group **result)
 {
 #ifdef HAVE___POSIX_GETGRGID_R
-	if (nwrap_main_global->libc->fns->_libc_getgrgid_r == NULL) {
-		*(void **) (&nwrap_main_global->libc->fns->_libc_getgrgid_r) =
+	if (nwrap_symbol_libc(getgrgid_r).obj == NULL) {
+		nwrap_symbol_libc(getgrgid_r).obj = \
 			_nwrap_bind_symbol(NWRAP_LIBC, "__posix_getgrgid_r");
 	}
 #else
-	nwrap_bind_symbol(NWRAP_LIBC, getgrgid_r);
+	nwrap_bind_symbol_libc(getgrgid_r);
 #endif
 
-	return nwrap_main_global->libc->fns->_libc_getgrgid_r(gid,
-							      grp,
-							      buf,
-							      buflen,
-							      result);
+	return nwrap_symbol_libc(getgrgid_r).f(gid, grp, buf, buflen, result);
 }
 #endif
 
 static void libc_setgrent(void)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, setgrent);
+	nwrap_bind_symbol_libc(setgrent);
 
-	nwrap_main_global->libc->fns->_libc_setgrent();
+	nwrap_symbol_libc(setgrent).f();
 }
 
 static struct group *libc_getgrent(void)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, getgrent);
+	nwrap_bind_symbol_libc(getgrent);
 
-	return nwrap_main_global->libc->fns->_libc_getgrent();
+	return nwrap_symbol_libc(getgrent).f();
 }
 
 #ifdef HAVE_GETGRENT_R
@@ -1180,11 +1224,9 @@ static struct group *libc_getgrent_r(struct group *group,
 				     char *buf,
 				     size_t buflen)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, getgrent_r);
+	nwrap_bind_symbol_libc(getgrent_r);
 
-	return nwrap_main_global->libc->fns->_libc_getgrent_r(group,
-							      buf,
-							      buflen);
+	return nwrap_symbol_libc(getgrent_r).f(group, buf, buflen);
 }
 #else /* !HAVE_SOLARIS_GETGRENT_R */
 static int libc_getgrent_r(struct group *group,
@@ -1192,21 +1234,18 @@ static int libc_getgrent_r(struct group *group,
 			   size_t buflen,
 			   struct group **result)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, getgrent_r);
+	nwrap_bind_symbol_libc(getgrent_r);
 
-	return nwrap_main_global->libc->fns->_libc_getgrent_r(group,
-							      buf,
-							      buflen,
-							      result);
+	return nwrap_symbol_libc(getgrent_r).f(group, buf, buflen, result);
 }
 #endif /* HAVE_SOLARIS_GETGRENT_R */
 #endif /* HAVE_GETGRENT_R */
 
 static void libc_endgrent(void)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, endgrent);
+	nwrap_bind_symbol_libc(endgrent);
 
-	nwrap_main_global->libc->fns->_libc_endgrent();
+	nwrap_symbol_libc(endgrent).f();
 }
 
 #ifdef HAVE_GETGROUPLIST
@@ -1215,12 +1254,9 @@ static int libc_getgrouplist(const char *user,
 			     gid_t *groups,
 			     int *ngroups)
 {
-	nwrap_bind_symbol(NWRAP_LIBC, getgrouplist);
+	nwrap_bind_symbol_libc(getgrouplist);
 
-	return nwrap_main_global->libc->fns->_libc_getgrouplist(user,
-								group,
-								groups,
-								ngroups);
+	return nwrap_symbol_libc(getgrouplist).f(user, group, groups, ngroups);
 }
 #endif
 
@@ -1228,28 +1264,28 @@ static void libc_sethostent(int stayopen)
 {
 	nwrap_bind_symbol(NWRAP_LIBNSL, sethostent);
 
-	nwrap_main_global->libc->fns->_libc_sethostent(stayopen);
+	nwrap_symbol_libc(sethostent).f(stayopen);
 }
 
 static struct hostent *libc_gethostent(void)
 {
 	nwrap_bind_symbol(NWRAP_LIBNSL, gethostent);
 
-	return nwrap_main_global->libc->fns->_libc_gethostent();
+	return nwrap_symbol_libc(gethostent).f();
 }
 
 static void libc_endhostent(void)
 {
 	nwrap_bind_symbol(NWRAP_LIBNSL, endhostent);
 
-	nwrap_main_global->libc->fns->_libc_endhostent();
+	nwrap_symbol_libc(endhostent).f();
 }
 
 static struct hostent *libc_gethostbyname(const char *name)
 {
 	nwrap_bind_symbol(NWRAP_LIBNSL, gethostbyname);
 
-	return nwrap_main_global->libc->fns->_libc_gethostbyname(name);
+	return nwrap_symbol_libc(gethostbyname).f(name);
 }
 
 #ifdef HAVE_GETHOSTBYNAME2 /* GNU extension */
@@ -1257,7 +1293,7 @@ static struct hostent *libc_gethostbyname2(const char *name, int af)
 {
 	nwrap_bind_symbol(NWRAP_LIBNSL, gethostbyname2);
 
-	return nwrap_main_global->libc->fns->_libc_gethostbyname2(name, af);
+	return	nwrap_symbol_libc(gethostbyname2).f(name, af);
 }
 #endif
 
@@ -1267,16 +1303,14 @@ static struct hostent *libc_gethostbyaddr(const void *addr,
 {
 	nwrap_bind_symbol(NWRAP_LIBNSL, gethostbyaddr);
 
-	return nwrap_main_global->libc->fns->_libc_gethostbyaddr(addr,
-								 len,
-								 type);
+	return nwrap_symbol_libc(gethostbyaddr).f(addr, len, type);
 }
 
 static int libc_gethostname(char *name, size_t len)
 {
 	nwrap_bind_symbol(NWRAP_LIBNSL, gethostname);
 
-	return nwrap_main_global->libc->fns->_libc_gethostname(name, len);
+	return nwrap_symbol_libc(gethostname).f(name, len);
 }
 
 #ifdef HAVE_GETHOSTBYNAME_R
@@ -1289,12 +1323,8 @@ static int libc_gethostbyname_r(const char *name,
 {
 	nwrap_bind_symbol(NWRAP_LIBNSL, gethostbyname_r);
 
-	return nwrap_main_global->libc->fns->_libc_gethostbyname_r(name,
-								   ret,
-								   buf,
-								   buflen,
-								   result,
-								   h_errnop);
+	return nwrap_symbol_libc(gethostbyname_r).f(name, ret, buf, buflen,
+						    result, h_errnop);
 }
 #endif
 
@@ -1310,14 +1340,8 @@ static int libc_gethostbyaddr_r(const void *addr,
 {
 	nwrap_bind_symbol(NWRAP_LIBNSL, gethostbyaddr_r);
 
-	return nwrap_main_global->libc->fns->_libc_gethostbyaddr_r(addr,
-								   len,
-								   type,
-								   ret,
-								   buf,
-								   buflen,
-								   result,
-								   h_errnop);
+	return nwrap_symbol_libc(gethostbyaddr_r).f(addr, len, type, ret, buf,
+						    buflen, result, h_errnop);
 }
 #endif
 
@@ -1328,10 +1352,7 @@ static int libc_getaddrinfo(const char *node,
 {
 	nwrap_bind_symbol(NWRAP_LIBSOCKET, getaddrinfo);
 
-	return nwrap_main_global->libc->fns->_libc_getaddrinfo(node,
-							       service,
-							       hints,
-							       res);
+	return nwrap_symbol_libc(getaddrinfo).f(node, service, hints, res);
 }
 
 static int libc_getnameinfo(const struct sockaddr *sa,
@@ -1344,13 +1365,8 @@ static int libc_getnameinfo(const struct sockaddr *sa,
 {
 	nwrap_bind_symbol(NWRAP_LIBSOCKET, getnameinfo);
 
-	return nwrap_main_global->libc->fns->_libc_getnameinfo(sa,
-							       salen,
-							       host,
-							       hostlen,
-							       serv,
-							       servlen,
-							       flags);
+	return nwrap_symbol_libc(getnameinfo).f(sa, salen, host, hostlen, serv,
+						servlen, flags);
 }
 
 /*********************************************************
@@ -1478,23 +1494,6 @@ static bool nwrap_module_init(const char *name,
 	return true;
 }
 
-static void nwrap_libc_init(struct nwrap_main *r)
-{
-	r->libc = malloc(sizeof(struct nwrap_libc));
-	if (r->libc == NULL) {
-		printf("Failed to allocate memory for libc");
-		exit(-1);
-	}
-	ZERO_STRUCTP(r->libc);
-
-	r->libc->fns = malloc(sizeof(struct nwrap_libc_fns));
-	if (r->libc->fns == NULL) {
-		printf("Failed to allocate memory for libc functions");
-		exit(-1);
-	}
-	ZERO_STRUCTP(r->libc->fns);
-}
-
 static void nwrap_backend_init(struct nwrap_main *r)
 {
 	const char *module_so_path = getenv("NSS_WRAPPER_MODULE_SO_PATH");
@@ -1582,8 +1581,6 @@ static void nwrap_init(void)
 	}
 
 	nwrap_main_global = &__nwrap_main_global;
-
-	nwrap_libc_init(nwrap_main_global);
 
 	nwrap_backend_init(nwrap_main_global);
 
@@ -5504,17 +5501,15 @@ void nwrap_destructor(void)
 		struct nwrap_main *m = nwrap_main_global;
 
 		/* libc */
-		SAFE_FREE(m->libc->fns);
-		if (m->libc->handle != NULL) {
-			dlclose(m->libc->handle);
+		if (m->libc.handle != NULL) {
+			dlclose(m->libc.handle);
 		}
-		if (m->libc->nsl_handle != NULL) {
-			dlclose(m->libc->nsl_handle);
+		if (m->libc.nsl_handle != NULL) {
+			dlclose(m->libc.nsl_handle);
 		}
-		if (m->libc->sock_handle != NULL) {
-			dlclose(m->libc->sock_handle);
+		if (m->libc.sock_handle != NULL) {
+			dlclose(m->libc.sock_handle);
 		}
-		SAFE_FREE(m->libc);
 
 		/* backends */
 		for (i = 0; i < m->num_backends; i++) {
