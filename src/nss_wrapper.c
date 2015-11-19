@@ -901,7 +901,7 @@ static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 	return handle;
 }
 
-static void *_nwrap_load_lib_function(enum nwrap_lib lib, const char *fn_name)
+static void *_nwrap_bind_symbol(enum nwrap_lib lib, const char *fn_name)
 {
 	void *handle;
 	void *func;
@@ -924,10 +924,10 @@ static void *_nwrap_load_lib_function(enum nwrap_lib lib, const char *fn_name)
 	return func;
 }
 
-#define nwrap_load_lib_function(lib, fn_name) \
+#define nwrap_bind_symbol(lib, fn_name) \
 	if (nwrap_main_global->libc->fns->_libc_##fn_name == NULL) { \
 		*(void **) (&nwrap_main_global->libc->fns->_libc_##fn_name) = \
-			_nwrap_load_lib_function(lib, #fn_name); \
+			_nwrap_bind_symbol(lib, #fn_name); \
 	}
 
 /* INTERNAL HELPER FUNCTIONS */
@@ -953,7 +953,7 @@ static void nwrap_lines_unload(struct nwrap_cache *const nwrap)
  */
 static struct passwd *libc_getpwnam(const char *name)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, getpwnam);
+	nwrap_bind_symbol(NWRAP_LIBC, getpwnam);
 
 	return nwrap_main_global->libc->fns->_libc_getpwnam(name);
 }
@@ -968,10 +968,10 @@ static int libc_getpwnam_r(const char *name,
 #ifdef HAVE___POSIX_GETPWNAM_R
 	if (nwrap_main_global->libc->fns->_libc_getpwnam_r == NULL) {
 		*(void **) (&nwrap_main_global->libc->fns->_libc_getpwnam_r) =
-			_nwrap_load_lib_function(NWRAP_LIBC, "__posix_getpwnam_r");
+			_nwrap_bind_symbol(NWRAP_LIBC, "__posix_getpwnam_r");
 	}
 #else
-	nwrap_load_lib_function(NWRAP_LIBC, getpwnam_r);
+	nwrap_bind_symbol(NWRAP_LIBC, getpwnam_r);
 #endif
 
 	return nwrap_main_global->libc->fns->_libc_getpwnam_r(name,
@@ -984,7 +984,7 @@ static int libc_getpwnam_r(const char *name,
 
 static struct passwd *libc_getpwuid(uid_t uid)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, getpwuid);
+	nwrap_bind_symbol(NWRAP_LIBC, getpwuid);
 
 	return nwrap_main_global->libc->fns->_libc_getpwuid(uid);
 }
@@ -999,10 +999,10 @@ static int libc_getpwuid_r(uid_t uid,
 #ifdef HAVE___POSIX_GETPWUID_R
 	if (nwrap_main_global->libc->fns->_libc_getpwuid_r == NULL) {
 		*(void **) (&nwrap_main_global->libc->fns->_libc_getpwuid_r) =
-			_nwrap_load_lib_function(NWRAP_LIBC, "__posix_getpwuid_r");
+			_nwrap_bind_symbol(NWRAP_LIBC, "__posix_getpwuid_r");
 	}
 #else
-	nwrap_load_lib_function(NWRAP_LIBC, getpwuid_r);
+	nwrap_bind_symbol(NWRAP_LIBC, getpwuid_r);
 #endif
 
 	return nwrap_main_global->libc->fns->_libc_getpwuid_r(uid,
@@ -1046,14 +1046,14 @@ static bool str_tolower_copy(char **dst_name, const char *const src_name)
 
 static void libc_setpwent(void)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, setpwent);
+	nwrap_bind_symbol(NWRAP_LIBC, setpwent);
 
 	nwrap_main_global->libc->fns->_libc_setpwent();
 }
 
 static struct passwd *libc_getpwent(void)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, getpwent);
+	nwrap_bind_symbol(NWRAP_LIBC, getpwent);
 
 	return nwrap_main_global->libc->fns->_libc_getpwent();
 }
@@ -1063,7 +1063,7 @@ static struct passwd *libc_getpwent_r(struct passwd *pwdst,
 				      char *buf,
 				      int buflen)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, getpwent_r);
+	nwrap_bind_symbol(NWRAP_LIBC, getpwent_r);
 
 	return nwrap_main_global->libc->fns->_libc_getpwent_r(pwdst,
 							      buf,
@@ -1075,7 +1075,7 @@ static int libc_getpwent_r(struct passwd *pwdst,
 			   size_t buflen,
 			   struct passwd **pwdstp)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, getpwent_r);
+	nwrap_bind_symbol(NWRAP_LIBC, getpwent_r);
 
 	return nwrap_main_global->libc->fns->_libc_getpwent_r(pwdst,
 							      buf,
@@ -1086,21 +1086,21 @@ static int libc_getpwent_r(struct passwd *pwdst,
 
 static void libc_endpwent(void)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, endpwent);
+	nwrap_bind_symbol(NWRAP_LIBC, endpwent);
 
 	nwrap_main_global->libc->fns->_libc_endpwent();
 }
 
 static int libc_initgroups(const char *user, gid_t gid)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, initgroups);
+	nwrap_bind_symbol(NWRAP_LIBC, initgroups);
 
 	return nwrap_main_global->libc->fns->_libc_initgroups(user, gid);
 }
 
 static struct group *libc_getgrnam(const char *name)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, getgrnam);
+	nwrap_bind_symbol(NWRAP_LIBC, getgrnam);
 
 	return nwrap_main_global->libc->fns->_libc_getgrnam(name);
 }
@@ -1115,10 +1115,10 @@ static int libc_getgrnam_r(const char *name,
 #ifdef HAVE___POSIX_GETGRNAM_R
 	if (nwrap_main_global->libc->fns->_libc_getgrnam_r == NULL) {
 		*(void **) (&nwrap_main_global->libc->fns->_libc_getgrnam_r) =
-			_nwrap_load_lib_function(NWRAP_LIBC, "__posix_getgrnam_r");
+			_nwrap_bind_symbol(NWRAP_LIBC, "__posix_getgrnam_r");
 	}
 #else
-	nwrap_load_lib_function(NWRAP_LIBC, getgrnam_r);
+	nwrap_bind_symbol(NWRAP_LIBC, getgrnam_r);
 #endif
 
 	return nwrap_main_global->libc->fns->_libc_getgrnam_r(name,
@@ -1131,7 +1131,7 @@ static int libc_getgrnam_r(const char *name,
 
 static struct group *libc_getgrgid(gid_t gid)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, getgrgid);
+	nwrap_bind_symbol(NWRAP_LIBC, getgrgid);
 
 	return nwrap_main_global->libc->fns->_libc_getgrgid(gid);
 }
@@ -1146,10 +1146,10 @@ static int libc_getgrgid_r(gid_t gid,
 #ifdef HAVE___POSIX_GETGRGID_R
 	if (nwrap_main_global->libc->fns->_libc_getgrgid_r == NULL) {
 		*(void **) (&nwrap_main_global->libc->fns->_libc_getgrgid_r) =
-			_nwrap_load_lib_function(NWRAP_LIBC, "__posix_getgrgid_r");
+			_nwrap_bind_symbol(NWRAP_LIBC, "__posix_getgrgid_r");
 	}
 #else
-	nwrap_load_lib_function(NWRAP_LIBC, getgrgid_r);
+	nwrap_bind_symbol(NWRAP_LIBC, getgrgid_r);
 #endif
 
 	return nwrap_main_global->libc->fns->_libc_getgrgid_r(gid,
@@ -1162,14 +1162,14 @@ static int libc_getgrgid_r(gid_t gid,
 
 static void libc_setgrent(void)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, setgrent);
+	nwrap_bind_symbol(NWRAP_LIBC, setgrent);
 
 	nwrap_main_global->libc->fns->_libc_setgrent();
 }
 
 static struct group *libc_getgrent(void)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, getgrent);
+	nwrap_bind_symbol(NWRAP_LIBC, getgrent);
 
 	return nwrap_main_global->libc->fns->_libc_getgrent();
 }
@@ -1180,7 +1180,7 @@ static struct group *libc_getgrent_r(struct group *group,
 				     char *buf,
 				     size_t buflen)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, getgrent_r);
+	nwrap_bind_symbol(NWRAP_LIBC, getgrent_r);
 
 	return nwrap_main_global->libc->fns->_libc_getgrent_r(group,
 							      buf,
@@ -1192,7 +1192,7 @@ static int libc_getgrent_r(struct group *group,
 			   size_t buflen,
 			   struct group **result)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, getgrent_r);
+	nwrap_bind_symbol(NWRAP_LIBC, getgrent_r);
 
 	return nwrap_main_global->libc->fns->_libc_getgrent_r(group,
 							      buf,
@@ -1204,7 +1204,7 @@ static int libc_getgrent_r(struct group *group,
 
 static void libc_endgrent(void)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, endgrent);
+	nwrap_bind_symbol(NWRAP_LIBC, endgrent);
 
 	nwrap_main_global->libc->fns->_libc_endgrent();
 }
@@ -1215,7 +1215,7 @@ static int libc_getgrouplist(const char *user,
 			     gid_t *groups,
 			     int *ngroups)
 {
-	nwrap_load_lib_function(NWRAP_LIBC, getgrouplist);
+	nwrap_bind_symbol(NWRAP_LIBC, getgrouplist);
 
 	return nwrap_main_global->libc->fns->_libc_getgrouplist(user,
 								group,
@@ -1226,28 +1226,28 @@ static int libc_getgrouplist(const char *user,
 
 static void libc_sethostent(int stayopen)
 {
-	nwrap_load_lib_function(NWRAP_LIBNSL, sethostent);
+	nwrap_bind_symbol(NWRAP_LIBNSL, sethostent);
 
 	nwrap_main_global->libc->fns->_libc_sethostent(stayopen);
 }
 
 static struct hostent *libc_gethostent(void)
 {
-	nwrap_load_lib_function(NWRAP_LIBNSL, gethostent);
+	nwrap_bind_symbol(NWRAP_LIBNSL, gethostent);
 
 	return nwrap_main_global->libc->fns->_libc_gethostent();
 }
 
 static void libc_endhostent(void)
 {
-	nwrap_load_lib_function(NWRAP_LIBNSL, endhostent);
+	nwrap_bind_symbol(NWRAP_LIBNSL, endhostent);
 
 	nwrap_main_global->libc->fns->_libc_endhostent();
 }
 
 static struct hostent *libc_gethostbyname(const char *name)
 {
-	nwrap_load_lib_function(NWRAP_LIBNSL, gethostbyname);
+	nwrap_bind_symbol(NWRAP_LIBNSL, gethostbyname);
 
 	return nwrap_main_global->libc->fns->_libc_gethostbyname(name);
 }
@@ -1255,7 +1255,7 @@ static struct hostent *libc_gethostbyname(const char *name)
 #ifdef HAVE_GETHOSTBYNAME2 /* GNU extension */
 static struct hostent *libc_gethostbyname2(const char *name, int af)
 {
-	nwrap_load_lib_function(NWRAP_LIBNSL, gethostbyname2);
+	nwrap_bind_symbol(NWRAP_LIBNSL, gethostbyname2);
 
 	return nwrap_main_global->libc->fns->_libc_gethostbyname2(name, af);
 }
@@ -1265,7 +1265,7 @@ static struct hostent *libc_gethostbyaddr(const void *addr,
 					  socklen_t len,
 					  int type)
 {
-	nwrap_load_lib_function(NWRAP_LIBNSL, gethostbyaddr);
+	nwrap_bind_symbol(NWRAP_LIBNSL, gethostbyaddr);
 
 	return nwrap_main_global->libc->fns->_libc_gethostbyaddr(addr,
 								 len,
@@ -1274,7 +1274,7 @@ static struct hostent *libc_gethostbyaddr(const void *addr,
 
 static int libc_gethostname(char *name, size_t len)
 {
-	nwrap_load_lib_function(NWRAP_LIBNSL, gethostname);
+	nwrap_bind_symbol(NWRAP_LIBNSL, gethostname);
 
 	return nwrap_main_global->libc->fns->_libc_gethostname(name, len);
 }
@@ -1287,7 +1287,7 @@ static int libc_gethostbyname_r(const char *name,
 				struct hostent **result,
 				int *h_errnop)
 {
-	nwrap_load_lib_function(NWRAP_LIBNSL, gethostbyname_r);
+	nwrap_bind_symbol(NWRAP_LIBNSL, gethostbyname_r);
 
 	return nwrap_main_global->libc->fns->_libc_gethostbyname_r(name,
 								   ret,
@@ -1308,7 +1308,7 @@ static int libc_gethostbyaddr_r(const void *addr,
 				struct hostent **result,
 				int *h_errnop)
 {
-	nwrap_load_lib_function(NWRAP_LIBNSL, gethostbyaddr_r);
+	nwrap_bind_symbol(NWRAP_LIBNSL, gethostbyaddr_r);
 
 	return nwrap_main_global->libc->fns->_libc_gethostbyaddr_r(addr,
 								   len,
@@ -1326,7 +1326,7 @@ static int libc_getaddrinfo(const char *node,
 			    const struct addrinfo *hints,
 			    struct addrinfo **res)
 {
-	nwrap_load_lib_function(NWRAP_LIBSOCKET, getaddrinfo);
+	nwrap_bind_symbol(NWRAP_LIBSOCKET, getaddrinfo);
 
 	return nwrap_main_global->libc->fns->_libc_getaddrinfo(node,
 							       service,
@@ -1342,7 +1342,7 @@ static int libc_getnameinfo(const struct sockaddr *sa,
 			    size_t servlen,
 			    int flags)
 {
-	nwrap_load_lib_function(NWRAP_LIBSOCKET, getnameinfo);
+	nwrap_bind_symbol(NWRAP_LIBSOCKET, getnameinfo);
 
 	return nwrap_main_global->libc->fns->_libc_getnameinfo(sa,
 							       salen,
