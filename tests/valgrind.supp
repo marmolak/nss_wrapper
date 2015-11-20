@@ -29,3 +29,11 @@
    fun:_dlerror_run
    fun:dlclose
 }
+
+{
+   glibc___sha512_crypt_alloc
+   Memcheck:Leak
+   fun:malloc
+   fun:realloc
+   fun:__sha512_crypt
+}
