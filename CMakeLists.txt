@@ -58,6 +58,15 @@ install(
 
 if (UNIT_TESTING)
     find_package(CMocka REQUIRED)
+
+    file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}/tests/valgrind.supp" VALGRIND_SUPPRESSION_FILE)
+    # add the valgrind suppressions
+    set(MEMORYCHECK_SUPPRESSIONS_FILE
+        ${VALGRIND_SUPPRESSION_FILE}
+        CACHE
+        FILEPATH
+        "Path to the memory checking command, used for memory error detection.")
+
     include(AddCMockaTest)
     add_subdirectory(tests)
 endif (UNIT_TESTING)
