@@ -1,6 +1,15 @@
 ChangeLog
 ==========
 
+version 1.1.0 (released 2015-11-20)
+  * Added support for initgroups()
+  * Added support for shadow files (getspnam(), etc.)
+  * Improved support for multi address handling in getaddrinfo()
+  * Improved file parser
+  * Fixed compilation on machines without IPv4 support
+  * Fixed service string sanity check in getaddrinfo() (bso #11501)
+  * Fixed AI_NUMERICHOST handling in getaddrinfo() (bso # 11477)
+
 version 1.0.3 (released 2014-09-11)
   * Added a nss_wrapper manpage.
   * Fixed cmake find_package configs.
