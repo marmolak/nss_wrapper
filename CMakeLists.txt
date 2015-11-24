@@ -34,6 +34,9 @@ include(DefineCompilerFlags)
 include(DefineInstallationPaths)
 include(DefineOptions.cmake)
 include(CPackConfig.cmake)
+if (OSX)
+    add_definitions(-DOSX)
+endif ()
 
 # disallow in-source build
 include(MacroEnsureOutOfSourceBuild)

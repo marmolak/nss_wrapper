@@ -178,7 +178,11 @@ static void test_nwrap_gethostbyname2(void **state)
 	a = inet_ntop(AF_INET6, he->h_addr_list[0], ip, sizeof(ip));
 	assert_non_null(a);
 
+#ifndef OSX
 	assert_string_equal(ip, "::14");
+#else
+	assert_string_equal(ip, "::0.0.0.20");
+#endif /* OSX */
 
 	/* Check ipv4 he */
 	he = gethostbyname2("krikkit.galaxy.site", AF_INET);

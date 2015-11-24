@@ -79,7 +79,7 @@
 #include <dlfcn.h>
 
 #if defined(HAVE_NSS_H)
-/* Linux and BSD */
+/* Linux and some BSDs. Not OpenBSD nor OS X (Darwin) */
 #include <nss.h>
 
 typedef enum nss_status NSS_STATUS;
@@ -96,7 +96,7 @@ typedef nss_status_t NSS_STATUS;
 # define NSS_STATUS_UNAVAIL     NSS_UNAVAIL
 # define NSS_STATUS_TRYAGAIN    NSS_TRYAGAIN
 #else
-# error "No nsswitch support detected"
+ # define NO_NSS_SUPPORT
 #endif
 
 #ifndef PTR_DIFF
@@ -287,14 +287,23 @@ typedef int (*__libc_getpwuid_r)(uid_t uid, struct passwd *pwd, char *buf, size_
 typedef void (*__libc_setpwent)(void);
 typedef struct passwd *(*__libc_getpwent)(void);
 
-#ifdef HAVE_SOLARIS_GETPWENT_R
-typedef struct passwd *(*__libc_getpwent_r)(struct passwd *pwbuf, char *buf, size_t buflen);
-#else
-typedef int (*__libc_getpwent_r)(struct passwd *pwbuf, char *buf, size_t buflen, struct passwd **pwbufp);
-#endif
+#ifndef OSX /* OSX doesn't have these calls */
+
+ #ifdef HAVE_SOLARIS_GETPWENT_R
+  typedef struct passwd *(*__libc_getpwent_r)(struct passwd *pwbuf, char *buf, size_t buflen);
+ #else
+  typedef int (*__libc_getpwent_r)(struct passwd *pwbuf, char *buf, size_t buflen, struct passwd **pwbufp);
+ #endif
+
+#endif /* OSX */
+
 
 typedef void (*__libc_endpwent)(void);
-typedef int (*__libc_initgroups)(const char *user, gid_t gid);
+#ifdef OSX
+ typedef int (*__libc_initgroups)(const char *user, int gid);
+#else
+ typedef int (*__libc_initgroups)(const char *user, gid_t gid);
+#endif /* OS X */
 typedef struct group *(*__libc_getgrnam)(const char *name);
 typedef int (*__libc_getgrnam_r)(const char *name, struct group *grp, char *buf, size_t buflen, struct group **result);
 typedef struct group *(*__libc_getgrgid)(gid_t gid);
@@ -303,13 +312,19 @@ typedef void (*__libc_setgrent)(void);
 typedef struct group *(*__libc_getgrent)(void);
 
 #ifdef HAVE_SOLARIS_GETGRENT_R
-typedef struct group *(*__libc_getgrent_r)(struct group *group, char *buf, size_t buflen);
+ typedef struct group *(*__libc_getgrent_r)(struct group *group, char *buf, size_t buflen);
 #else
-typedef int (*__libc_getgrent_r)(struct group *group, char *buf, size_t buflen, struct group **result);
-#endif
+ #ifndef OSX /* OSX doesn't have _r function variants */
+  typedef int (*__libc_getgrent_r)(struct group *group, char *buf, size_t buflen, struct group **result);
+ #endif /* OSX */
+#endif /* HAVE_SOLARIS_GETPWENT_R */
 
 typedef void (*__libc_endgrent)(void);
-typedef int (*__libc_getgrouplist)(const char *user, gid_t group, gid_t *groups, int *ngroups);
+#ifdef OSX
+ typedef int (*__libc_getgrouplist)(const char *user, int group, int *groups, int *ngroups);
+#else
+ typedef int (*__libc_getgrouplist)(const char *user, gid_t group, gid_t *groups, int *ngroups);
+#endif /* OSX */
 
 typedef void (*__libc_sethostent)(int stayopen);
 typedef struct hostent *(*__libc_gethostent)(void);
@@ -355,11 +370,13 @@ struct nwrap_libc_symbols {
 	NWRAP_SYMBOL_ENTRY(getpwuid_r);
 	NWRAP_SYMBOL_ENTRY(setpwent);
 	NWRAP_SYMBOL_ENTRY(getpwent);
+#ifndef OSX
 #ifdef HAVE_SOLARIS_GETPWENT_R
 	NWRAP_SYMBOL_ENTRY(getpwent_r);
 #else
 	NWRAP_SYMBOL_ENTRY(getpwent_r);
 #endif
+#endif /* OSX */
 	NWRAP_SYMBOL_ENTRY(endpwent);
 	NWRAP_SYMBOL_ENTRY(initgroups);
 	NWRAP_SYMBOL_ENTRY(getgrnam);
@@ -368,11 +385,13 @@ struct nwrap_libc_symbols {
 	NWRAP_SYMBOL_ENTRY(getgrgid_r);
 	NWRAP_SYMBOL_ENTRY(setgrent);
 	NWRAP_SYMBOL_ENTRY(getgrent);
+#ifndef OSX
 #ifdef HAVE_SOLARIS_GETGRENT_R
 	NWRAP_SYMBOL_ENTRY(getgrent_r);
 #else
 	NWRAP_SYMBOL_ENTRY(getgrent_r);
 #endif
+#endif /* OSX */
 	NWRAP_SYMBOL_ENTRY(endgrent);
 	NWRAP_SYMBOL_ENTRY(getgrouplist);
 
@@ -397,6 +416,7 @@ struct nwrap_libc_symbols {
 #endif
 };
 
+#ifndef NO_NSS_SUPPORT 
 struct nwrap_module_nss_fns {
 	NSS_STATUS (*_nss_getpwnam_r)(const char *name, struct passwd *result, char *buffer,
 				      size_t buflen, int *errnop);
@@ -417,6 +437,7 @@ struct nwrap_module_nss_fns {
 				      size_t buflen, int *errnop);
 	NSS_STATUS (*_nss_endgrent)(void);
 };
+#endif
 
 struct nwrap_backend {
 	const char *name;
@@ -509,6 +530,7 @@ static void nwrap_files_endgrent(struct nwrap_backend *b);
 
 /* prototypes for module backend */
 
+#ifndef NO_NSS_SUPPORT
 static struct passwd *nwrap_module_getpwent(struct nwrap_backend *b);
 static int nwrap_module_getpwent_r(struct nwrap_backend *b,
 				   struct passwd *pwdst, char *buf,
@@ -543,6 +565,7 @@ static void nwrap_module_setgrent(struct nwrap_backend *b);
 static void nwrap_module_endgrent(struct nwrap_backend *b);
 static int nwrap_module_initgroups(struct nwrap_backend *b,
 				   const char *user, gid_t group);
+#endif /* NO_NSS_SUPPORT */
 
 struct nwrap_ops nwrap_files_ops = {
 	.nw_getpwnam	= nwrap_files_getpwnam,
@@ -564,6 +587,7 @@ struct nwrap_ops nwrap_files_ops = {
 	.nw_endgrent	= nwrap_files_endgrent,
 };
 
+#ifndef NO_NSS_SUPPORT
 struct nwrap_ops nwrap_module_ops = {
 	.nw_getpwnam	= nwrap_module_getpwnam,
 	.nw_getpwnam_r	= nwrap_module_getpwnam_r,
@@ -583,6 +607,7 @@ struct nwrap_ops nwrap_module_ops = {
 	.nw_getgrent_r	= nwrap_module_getgrent_r,
 	.nw_endgrent	= nwrap_module_endgrent,
 };
+#endif /* NO_NSS_SUPPORT */
 
 struct nwrap_libc {
 	void *handle;
@@ -858,20 +883,31 @@ enum nwrap_lib {
     NWRAP_LIBC,
     NWRAP_LIBNSL,
     NWRAP_LIBSOCKET,
+    NWRAP_LIBSYSTEM,
 };
 
 #ifndef NDEBUG
 static const char *nwrap_str_lib(enum nwrap_lib lib)
 {
 	switch (lib) {
+#ifndef OSX
 	case NWRAP_LIBC:
 		return "libc";
 	case NWRAP_LIBNSL:
 		return "libnsl";
 	case NWRAP_LIBSOCKET:
 		return "libsocket";
+	case NWRAP_LIBSYSTEM:
+		return "libSystem";
+#else /* OSX specific */
+	/* In case of OS fall throught all options to libSystem */
+	case NWRAP_LIBC:
+	case NWRAP_LIBNSL:
+	case NWRAP_LIBSOCKET:
+	case NWRAP_LIBSYSTEM:
+		return "libSystem";
+#endif /* OSX */
 	}
-
 	/* Compiler would warn us about unhandled enum value if we get here */
 	return "unknown";
 }
@@ -881,7 +917,9 @@ static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 {
 	int flags = RTLD_LAZY;
 	void *handle = NULL;
+#ifndef OSX
 	int i;
+#endif /* OSX */
 
 #ifdef RTLD_DEEPBIND
 	flags |= RTLD_DEEPBIND;
@@ -925,7 +963,9 @@ static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 		}
 		break;
 #endif
-		/* FALL TROUGH */
+	case NWRAP_LIBSYSTEM:
+#ifndef OSX 
+	/* FALL TROUGH */
 	case NWRAP_LIBC:
 		handle = nwrap_main_global->libc.handle;
 		if (handle == NULL) {
@@ -942,6 +982,15 @@ static void *nwrap_load_lib_handle(enum nwrap_lib lib)
 			nwrap_main_global->libc.handle = handle;
 		}
 		break;
+#else /* OSX code path */
+	case NWRAP_LIBC:
+		handle = nwrap_main_global->libc.handle;
+		if (handle == NULL) {
+			handle = dlopen("libSystem.dylib", flags);
+			nwrap_main_global->libc.handle = handle;
+		}
+		break;
+#endif /* OSX */
 	}
 
 	if (handle == NULL) {
@@ -1115,6 +1164,7 @@ static struct passwd *libc_getpwent(void)
 	return nwrap_symbol_libc(getpwent).f();
 }
 
+#ifndef OSX
 #ifdef HAVE_SOLARIS_GETPWENT_R
 static struct passwd *libc_getpwent_r(struct passwd *pwdst,
 				      char *buf,
@@ -1135,6 +1185,7 @@ static int libc_getpwent_r(struct passwd *pwdst,
 	return nwrap_symbol_libc(getpwent_r).f(pwdst, buf, buflen, pwdstp);
 }
 #endif /* HAVE_SOLARIS_GETPWENT_R */
+#endif /* OSX */
 
 static void libc_endpwent(void)
 {
@@ -1218,6 +1269,7 @@ static struct group *libc_getgrent(void)
 	return nwrap_symbol_libc(getgrent).f();
 }
 
+#ifndef OSX
 #ifdef HAVE_GETGRENT_R
 #ifdef HAVE_SOLARIS_GETGRENT_R
 static struct group *libc_getgrent_r(struct group *group,
@@ -1240,6 +1292,7 @@ static int libc_getgrent_r(struct group *group,
 }
 #endif /* HAVE_SOLARIS_GETGRENT_R */
 #endif /* HAVE_GETGRENT_R */
+#endif /* OSX */
 
 static void libc_endgrent(void)
 {
@@ -1249,10 +1302,17 @@ static void libc_endgrent(void)
 }
 
 #ifdef HAVE_GETGROUPLIST
+#ifndef OSX
 static int libc_getgrouplist(const char *user,
 			     gid_t group,
 			     gid_t *groups,
 			     int *ngroups)
+#else /* OSX path */
+static int libc_getgrouplist(const char *user,
+			     int group,
+			     int *groups,
+			     int *ngroups)
+#endif /* OSX */
 {
 	nwrap_bind_symbol_libc(getgrouplist);
 
@@ -1369,6 +1429,8 @@ static int libc_getnameinfo(const struct sockaddr *sa,
 						servlen, flags);
 }
 
+
+#ifndef NO_NSS_SUPPORT
 /*********************************************************
  * NWRAP NSS MODULE LOADER FUNCTIONS
  *********************************************************/
@@ -1526,6 +1588,7 @@ static void nwrap_backend_init(struct nwrap_main *r)
 		}
 	}
 }
+#endif
 
 static void nwrap_init(void)
 {
@@ -1582,7 +1645,9 @@ static void nwrap_init(void)
 
 	nwrap_main_global = &__nwrap_main_global;
 
+#ifndef NO_NSS_SUPPORT
 	nwrap_backend_init(nwrap_main_global);
+#endif
 
 	/* passwd */
 	nwrap_pw_global.cache = &__nwrap_cache_pw;
@@ -2588,7 +2653,11 @@ static bool nwrap_ed_inventarize_add_new(char *const h_name,
 		return false;
 	}
 
+#ifdef OSX
+	e.key = strdup(h_name);
+#else
 	e.key = h_name;
+#endif
 	e.data = (void *)el;
 
 	p = hsearch(e, ENTER);
@@ -2748,11 +2817,11 @@ static bool nwrap_he_parse_line(struct nwrap_cache *nwrap, char *line)
 
 	*p = '\0';
 
-	if (inet_pton(AF_INET, i, ed->addr.host_addr)) {
+	if (inet_pton(AF_INET, i, ed->addr.host_addr) == 1) {
 		ed->ht.h_addrtype = AF_INET;
 		ed->ht.h_length = 4;
 #ifdef HAVE_IPV6
-	} else if (inet_pton(AF_INET6, i, ed->addr.host_addr)) {
+	} else if (inet_pton(AF_INET6, i, ed->addr.host_addr) == 1) {
 		ed->ht.h_addrtype = AF_INET6;
 		ed->ht.h_length = 16;
 #endif
@@ -3757,7 +3826,7 @@ static void nwrap_files_endhostent(void)
  * module backend
  */
 
-
+#ifndef NO_NSS_SUPPORT
 static struct passwd *nwrap_module_getpwnam(struct nwrap_backend *b,
 					    const char *name)
 {
@@ -4185,6 +4254,7 @@ static void nwrap_module_endgrent(struct nwrap_backend *b)
 
 	b->fns->_nss_endgrent();
 }
+#endif
 
 /****************************************************************************
  *   GETPWNAM
@@ -4375,6 +4445,7 @@ struct passwd *getpwent(void)
  *   GETPWENT_R
  ***************************************************************************/
 
+#ifndef OSX
 static int nwrap_getpwent_r(struct passwd *pwdst, char *buf,
 			    size_t buflen, struct passwd **pwdstp)
 {
@@ -4419,6 +4490,7 @@ int getpwent_r(struct passwd *pwdst, char *buf,
 	return nwrap_getpwent_r(pwdst, buf, buflen, pwdstp);
 }
 #endif /* HAVE_SOLARIS_GETPWENT_R */
+#endif /* OSX */
 
 /****************************************************************************
  *   ENDPWENT
@@ -4466,7 +4538,11 @@ static int nwrap_initgroups(const char *user, gid_t group)
 	return -1;
 }
 
+#ifndef OSX
 int initgroups(const char *user, gid_t group)
+#else
+int initgroups(const char *user, int group)
+#endif
 {
 	if (!nss_wrapper_enabled()) {
 		return libc_initgroups(user, group);
@@ -4680,7 +4756,7 @@ struct group *getgrent(void)
 /****************************************************************************
  *   GETGRENT_R
  ***************************************************************************/
-
+#ifndef OSX
 static int nwrap_getgrent_r(struct group *grdst, char *buf,
 			    size_t buflen, struct group **grdstp)
 {
@@ -4726,6 +4802,7 @@ int getgrent_r(struct group *src, char *buf,
 	return nwrap_getgrent_r(src, buf, buflen, grdstp);
 }
 #endif /* HAVE_SOLARIS_GETGRENT_R */
+#endif /* OSX */
 
 /****************************************************************************
  *   ENDGRENT
@@ -4756,8 +4833,13 @@ void endgrent(void)
  ***************************************************************************/
 
 #ifdef HAVE_GETGROUPLIST
+#ifndef OSX
 static int nwrap_getgrouplist(const char *user, gid_t group,
 			      gid_t *groups, int *ngroups)
+#else
+static int nwrap_getgrouplist(const char *user, int group,
+			      int *groups, int *ngroups)
+#endif /* OSX */
 {
 	struct group *grp;
 	gid_t *groups_tmp;
@@ -4782,8 +4864,8 @@ static int nwrap_getgrouplist(const char *user, gid_t group,
 			  grp->gr_name);
 
 		for (i=0; grp->gr_mem && grp->gr_mem[i] != NULL; i++) {
-
-			if (group != grp->gr_gid &&
+			/* Cast to git_t here is necessary for OSX port */
+			if ((gid_t)group != grp->gr_gid &&
 			    (strcmp(user, grp->gr_mem[i]) == 0)) {
 
 				NWRAP_LOG(NWRAP_LOG_DEBUG,
@@ -4824,7 +4906,11 @@ static int nwrap_getgrouplist(const char *user, gid_t group,
 	return count;
 }
 
+#ifndef OSX
 int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups)
+#else
+int getgrouplist(const char *user, int group, int *groups, int *ngroups)
+#endif /* OSX */
 {
 	if (!nss_wrapper_enabled()) {
 		return libc_getgrouplist(user, group, groups, ngroups);
@@ -5082,10 +5168,24 @@ static int nwrap_convert_he_ai(const struct hostent *he,
 			return EAI_FAMILY;
 	}
 
+#ifndef OSX
 	ai = (struct addrinfo *)malloc(sizeof(struct addrinfo) + socklen);
+#else
+	ai = (struct addrinfo *)malloc(sizeof(struct addrinfo));
+#endif /* OSX */
 	if (ai == NULL) {
 		return EAI_MEMORY;
 	}
+
+#ifndef OSX
+	ai->ai_addr = (struct sockaddr *) ((uintptr_t)ai + (uintptr_t)sizeof(struct addrinfo));
+#else
+	ai->ai_addr = malloc(socklen);
+	if (ai->ai_addr == NULL) {
+		free(ai);
+		return EAI_MEMORY;
+	}
+#endif /* OSX */
 
 	ai->ai_flags = hints->ai_flags;
 	ai->ai_family = he->h_addrtype;
@@ -5105,7 +5205,6 @@ static int nwrap_convert_he_ai(const struct hostent *he,
 	}
 
 	ai->ai_addrlen = socklen;
-	ai->ai_addr = (void *)(ai + 1);
 
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
 	ai->ai_addr->sa_len = socklen;
@@ -5310,6 +5409,15 @@ valid_port:
 			ai_new->ai_next = NULL;
 
 			/* We need a deep copy or freeaddrinfo() will blow up */
+#ifdef OSX
+			ai_new->ai_addr = malloc(ai->ai_addrlen);
+			if (ai_new->ai_addr == NULL) {
+				freeaddrinfo(ai);
+				return EAI_MEMORY;
+			}
+
+			memcpy(ai_new->ai_addr, ai->ai_addr, ai->ai_addrlen);
+#endif /* OSX */
 			if (ai_cur->ai_canonname != NULL) {
 				ai_new->ai_canonname =
 					strdup(ai_cur->ai_canonname);
@@ -5497,6 +5605,7 @@ void nwrap_destructor(void)
 	int i;
 
 	NWRAP_LOCK_ALL;
+
 	if (nwrap_main_global != NULL) {
 		struct nwrap_main *m = nwrap_main_global;
 

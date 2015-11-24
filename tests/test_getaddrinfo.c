@@ -78,7 +78,11 @@ static void test_nwrap_getaddrinfo(void **state)
 	assert_int_equal(sin6p->sin6_family, AF_INET6);
 	inet_ntop(AF_INET6, (void *)&sin6p->sin6_addr, ip6, sizeof(ip6));
 
+#ifndef OSX
 	assert_string_equal(ip6, "::13");
+#else
+	assert_string_equal(ip6, "::0.0.0.19");
+#endif /* OSX */
 
 	freeaddrinfo(res);
 }
@@ -433,7 +437,14 @@ static void test_nwrap_getaddrinfo_ipv6(void **state)
 	assert_int_equal(sin6p->sin6_family, AF_INET6);
 	inet_ntop(AF_INET6, (void *)&sin6p->sin6_addr, ip6, sizeof(ip6));
 
+#ifndef OSX
 	assert_string_equal(ip6, "::14");
+#else
+	/* According to darwin developer mailing list,
+	 * ::NN formated address is ipv4 compatible adress...
+	 * Human representation is different on darwin/os x */ 
+	assert_string_equal(ip6, "::0.0.0.20");
+#endif /* OSX */
 
 	freeaddrinfo(res);
 }

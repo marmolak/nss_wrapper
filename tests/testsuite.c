@@ -138,6 +138,7 @@ static bool test_nwrap_getpwnam(const char *name, struct passwd *pwd_p)
 	return ok;
 }
 
+#ifndef OSX
 static void test_nwrap_getpwnam_r(const char *name,
 				  struct passwd *pwd_p)
 {
@@ -161,6 +162,7 @@ static void test_nwrap_getpwnam_r(const char *name,
 		copy_passwd(&pwd, pwd_p);
 	}
 }
+#endif
 
 static bool test_nwrap_getpwuid(uid_t uid,
 				struct passwd *pwd_p)
@@ -186,6 +188,7 @@ static bool test_nwrap_getpwuid(uid_t uid,
 	return ok;
 }
 
+#ifndef OSX
 static bool test_nwrap_getpwuid_r(uid_t uid,
 				  struct passwd *pwd_p)
 {
@@ -211,6 +214,7 @@ static bool test_nwrap_getpwuid_r(uid_t uid,
 
 	return true;
 }
+#endif
 
 static bool copy_group(const struct group *grp,
 		       struct group *g)
@@ -306,6 +310,7 @@ static bool test_nwrap_getgrnam(const char *name,
 	return ok;
 }
 
+#ifndef OSX
 static bool test_nwrap_getgrnam_r(const char *name,
 				  struct group *grp_p)
 {
@@ -331,6 +336,7 @@ static bool test_nwrap_getgrnam_r(const char *name,
 
 	return true;
 }
+#endif
 
 static bool test_nwrap_getgrgid(gid_t gid,
 				struct group *grp_p)
@@ -356,6 +362,7 @@ static bool test_nwrap_getgrgid(gid_t gid,
 	return ok;
 }
 
+#ifndef OSX
 static bool test_nwrap_getgrgid_r(gid_t gid,
 				  struct group *grp_p)
 {
@@ -381,6 +388,7 @@ static bool test_nwrap_getgrgid_r(gid_t gid,
 
 	return true;
 }
+#endif
 
 static bool test_nwrap_enum_passwd(struct passwd **pwd_array_p,
 				   size_t *num_pwd_p)
@@ -418,6 +426,7 @@ static bool test_nwrap_enum_passwd(struct passwd **pwd_array_p,
 	return true;
 }
 
+#ifndef OSX
 static bool test_nwrap_enum_r_passwd(struct passwd **pwd_array_p,
 				     size_t *num_pwd_p)
 {
@@ -468,6 +477,7 @@ static bool test_nwrap_enum_r_passwd(struct passwd **pwd_array_p,
 
 	return true;
 }
+#endif
 
 static bool test_nwrap_passwd(void)
 {
@@ -492,6 +502,7 @@ static bool test_nwrap_passwd(void)
 	return true;
 }
 
+#ifndef OSX
 static void test_nwrap_passwd_r(void)
 {
 	struct passwd *pwd, pwd1, pwd2;
@@ -547,6 +558,7 @@ static bool test_nwrap_passwd_r_cross(void)
 
 	return true;
 }
+#endif
 
 static bool test_nwrap_enum_group(struct group **grp_array_p,
 				  size_t *num_grp_p)
@@ -583,6 +595,7 @@ static bool test_nwrap_enum_group(struct group **grp_array_p,
 	return true;
 }
 
+#ifndef OSX
 static bool test_nwrap_enum_r_group(struct group **grp_array_p,
 				    size_t *num_grp_p)
 {
@@ -633,6 +646,7 @@ static bool test_nwrap_enum_r_group(struct group **grp_array_p,
 
 	return true;
 }
+#endif
 
 static bool test_nwrap_group(void)
 {
@@ -658,6 +672,7 @@ static bool test_nwrap_group(void)
 	return true;
 }
 
+#ifndef OSX
 static bool test_nwrap_group_r(void)
 {
 	struct group *grp, grp1, grp2;
@@ -715,16 +730,28 @@ static bool test_nwrap_group_r_cross(void)
 
 	return true;
 }
+#endif
 
 #ifdef HAVE_GETGROUPLIST
+#ifndef OSX
 static bool test_nwrap_getgrouplist(const char *user,
 				    gid_t gid,
 				    gid_t **gids_p,
 				    int *num_gids_p)
+#else
+static bool test_nwrap_getgrouplist(const char *user,
+				    int gid,
+				    int **gids_p,
+				    int *num_gids_p)
+#endif /* OSX */
 {
 	int ret;
 	int num_groups = 0;
+#ifndef OSX
 	gid_t *groups = NULL;
+#else
+	int *groups = NULL;
+#endif /* OSX */
 
 	DEBUG("Testing getgrouplist: %s\n", user);
 
@@ -771,7 +798,11 @@ static bool test_nwrap_membership_user(const struct passwd *pwd,
 {
 	int num_user_groups = 0;
 	size_t num_user_groups_from_enum = 0;
+#ifndef OSX
 	gid_t *user_groups = NULL;
+#else
+	int *user_groups = NULL;
+#endif /* OSX */
 	size_t i;
 	int g;
 	bool primary_group_had_user_member = false;
@@ -861,6 +892,7 @@ static void test_nwrap_enumeration(void **state)
 	test_nwrap_group();
 }
 
+#ifndef OSX
 static void test_nwrap_reentrant_enumeration(void **state)
 {
 	const char *old_pwd = getenv("NSS_WRAPPER_PASSWD");
@@ -896,6 +928,7 @@ static void test_nwrap_reentrant_enumeration_crosschecks(void **state)
 	test_nwrap_passwd_r_cross();
 	test_nwrap_group_r_cross();
 }
+#endif
 
 static bool test_nwrap_passwd_duplicates(void)
 {
@@ -979,6 +1012,7 @@ static void test_nwrap_duplicates(void **state)
 	test_nwrap_group_duplicates();
 }
 
+#ifndef OSX
 static void test_nwrap_small_buffer(void **state)
 {
 	struct group grp, *grpp;
@@ -1024,20 +1058,25 @@ static void test_nwrap_group_many_members_r(void **state)
 	}
 	assert_int_equal(count, 11);
 }
+#endif /* OSX */
 
 int main(void) {
 	int rc;
 
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test(test_nwrap_enumeration),
+#ifndef OSX
 		cmocka_unit_test(test_nwrap_reentrant_enumeration),
 		cmocka_unit_test(test_nwrap_reentrant_enumeration_crosschecks),
+#endif /* OSX */
 #ifdef HAVE_GETGROUPLIST
 		cmocka_unit_test(test_nwrap_membership),
 #endif
 		cmocka_unit_test(test_nwrap_duplicates),
+#ifndef OSX
 		cmocka_unit_test(test_nwrap_small_buffer),
 		cmocka_unit_test(test_nwrap_group_many_members_r),
+#endif /* OSX */
 	};
 
 	rc = cmocka_run_group_tests(tests, NULL, NULL);
