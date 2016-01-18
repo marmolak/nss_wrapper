@@ -287,7 +287,7 @@ typedef int (*__libc_getpwuid_r)(uid_t uid, struct passwd *pwd, char *buf, size_
 typedef void (*__libc_setpwent)(void);
 typedef struct passwd *(*__libc_getpwent)(void);
 
-#ifndef OSX /* OSX doesn't have these calls */
+#if !(defined OSX || defined OPENBSD) /* OSX nor OpenBSD doesn't have these calls */
 
  #ifdef HAVE_SOLARIS_GETPWENT_R
   typedef struct passwd *(*__libc_getpwent_r)(struct passwd *pwbuf, char *buf, size_t buflen);
@@ -295,14 +295,14 @@ typedef struct passwd *(*__libc_getpwent)(void);
   typedef int (*__libc_getpwent_r)(struct passwd *pwbuf, char *buf, size_t buflen, struct passwd **pwbufp);
  #endif
 
-#endif /* OSX */
+#endif /* OSX || OPENBSD */
 
 
 typedef void (*__libc_endpwent)(void);
-#ifdef OSX
- typedef int (*__libc_initgroups)(const char *user, int gid);
-#else
+#ifndef OSX
  typedef int (*__libc_initgroups)(const char *user, gid_t gid);
+#else /* OSX path */
+ typedef int (*__libc_initgroups)(const char *user, int gid);
 #endif /* OS X */
 typedef struct group *(*__libc_getgrnam)(const char *name);
 typedef int (*__libc_getgrnam_r)(const char *name, struct group *grp, char *buf, size_t buflen, struct group **result);
@@ -311,19 +311,20 @@ typedef int (*__libc_getgrgid_r)(gid_t gid, struct group *grp, char *buf, size_t
 typedef void (*__libc_setgrent)(void);
 typedef struct group *(*__libc_getgrent)(void);
 
-#ifdef HAVE_SOLARIS_GETGRENT_R
- typedef struct group *(*__libc_getgrent_r)(struct group *group, char *buf, size_t buflen);
-#else
- #ifndef OSX /* OSX doesn't have _r function variants */
+#if !(defined OSX || defined OPENBSD) /* OSX doesn't have _r function variants */
+ #ifdef HAVE_SOLARIS_GETGRENT_R
+  typedef struct group *(*__libc_getgrent_r)(struct group *group, char *buf, size_t buflen);
+ #else
   typedef int (*__libc_getgrent_r)(struct group *group, char *buf, size_t buflen, struct group **result);
- #endif /* OSX */
-#endif /* HAVE_SOLARIS_GETPWENT_R */
+ #endif /* HAVE_SOLARIS_GETPWENT_R */
+#endif /* OSX || OPENBSD */
 
 typedef void (*__libc_endgrent)(void);
-#ifdef OSX
- typedef int (*__libc_getgrouplist)(const char *user, int group, int *groups, int *ngroups);
-#else
+
+#ifndef OSX
  typedef int (*__libc_getgrouplist)(const char *user, gid_t group, gid_t *groups, int *ngroups);
+#else
+ typedef int (*__libc_getgrouplist)(const char *user, int group, int *groups, int *ngroups);
 #endif /* OSX */
 
 typedef void (*__libc_sethostent)(int stayopen);
@@ -370,13 +371,13 @@ struct nwrap_libc_symbols {
 	NWRAP_SYMBOL_ENTRY(getpwuid_r);
 	NWRAP_SYMBOL_ENTRY(setpwent);
 	NWRAP_SYMBOL_ENTRY(getpwent);
-#ifndef OSX
+#if !(defined OSX || defined OPENBSD) 
 #ifdef HAVE_SOLARIS_GETPWENT_R
 	NWRAP_SYMBOL_ENTRY(getpwent_r);
 #else
 	NWRAP_SYMBOL_ENTRY(getpwent_r);
 #endif
-#endif /* OSX */
+#endif /* OSX || OPENBSD */
 	NWRAP_SYMBOL_ENTRY(endpwent);
 	NWRAP_SYMBOL_ENTRY(initgroups);
 	NWRAP_SYMBOL_ENTRY(getgrnam);
@@ -385,7 +386,7 @@ struct nwrap_libc_symbols {
 	NWRAP_SYMBOL_ENTRY(getgrgid_r);
 	NWRAP_SYMBOL_ENTRY(setgrent);
 	NWRAP_SYMBOL_ENTRY(getgrent);
-#ifndef OSX
+#if !(defined OSX || defined OPENBSD)
 #ifdef HAVE_SOLARIS_GETGRENT_R
 	NWRAP_SYMBOL_ENTRY(getgrent_r);
 #else
@@ -1164,7 +1165,7 @@ static struct passwd *libc_getpwent(void)
 	return nwrap_symbol_libc(getpwent).f();
 }
 
-#ifndef OSX
+#if !(defined OSX || defined OPENBSD)
 #ifdef HAVE_SOLARIS_GETPWENT_R
 static struct passwd *libc_getpwent_r(struct passwd *pwdst,
 				      char *buf,
@@ -1185,7 +1186,7 @@ static int libc_getpwent_r(struct passwd *pwdst,
 	return nwrap_symbol_libc(getpwent_r).f(pwdst, buf, buflen, pwdstp);
 }
 #endif /* HAVE_SOLARIS_GETPWENT_R */
-#endif /* OSX */
+#endif /* OSX || OPENBSD */
 
 static void libc_endpwent(void)
 {
@@ -1269,7 +1270,7 @@ static struct group *libc_getgrent(void)
 	return nwrap_symbol_libc(getgrent).f();
 }
 
-#ifndef OSX
+#if !(defined OSX || defined OPENBSD)
 #ifdef HAVE_GETGRENT_R
 #ifdef HAVE_SOLARIS_GETGRENT_R
 static struct group *libc_getgrent_r(struct group *group,
@@ -1292,7 +1293,7 @@ static int libc_getgrent_r(struct group *group,
 }
 #endif /* HAVE_SOLARIS_GETGRENT_R */
 #endif /* HAVE_GETGRENT_R */
-#endif /* OSX */
+#endif /* OSX || OPENBSD */
 
 static void libc_endgrent(void)
 {
@@ -4441,11 +4442,12 @@ struct passwd *getpwent(void)
 	return nwrap_getpwent();
 }
 
+#if !(defined OSX || defined OPENBSD)
+
 /****************************************************************************
  *   GETPWENT_R
  ***************************************************************************/
 
-#ifndef OSX
 static int nwrap_getpwent_r(struct passwd *pwdst, char *buf,
 			    size_t buflen, struct passwd **pwdstp)
 {
@@ -4490,7 +4492,7 @@ int getpwent_r(struct passwd *pwdst, char *buf,
 	return nwrap_getpwent_r(pwdst, buf, buflen, pwdstp);
 }
 #endif /* HAVE_SOLARIS_GETPWENT_R */
-#endif /* OSX */
+#endif /* OSX || OPENBSD */
 
 /****************************************************************************
  *   ENDPWENT
@@ -4542,7 +4544,7 @@ static int nwrap_initgroups(const char *user, gid_t group)
 int initgroups(const char *user, gid_t group)
 #else
 int initgroups(const char *user, int group)
-#endif
+#endif /* OSX */
 {
 	if (!nss_wrapper_enabled()) {
 		return libc_initgroups(user, group);
@@ -4753,10 +4755,11 @@ struct group *getgrent(void)
 	return nwrap_getgrent();
 }
 
+#if !(defined OSX || defined OPENBSD)
+
 /****************************************************************************
  *   GETGRENT_R
  ***************************************************************************/
-#ifndef OSX
 static int nwrap_getgrent_r(struct group *grdst, char *buf,
 			    size_t buflen, struct group **grdstp)
 {
@@ -4802,7 +4805,7 @@ int getgrent_r(struct group *src, char *buf,
 	return nwrap_getgrent_r(src, buf, buflen, grdstp);
 }
 #endif /* HAVE_SOLARIS_GETGRENT_R */
-#endif /* OSX */
+#endif /* OSX || OPENBSD */
 
 /****************************************************************************
  *   ENDGRENT
@@ -5061,8 +5064,9 @@ void endhostent(void)
 }
 #endif /* HAVE_SOLARIS_ENDHOSTENT */
 
-#ifdef BSD
-/* BSD implementation stores data in thread local storage but GLIBC does not */
+#if defined(BSD) && !(defined OPENBSD)
+/* BSD (not OpenBSD) implementation stores data in thread local storage
+ * but GLIBC does not */
 static __thread struct hostent user_he;
 static __thread struct nwrap_vector user_addrlist;
 #else
@@ -5088,8 +5092,9 @@ struct hostent *gethostbyname(const char *name)
 
 /* This is a GNU extension - Also can be found on BSD systems */
 #ifdef HAVE_GETHOSTBYNAME2
-#ifdef BSD
-/* BSD implementation stores data in  thread local storage but GLIBC not */
+#if defined(BSD) && !defined(OPENBSD)
+/* BSD (not OpenBSD) implementation stores data in  thread local storage
+ * but GLIBC not */
 static __thread struct hostent user_he2;
 static __thread struct nwrap_vector user_addrlist2;
 #else
@@ -5132,7 +5137,11 @@ struct hostent *gethostbyaddr(const void *addr,
 
 static const struct addrinfo default_hints =
 {
+#ifndef OPENBSD
 	.ai_flags = AI_ADDRCONFIG|AI_V4MAPPED,
+#else
+	.ai_flags = AI_ADDRCONFIG,
+#endif /* OPENBSD */
 	.ai_family = AF_UNSPEC,
 	.ai_socktype = 0,
 	.ai_protocol = 0,
